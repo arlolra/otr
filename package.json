@@ -1,0 +1,22 @@
+{
+  "name": "otr",
+  "version": "0.0.0",
+  "description": "Off-the-Record Messaging Protocol v2",
+  "main": "otr.js",
+  "scripts": {
+    "test": "find test/*.test.js | xargs node"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:arlolra/otr.git"
+  },
+  "keywords": [
+    "otr",
+    "off-the-record",
+    "crypto",
+    "protocol",
+    "socialist millionaire"
+  ],
+  "author": "Arlo Breault",
+  "license": "MIT"
+}
