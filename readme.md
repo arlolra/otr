@@ -1,5 +1,9 @@
-Off-the Record Messaging Protocol v2 implemented in JavaScript
-===========================================================
+Off-the Record Messaging Protocol v2 in JavaScript
+==================================================
+
+This is obviously still a WIP.
+
+---
 
 Spec: http://www.cypherpunks.ca/otr/Protocol-v2-3.1.0.html
 
