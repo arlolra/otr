@@ -1513,4 +1513,9 @@ module.exports = {
   , equals     : equals
   , sub        : sub
   , mod        : mod
+  , mult       : mult
+  , divInt_    : divInt_
+  , dup        : dup
+  , greater    : greater
+  , add        : add
 }
