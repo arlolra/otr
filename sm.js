@@ -166,6 +166,34 @@ SM.prototype = {
 
   },
 
+  smpHash: function (version, fmpi, smpi) {
+    var sha256 = CryptoJS.algo.SHA256.create()
+    sha256.update(version.toString())
+    sha256.update(BigInt.bigInt2str(fmpi, 10))
+    if (smpi) sha256.update(BigInt.bigInt2str(smpi, 10))
+    var hash = sha256.finalize()
+    return BigInt.str2bigInt(hash.toString(CryptoJS.enc.Hex), 16)
+  },
+
+  ZKP: function (v, c, D, ga) {
+    return BigInt.equals(c,
+      this.smpHash(v,
+        BigInt.multMod(
+          BigInt.powMod(g, D, n),
+          BigInt.powMod(ga, c, n),
+        n)
+      )
+    )
+  },
+
+  computeC: function (v, r) {
+    return this.smpHash(v, BigInt.powMod(g, r, n))
+  },
+
+  computeD: function (r, a, c) {
+    return BigInt.sub(r, BigInt.multMod(a, c, q))
+  },
+
   // send a message
   sendMsg: function (msg, rcv) {
     
@@ -175,7 +203,21 @@ SM.prototype = {
     // Alice
     if (!msg) {
       this.nextExpected = SMPSTATE_EXPECT2
-      return rcv.receiveMsg(this.makeG2s(), this)
+      var send = this.makeG2s()
+
+      var r2 = this.randomExponent()
+      var r3 = this.randomExponent()
+
+      var c2 = this.computeC(1, r2)
+      var c3 = this.computeC(2, r3)
+
+      var D2 = this.computeD(r2, this.a2, c2)
+      var D3 = this.computeD(r3, this.a3, c3)
+
+      console.log('Check c2: ' + this.ZKP(1, c2, D2, send.g2a))
+      console.log('Check c3: ' + this.ZKP(2, c3, D3, send.g3a))
+
+      return rcv.receiveMsg(send, this)
     }
     rcv.receiveMsg(msg, this)
   },

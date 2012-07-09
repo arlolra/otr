@@ -1512,4 +1512,5 @@ module.exports = {
   , randBigInt : randBigInt
   , equals     : equals
   , sub        : sub
+  , mod        : mod
 }
