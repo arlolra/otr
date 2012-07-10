@@ -71,6 +71,12 @@ function SM(secret) {
   this.nextExpected = SMPSTATE_EXPECT1
 
   this.init()
+
+  // bind methods
+  var self = this
+  ;['sendMsg', 'receiveMsg'].forEach(function (meth) {
+    self[meth] = self[meth].bind(self)
+  })
 }
 
 SM.prototype = {
@@ -123,7 +129,7 @@ SM.prototype = {
   },
 
   // the bulk of the work
-  handleSM: function (msg, rcv) {
+  handleSM: function (msg, callback) {
 
     var send = {}
       , reply = true
@@ -168,11 +174,11 @@ SM.prototype = {
         break
 
       default:
-        throw new Error('dang')
+        this.error('Unrecognized state.')
 
     }
 
-    if (reply) this.sendMsg(send, rcv)
+    if (reply) this.sendMsg(send, callback)
 
   },
 
@@ -205,32 +211,49 @@ SM.prototype = {
   },
 
   // send a message
-  sendMsg: function (msg, rcv) {
+  sendMsg: function (send, callback) {
 
     // "?OTR:" + base64encode(msg) + "."
     console.log('sending')
 
-    // Alice
-    if (!msg) {
-      var send = this.makeG2s()
-
-      var r2 = this.randomExponent()
-      var r3 = this.randomExponent()
-
-      send.c2 = this.c2 = this.computeC(1, r2)
-      send.c3 = this.c3 = this.computeC(2, r3)
-      send.d2 = this.d2 = this.computeD(r2, this.a2, this.c2)
-      send.d3 = this.d3 = this.computeD(r3, this.a3, this.c3)
-
-      this.nextExpected = SMPSTATE_EXPECT2
-      return rcv.receiveMsg(send, this)
-    }
-    rcv.receiveMsg(msg, this)
+    callback(send, this.receiveMsg)
   },
 
   // receive a message
-  receiveMsg: function (msg, rcv) {
-    this.handleSM(msg, rcv)
+  receiveMsg: function (msg, callback) {
+    this.handleSM(msg, callback)
+  },
+
+  error: function (err) {
+    this.nextExpected = SMPSTATE_EXPECT1
+    throw new Error(err)
+  },
+
+  initiate: function (callback) {
+    if (this.nextExpected !== SMPSTATE_EXPECT1)
+      return this.error('Unexpected state.')
+
+    if (typeof callback !== 'function')
+      return this.error('Nowhere to go?')
+
+    var send = this.makeG2s()
+
+    // zero-knowledge proof that the exponents
+    // associated with g2a & g3a are known
+    var r2 = this.randomExponent()
+    var r3 = this.randomExponent()
+    send.c2 = this.c2 = this.computeC(1, r2)
+    send.c3 = this.c3 = this.computeC(2, r3)
+    send.d2 = this.d2 = this.computeD(r2, this.a2, this.c2)
+    send.d3 = this.d3 = this.computeD(r3, this.a3, this.c3)
+
+    // set the next expected state
+    this.nextExpected = SMPSTATE_EXPECT2
+
+    // set the message type
+    send.type = 2
+
+    this.sendMsg(send, callback)
   }
 
 }

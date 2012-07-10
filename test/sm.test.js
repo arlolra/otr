@@ -4,4 +4,4 @@ var assert = require('assert')
 var alice = new SM('arlo')
 var bob = new SM('arlo')
 
-alice.sendMsg(null, bob)
+alice.initiate(bob.receiveMsg)
