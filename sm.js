@@ -14,6 +14,10 @@ function subMod(one, two, n) {
   return BigInt.sub(one, two)
 }
 
+function randomExponent() {
+  return BigInt.randBigInt(1536)
+}
+
 // smp machine states
 var SMPSTATE_EXPECT1 = 1
   , SMPSTATE_EXPECT2 = 2
@@ -71,8 +75,8 @@ SM.prototype = {
   // set the initial values
   // also used when aborting
   init: function () {
-    this.a2 = this.randomExponent()
-    this.a3 = this.randomExponent()
+    this.a2 = randomExponent()
+    this.a3 = randomExponent()
 
     this.g2 = null
     this.g3 = null
@@ -89,11 +93,6 @@ SM.prototype = {
     this.smpstate = SMPSTATE_EXPECT1
   },
 
-  // just returns a random exponent
-  randomExponent: function () {
-    return BigInt.randBigInt(1536)
-  },
-
   makeG2s: function () {
     return {
         g2a: BigInt.powMod(G, this.a2, N)
@@ -107,7 +106,7 @@ SM.prototype = {
   },
 
   computePQ: function (send) {
-    var r = this.randomExponent()
+    var r = randomExponent()
     send.p = this.p = BigInt.powMod(this.g3, r, N)
     
     var g1r = BigInt.powMod(G, r, N)
@@ -275,8 +274,8 @@ SM.prototype = {
 
     // zero-knowledge proof that the exponents
     // associated with g2a & g3a are known
-    var r2 = this.randomExponent()
-    var r3 = this.randomExponent()
+    var r2 = randomExponent()
+    var r3 = randomExponent()
     send.c2 = this.c2 = this.computeC(1, r2)
     send.c3 = this.c3 = this.computeC(2, r3)
     send.d2 = this.d2 = this.computeD(r2, this.a2, this.c2)
