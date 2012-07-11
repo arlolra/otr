@@ -52,24 +52,7 @@ function SM(secret) {
   var hash = sha256.finalize()
   this.secret = BigInt.str2bigInt(hash.toString(CryptoJS.enc.Hex), 16)
 
-  this.a2 = null
-  this.a3 = null
-
-  this.g2 = null
-  this.g3 = null
-
-  this.p = null
-  this.q = null
-  this.r = null
-
-  this.c2 = null
-  this.c3 = null
-  this.d2 = null
-  this.d3 = null
-
-  this.received_question = false
-  this.nextExpected = SMPSTATE_EXPECT1
-
+  // initialize vars
   this.init()
 
   // bind methods
@@ -90,6 +73,20 @@ SM.prototype = {
   init: function () {
     this.a2 = this.randomExponent()
     this.a3 = this.randomExponent()
+
+    this.g2 = null
+    this.g3 = null
+
+    this.p = null
+    this.q = null
+    this.r = null
+
+    this.c2 = null
+    this.c3 = null
+    this.d2 = null
+    this.d3 = null
+
+    this.smpstate = SMPSTATE_EXPECT1
   },
 
   // just returns a random exponent
@@ -129,12 +126,12 @@ SM.prototype = {
   },
 
   // the bulk of the work
-  handleSM: function (msg, callback) {
+  handleSM: function (msg, cb) {
 
     var send = {}
       , reply = true
 
-    switch (this.nextExpected) {
+    switch (this.smpstate) {
 
       // Bob
       case SMPSTATE_EXPECT1:
@@ -143,7 +140,8 @@ SM.prototype = {
         send = this.makeG2s()
         this.computeGs(msg)
         this.computePQ(send)
-        this.nextExpected = SMPSTATE_EXPECT3
+        this.smpstate = SMPSTATE_EXPECT3
+        send.type = 3
         break
 
       // Alice
@@ -151,7 +149,8 @@ SM.prototype = {
         this.computeGs(msg)
         this.computePQ(send)
         this.computeR(msg, send)
-        this.nextExpected = SMPSTATE_EXPECT4
+        this.smpstate = SMPSTATE_EXPECT4
+        send.type = 4
         break
 
       // Bob
@@ -161,7 +160,8 @@ SM.prototype = {
         var rab = this.computeRab(msg)
         console.log('Compare Rab: '
           + BigInt.equals(rab, divMod(msg.p, this.p, N)))
-        this.nextExpected = SMPSTATE_EXPECT1
+        send.type = 5
+        this.init()
         break
 
       // Alice
@@ -169,16 +169,16 @@ SM.prototype = {
         var rab = this.computeRab(msg)
         console.log('Compare Rab: '
           + BigInt.equals(rab, divMod(this.p, msg.p, N)))
-        this.nextExpected = SMPSTATE_EXPECT1
+        this.init()
         reply = false
         break
 
       default:
-        this.error('Unrecognized state.')
+        this.error('Unrecognized state.', cb)
 
     }
 
-    if (reply) this.sendMsg(send, callback)
+    if (reply) this.sendMsg(send, cb)
 
   },
 
@@ -211,30 +211,65 @@ SM.prototype = {
   },
 
   // send a message
-  sendMsg: function (send, callback) {
+  sendMsg: function (send, cb) {
 
     // "?OTR:" + base64encode(msg) + "."
     console.log('sending')
 
-    callback(send, this.receiveMsg)
+    cb(send, this.receiveMsg)
   },
 
   // receive a message
-  receiveMsg: function (msg, callback) {
-    this.handleSM(msg, callback)
+  receiveMsg: function (msg, cb) {
+
+    if (typeof cb !== 'function')
+      throw new Error('Nowhere to go?')
+
+    if (typeof msg !== 'object')
+      return this.error('No message type.', cb)
+
+    var expectStates = {
+        2: SMPSTATE_EXPECT1
+      , 3: SMPSTATE_EXPECT2
+      , 4: SMPSTATE_EXPECT3
+      , 5: SMPSTATE_EXPECT4
+    }
+
+    switch (msg.type) {
+
+      case 2:  // these fall through
+      case 3:
+      case 4:
+      case 5:
+        if (this.smpstate !== expectStates[msg.type])
+          return this.error('Unexpected state.', cb)
+        this.handleSM(msg, cb)
+        break
+
+      // abort! there was an error
+      case 6:
+        this.init()
+        break
+
+      default:
+        this.error('Invalid message type.', cb)
+
+    }
+
   },
 
-  error: function (err) {
-    this.nextExpected = SMPSTATE_EXPECT1
-    throw new Error(err)
+  error: function (err, cb) {
+    console.log(err)
+    this.init()
+    this.sendMsg({ type: 6 }, cb)
   },
 
-  initiate: function (callback) {
-    if (this.nextExpected !== SMPSTATE_EXPECT1)
-      return this.error('Unexpected state.')
+  initiate: function (cb) {
+    if (typeof cb !== 'function')
+      throw new Error('Nowhere to go?')
 
-    if (typeof callback !== 'function')
-      return this.error('Nowhere to go?')
+    // start over
+    this.init()
 
     var send = this.makeG2s()
 
@@ -248,12 +283,12 @@ SM.prototype = {
     send.d3 = this.d3 = this.computeD(r3, this.a3, this.c3)
 
     // set the next expected state
-    this.nextExpected = SMPSTATE_EXPECT2
+    this.smpstate = SMPSTATE_EXPECT2
 
     // set the message type
     send.type = 2
 
-    this.sendMsg(send, callback)
+    this.sendMsg(send, cb)
   }
 
 }
