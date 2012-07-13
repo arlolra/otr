@@ -105,10 +105,8 @@ SM.prototype = {
     this.g3 = BigInt.powMod(msg.g3a, this.a3, N)
   },
 
-  computePQ: function (send) {
-    var r = randomExponent()
+  computePQ: function (r, send) {
     send.p = this.p = BigInt.powMod(this.g3, r, N)
-    
     var g1r = BigInt.powMod(G, r, N)
     var g2x = BigInt.powMod(this.g2, this.secret, N)
     send.q = this.q = BigInt.multMod(g1r, g2x, N)
@@ -124,61 +122,12 @@ SM.prototype = {
     return BigInt.powMod(msg.r, this.a3, N)
   },
 
-  // the bulk of the work
-  handleSM: function (msg, cb) {
+  computeC: function (v, r) {
+    return this.smpHash(v, BigInt.powMod(G, r, N))
+  },
 
-    var send = {}
-      , reply = true
-
-    switch (this.smpstate) {
-
-      // Bob
-      case SMPSTATE_EXPECT1:
-        console.log('Check c2: ' + this.ZKP(1, msg.c2, msg.d2, msg.g2a))
-        console.log('Check c3: ' + this.ZKP(2, msg.c3, msg.d3, msg.g3a))
-        send = this.makeG2s()
-        this.computeGs(msg)
-        this.computePQ(send)
-        this.smpstate = SMPSTATE_EXPECT3
-        send.type = 3
-        break
-
-      // Alice
-      case SMPSTATE_EXPECT2:
-        this.computeGs(msg)
-        this.computePQ(send)
-        this.computeR(msg, send)
-        this.smpstate = SMPSTATE_EXPECT4
-        send.type = 4
-        break
-
-      // Bob
-      case SMPSTATE_EXPECT3:
-        send.p = this.p  // redundant
-        this.computeR(msg, send, true)
-        var rab = this.computeRab(msg)
-        console.log('Compare Rab: '
-          + BigInt.equals(rab, divMod(msg.p, this.p, N)))
-        send.type = 5
-        this.init()
-        break
-
-      // Alice
-      case SMPSTATE_EXPECT4:
-        var rab = this.computeRab(msg)
-        console.log('Compare Rab: '
-          + BigInt.equals(rab, divMod(this.p, msg.p, N)))
-        this.init()
-        reply = false
-        break
-
-      default:
-        this.error('Unrecognized state.', cb)
-
-    }
-
-    if (reply) this.sendMsg(send, cb)
-
+  computeD: function (r, a, c) {
+    return subMod(r, BigInt.multMod(a, c, Q), Q)
   },
 
   smpHash: function (version, fmpi, smpi) {
@@ -201,12 +150,110 @@ SM.prototype = {
     )
   },
 
-  computeC: function (v, r) {
-    return this.smpHash(v, BigInt.powMod(G, r, N))
-  },
+  // the bulk of the work
+  handleSM: function (msg, cb) {
 
-  computeD: function (r, a, c) {
-    return subMod(r, BigInt.multMod(a, c, Q), Q)
+    var send = {}
+      , reply = true
+
+    switch (this.smpstate) {
+
+      case SMPSTATE_EXPECT1:
+
+        // verify znp's
+        console.log('Check c2: ' + this.ZKP(1, msg.c2, msg.d2, msg.g2a))
+        console.log('Check c3: ' + this.ZKP(2, msg.c3, msg.d3, msg.g3a))
+
+        send = this.makeG2s()
+
+        // zero-knowledge proof that the exponents
+        // associated with g2a & g3a are known
+        var r2 = randomExponent()
+        var r3 = randomExponent()
+        send.c2 = this.c2 = this.computeC(3, r2)
+        send.c3 = this.c3 = this.computeC(4, r3)
+        send.d2 = this.d2 = this.computeD(r2, this.a2, this.c2)
+        send.d3 = this.d3 = this.computeD(r3, this.a3, this.c3)
+
+        this.computeGs(msg)
+
+        var r4 = randomExponent()
+        this.computePQ(r4, send)
+
+        // zero-knowledge proof that P & Q
+        // were generated according to the protocol
+        var r5 = randomExponent()
+        var r6 = randomExponent()
+        var tmp = BigInt.multMod(
+            BigInt.powMod(G, r5, N)
+          , BigInt.powMod(this.g2, r6, N)
+          , N
+        )
+        send.cP = this.smpHash(5, BigInt.powMod(this.g3, r5, N), tmp)
+        send.d5 = this.computeD(r5, r4, send.cP)
+        send.d6 = this.computeD(r6, this.secret, send.cP)
+
+        this.smpstate = SMPSTATE_EXPECT3
+        send.type = 3
+        break
+
+      case SMPSTATE_EXPECT2:
+
+        // verify znp of c3 / c3
+        console.log('Check c2: ' + this.ZKP(3, msg.c2, msg.d2, msg.g2a))
+        console.log('Check c3: ' + this.ZKP(4, msg.c3, msg.d3, msg.g3a))
+
+        this.computeGs(msg)
+
+        // verify znp of cP
+        var t1 = BigInt.multMod(
+            BigInt.powMod(this.g3, msg.d5, N)
+          , BigInt.powMod(msg.p, msg.cP, N)
+          , N
+        )
+        var t2 = BigInt.multMod(
+            BigInt.powMod(G, msg.d5, N)
+          , BigInt.powMod(this.g2, msg.d6, N)
+          , N
+        )
+        t2 = BigInt.multMod(t2, BigInt.powMod(msg.q, msg.cP, N), N)
+        var cP = this.smpHash(5, t1, t2)
+        console.log('Check cP: ' + BigInt.equals(msg.cP, cP))
+
+        var r4 = randomExponent()
+        this.computePQ(r4, send)
+
+        this.computeR(msg, send)
+
+        this.smpstate = SMPSTATE_EXPECT4
+        send.type = 4
+        break
+
+      case SMPSTATE_EXPECT3:
+        send.p = this.p  // redundant
+        this.computeR(msg, send, true)
+        var rab = this.computeRab(msg)
+        console.log('Compare Rab: '
+          + BigInt.equals(rab, divMod(msg.p, this.p, N)))
+        send.type = 5
+        this.init()
+        break
+
+      case SMPSTATE_EXPECT4:
+        var rab = this.computeRab(msg)
+        console.log('Compare Rab: '
+          + BigInt.equals(rab, divMod(this.p, msg.p, N)))
+        this.init()
+        reply = false
+        break
+
+      default:
+        this.error('Unrecognized state.', cb)
+
+    }
+
+    if (reply) this.sendMsg(send, cb)
+
   },
 
   // send a message
