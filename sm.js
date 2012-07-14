@@ -247,7 +247,7 @@ SM.prototype = {
         send.cR = this.smpHash(7, BigInt.powMod(G, r7, N), tmp2)
         send.d7 = this.computeD(r7, this.a3, send.cR)
 
-        send.g3a = this.g3a // redundant
+        send.g3a = this.g3a  // redundant
 
         this.smpstate = SMPSTATE_EXPECT4
         send.type = 4
@@ -284,20 +284,47 @@ SM.prototype = {
         var cR = this.smpHash(7, t3, t4)
         console.log('Check cR: ' + BigInt.equals(msg.cR, cR))
 
-        send.p = this.p  // redundant
-
         this.computeR(msg, send, true)
+
+        // zero-knowledge proof that R
+        // was generated according to the protocol
+        var r7 = randomExponent()
+        var tmp2 = BigInt.powMod(divMod(msg.q, this.q, N), r7, N)
+        send.cR = this.smpHash(8, BigInt.powMod(G, r7, N), tmp2)
+        send.d7 = this.computeD(r7, this.a3, send.cR)
+
         var rab = this.computeRab(msg)
         console.log('Compare Rab: '
           + BigInt.equals(rab, divMod(msg.p, this.p, N)))
+
+        send.p = this.p  // redundant
+        send.q = this.q  // redundant
+        send.g3a = this.g3a  // redundant
+
         send.type = 5
         this.init()
         break
 
       case SMPSTATE_EXPECT4:
+
+        // verify znp of cR
+        var t3 = BigInt.multMod(
+            BigInt.powMod(G, msg.d7, N)
+          , BigInt.powMod(msg.g3a, msg.cR, N)
+          , N
+        )
+        var t4 = BigInt.multMod(
+            BigInt.powMod(divMod(this.q, msg.q, N), msg.d7, N)
+          , BigInt.powMod(msg.r, msg.cR, N)
+          , N
+        )
+        var cR = this.smpHash(8, t3, t4)
+        console.log('Check cR: ' + BigInt.equals(msg.cR, cR))
+
         var rab = this.computeRab(msg)
         console.log('Compare Rab: '
           + BigInt.equals(rab, divMod(this.p, msg.p, N)))
+
         this.init()
         reply = false
         break
