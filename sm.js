@@ -18,6 +18,10 @@ function randomExponent() {
   return BigInt.randBigInt(1536)
 }
 
+function randomValue() {
+  return BigInt.randBigInt(128)
+}
+
 // smp machine states
 var SMPSTATE_EXPECT1 = 1
   , SMPSTATE_EXPECT2 = 2
@@ -75,8 +79,8 @@ SM.prototype = {
   // set the initial values
   // also used when aborting
   init: function () {
-    this.a2 = randomExponent()
-    this.a3 = randomExponent()
+    this.a2 = null
+    this.a3 = null
 
     this.g2a = null
     this.g3a = null
@@ -165,6 +169,9 @@ SM.prototype = {
         // verify znp's
         console.log('Check c2: ' + this.ZKP(1, msg.c2, msg.d2, msg.g2a))
         console.log('Check c3: ' + this.ZKP(2, msg.c3, msg.d3, msg.g3a))
+
+        this.a2 = randomExponent()
+        this.a3 = randomExponent()
 
         send = this.makeG2s()
 
@@ -397,14 +404,17 @@ SM.prototype = {
       throw new Error('Nowhere to go?')
 
     // start over
-    this.init()
+    if (this.smpstate !== SMPSTATE_EXPECT1) this.error()
+
+    this.a2 = randomValue()
+    this.a3 = randomValue()
 
     var send = this.makeG2s()
 
     // zero-knowledge proof that the exponents
     // associated with g2a & g3a are known
-    var r2 = randomExponent()
-    var r3 = randomExponent()
+    var r2 = randomValue()
+    var r3 = randomValue()
     send.c2 = this.c2 = this.computeC(1, r2)
     send.c3 = this.c3 = this.computeC(2, r3)
     send.d2 = this.d2 = this.computeD(r2, this.a2, this.c2)
