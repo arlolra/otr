@@ -234,8 +234,8 @@ SM.prototype = {
 
         // verify znp of cR
         var t3 = multPowMod(G, msg.d7, msg.g3a, msg.cR, N)
-        this.QoQ = divMod(msg.q, this.q, N)  // save Q over Q
-        var t4 = multPowMod(this.QoQ, msg.d7, msg.r, msg.cR, N)
+        var QoQ = divMod(msg.q, this.q, N)  // save Q over Q
+        var t4 = multPowMod(QoQ, msg.d7, msg.r, msg.cR, N)
         console.log('Check cR: ' + ZKP(7, msg.cR, t3, t4))
 
         this.computeR(msg, send, true)
@@ -243,7 +243,7 @@ SM.prototype = {
         // zero-knowledge proof that R
         // was generated according to the protocol
         var r7 = randomExponent()
-        var tmp2 = BigInt.powMod(this.QoQ, r7, N)
+        var tmp2 = BigInt.powMod(QoQ, r7, N)
         send.cR = smpHash(8, BigInt.powMod(G, r7, N), tmp2)
         send.d7 = this.computeD(r7, this.a3, send.cR)
 
