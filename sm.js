@@ -1,43 +1,7 @@
 var CryptoJS = require('./vendor/sha256.js')
-var BigInt = require('./vendor/bigint.js')
-
-
-// helpers
-function divMod(num, den, n) {
-  return BigInt.multMod(num, BigInt.inverseMod(den, n), n)
-}
-
-function subMod(one, two, n) {
-  one = BigInt.mod(one, n)
-  two = BigInt.mod(two, n)
-  if (BigInt.greater(two, one)) one = BigInt.add(one, n)
-  return BigInt.sub(one, two)
-}
-
-function randomExponent() {
-  return BigInt.randBigInt(1536)
-}
-
-function randomValue() {
-  return BigInt.randBigInt(128)
-}
-
-function smpHash(version, fmpi, smpi) {
-  var sha256 = CryptoJS.algo.SHA256.create()
-  sha256.update(version.toString())
-  sha256.update(BigInt.bigInt2str(fmpi, 10))
-  if (smpi) sha256.update(BigInt.bigInt2str(smpi, 10))
-  var hash = sha256.finalize()
-  return BigInt.str2bigInt(hash.toString(CryptoJS.enc.Hex), 16)
-}
-
-function multPowMod(a, b, c, d, e) {
-  return BigInt.multMod(BigInt.powMod(a, b, e), BigInt.powMod(c, d, e), e)
-}
-
-function ZKP(v, c, d, e) {
-  return BigInt.equals(c, smpHash(v, d, e))
-}
+  , BigInt = require('./vendor/bigint.js')
+  , DH = require('./dh.json')
+  , hlp = require('./helpers.js')
 
 // smp machine states
 var SMPSTATE_EXPECT1 = 1
@@ -47,17 +11,8 @@ var SMPSTATE_EXPECT1 = 1
 
 // diffie-hellman modulus and generator
 // see group 5, RFC 3526
-var G = BigInt.str2bigInt('2', 10)
-var N = BigInt.str2bigInt((
-            "FFFFFFFF FFFFFFFF C90FDAA2 2168C234 C4C6628B 80DC1CD1"
-          + "29024E08 8A67CC74 020BBEA6 3B139B22 514A0879 8E3404DD"
-          + "EF9519B3 CD3A431B 302B0A6D F25F1437 4FE1356D 6D51C245"
-          + "E485B576 625E7EC6 F44C42E9 A637ED6B 0BFF5CB6 F406B7ED"
-          + "EE386BFB 5A899FA5 AE9F2411 7C4B1FE6 49286651 ECE45B3D"
-          + "C2007CB8 A163BF05 98DA4836 1C55D39A 69163FA8 FD24CF5F"
-          + "83655D23 DCA3AD96 1C62F356 208552BB 9ED52907 7096966D"
-          + "670C354E 4ABC9804 F1746C08 CA237327 FFFFFFFF FFFFFFFF"
-        ).replace(/\s+/g, ''), 16)
+var G = BigInt.str2bigInt(DH.G, 10)
+var N = BigInt.str2bigInt(DH.N, 16)
 
 // to calculate D's for zero-knowledge proofs
 var Q = BigInt.sub(N, BigInt.str2bigInt('1', 10))
@@ -112,7 +67,7 @@ SM.prototype = {
 
   computePQ: function (r, send) {
     send.p = this.p = BigInt.powMod(this.g3, r, N)
-    send.q = this.q = multPowMod(G, r, this.g2, this.secret, N)
+    send.q = this.q = hlp.multPowMod(G, r, this.g2, this.secret, N)
   },
 
   computeR: function (send) {
@@ -124,11 +79,11 @@ SM.prototype = {
   },
 
   computeC: function (v, r) {
-    return smpHash(v, BigInt.powMod(G, r, N))
+    return hlp.smpHash(v, BigInt.powMod(G, r, N))
   },
 
   computeD: function (r, a, c) {
-    return subMod(r, BigInt.multMod(a, c, Q), Q)
+    return hlp.subMod(r, BigInt.multMod(a, c, Q), Q)
   },
 
   // the bulk of the work
@@ -143,21 +98,21 @@ SM.prototype = {
 
         // verify znp's
         console.log('Check c2: '
-          + ZKP(1, msg.c2, multPowMod(G, msg.d2, msg.g2a, msg.c2, N)))
+          + hlp.ZKP(1, msg.c2, hlp.multPowMod(G, msg.d2, msg.g2a, msg.c2, N)))
         console.log('Check c3: '
-          + ZKP(2, msg.c3, multPowMod(G, msg.d3, msg.g3a, msg.c3, N)))
+          + hlp.ZKP(2, msg.c3, hlp.multPowMod(G, msg.d3, msg.g3a, msg.c3, N)))
 
         this.g3ao = msg.g3a  // save for later
 
-        this.a2 = randomExponent()
-        this.a3 = randomExponent()
+        this.a2 = hlp.randomExponent()
+        this.a3 = hlp.randomExponent()
 
         send = this.makeG2s()
 
         // zero-knowledge proof that the exponents
         // associated with g2a & g3a are known
-        var r2 = randomExponent()
-        var r3 = randomExponent()
+        var r2 = hlp.randomExponent()
+        var r3 = hlp.randomExponent()
         send.c2 = this.c2 = this.computeC(3, r2)
         send.c3 = this.c3 = this.computeC(4, r3)
         send.d2 = this.d2 = this.computeD(r2, this.a2, this.c2)
@@ -165,15 +120,15 @@ SM.prototype = {
 
         this.computeGs(msg)
 
-        var r4 = randomExponent()
+        var r4 = hlp.randomExponent()
         this.computePQ(r4, send)
 
         // zero-knowledge proof that P & Q
         // were generated according to the protocol
-        var r5 = randomExponent()
-        var r6 = randomExponent()
-        var tmp = multPowMod(G, r5, this.g2, r6, N)
-        send.cP = smpHash(5, BigInt.powMod(this.g3, r5, N), tmp)
+        var r5 = hlp.randomExponent()
+        var r6 = hlp.randomExponent()
+        var tmp = hlp.multPowMod(G, r5, this.g2, r6, N)
+        send.cP = hlp.smpHash(5, BigInt.powMod(this.g3, r5, N), tmp)
         send.d5 = this.computeD(r5, r4, send.cP)
         send.d6 = this.computeD(r6, this.secret, send.cP)
 
@@ -185,43 +140,43 @@ SM.prototype = {
 
         // verify znp of c3 / c3
         console.log('Check c2: '
-          + ZKP(3, msg.c2, multPowMod(G, msg.d2, msg.g2a, msg.c2, N)))
+          + hlp.ZKP(3, msg.c2, hlp.multPowMod(G, msg.d2, msg.g2a, msg.c2, N)))
         console.log('Check c3: '
-          + ZKP(4, msg.c3, multPowMod(G, msg.d3, msg.g3a, msg.c3, N)))
+          + hlp.ZKP(4, msg.c3, hlp.multPowMod(G, msg.d3, msg.g3a, msg.c3, N)))
 
         this.g3ao = msg.g3a  // save for later
 
         this.computeGs(msg)
 
         // verify znp of cP
-        var t1 = multPowMod(this.g3, msg.d5, msg.p, msg.cP, N)
-        var t2 = multPowMod(G, msg.d5, this.g2, msg.d6, N)
+        var t1 = hlp.multPowMod(this.g3, msg.d5, msg.p, msg.cP, N)
+        var t2 = hlp.multPowMod(G, msg.d5, this.g2, msg.d6, N)
         t2 = BigInt.multMod(t2, BigInt.powMod(msg.q, msg.cP, N), N)
-        console.log('Check cP: ' + ZKP(5, msg.cP, t1, t2))
+        console.log('Check cP: ' + hlp.ZKP(5, msg.cP, t1, t2))
 
-        var r4 = randomExponent()
+        var r4 = hlp.randomExponent()
         this.computePQ(r4, send)
 
         // zero-knowledge proof that P & Q
         // were generated according to the protocol
-        var r5 = randomExponent()
-        var r6 = randomExponent()
-        var tmp = multPowMod(G, r5, this.g2, r6, N)
-        send.cP = smpHash(6, BigInt.powMod(this.g3, r5, N), tmp)
+        var r5 = hlp.randomExponent()
+        var r6 = hlp.randomExponent()
+        var tmp = hlp.multPowMod(G, r5, this.g2, r6, N)
+        send.cP = hlp.smpHash(6, BigInt.powMod(this.g3, r5, N), tmp)
         send.d5 = this.computeD(r5, r4, send.cP)
         send.d6 = this.computeD(r6, this.secret, send.cP)
 
         // store these
-        this.QoQ = divMod(this.q, msg.q, N)
-        this.PoP = divMod(this.p, msg.p, N)
+        this.QoQ = hlp.divMod(this.q, msg.q, N)
+        this.PoP = hlp.divMod(this.p, msg.p, N)
 
         this.computeR(send)
 
         // zero-knowledge proof that R
         // was generated according to the protocol
-        var r7 = randomExponent()
+        var r7 = hlp.randomExponent()
         var tmp2 = BigInt.powMod(this.QoQ, r7, N)
-        send.cR = smpHash(7, BigInt.powMod(G, r7, N), tmp2)
+        send.cR = hlp.smpHash(7, BigInt.powMod(G, r7, N), tmp2)
         send.d7 = this.computeD(r7, this.a3, send.cR)
 
         this.smpstate = SMPSTATE_EXPECT4
@@ -231,29 +186,29 @@ SM.prototype = {
       case SMPSTATE_EXPECT3:
 
         // verify znp of cP
-        var t1 = multPowMod(this.g3, msg.d5, msg.p, msg.cP, N)
-        var t2 = multPowMod(G, msg.d5, this.g2, msg.d6, N)
+        var t1 = hlp.multPowMod(this.g3, msg.d5, msg.p, msg.cP, N)
+        var t2 = hlp.multPowMod(G, msg.d5, this.g2, msg.d6, N)
         t2 = BigInt.multMod(t2, BigInt.powMod(msg.q, msg.cP, N), N)
-        console.log('Check cP: ' + ZKP(6, msg.cP, t1, t2))
+        console.log('Check cP: ' + hlp.ZKP(6, msg.cP, t1, t2))
 
         // verify znp of cR
-        var t3 = multPowMod(G, msg.d7, this.g3ao, msg.cR, N)
-        this.QoQ = divMod(msg.q, this.q, N)  // save Q over Q
-        var t4 = multPowMod(this.QoQ, msg.d7, msg.r, msg.cR, N)
-        console.log('Check cR: ' + ZKP(7, msg.cR, t3, t4))
+        var t3 = hlp.multPowMod(G, msg.d7, this.g3ao, msg.cR, N)
+        this.QoQ = hlp.divMod(msg.q, this.q, N)  // save Q over Q
+        var t4 = hlp.multPowMod(this.QoQ, msg.d7, msg.r, msg.cR, N)
+        console.log('Check cR: ' + hlp.ZKP(7, msg.cR, t3, t4))
 
         this.computeR(send)
 
         // zero-knowledge proof that R
         // was generated according to the protocol
-        var r7 = randomExponent()
+        var r7 = hlp.randomExponent()
         var tmp2 = BigInt.powMod(this.QoQ, r7, N)
-        send.cR = smpHash(8, BigInt.powMod(G, r7, N), tmp2)
+        send.cR = hlp.smpHash(8, BigInt.powMod(G, r7, N), tmp2)
         send.d7 = this.computeD(r7, this.a3, send.cR)
 
         var rab = this.computeRab(msg)
         console.log('Compare Rab: '
-          + BigInt.equals(rab, divMod(msg.p, this.p, N)))
+          + BigInt.equals(rab, hlp.divMod(msg.p, this.p, N)))
 
         send.type = 5
         this.init()
@@ -262,9 +217,9 @@ SM.prototype = {
       case SMPSTATE_EXPECT4:
 
         // verify znp of cR
-        var t3 = multPowMod(G, msg.d7, this.g3ao, msg.cR, N)
-        var t4 = multPowMod(this.QoQ, msg.d7, msg.r, msg.cR, N)
-        console.log('Check cR: ' + ZKP(8, msg.cR, t3, t4))
+        var t3 = hlp.multPowMod(G, msg.d7, this.g3ao, msg.cR, N)
+        var t4 = hlp.multPowMod(this.QoQ, msg.d7, msg.r, msg.cR, N)
+        console.log('Check cR: ' + hlp.ZKP(8, msg.cR, t3, t4))
 
         var rab = this.computeRab(msg)
         console.log('Compare Rab: ' + BigInt.equals(rab, this.PoP))
@@ -343,15 +298,15 @@ SM.prototype = {
     // start over
     if (this.smpstate !== SMPSTATE_EXPECT1) this.error('Start over.', cb)
 
-    this.a2 = randomValue()
-    this.a3 = randomValue()
+    this.a2 = hlp.randomValue()
+    this.a3 = hlp.randomValue()
 
     var send = this.makeG2s()
 
     // zero-knowledge proof that the exponents
     // associated with g2a & g3a are known
-    var r2 = randomValue()
-    var r3 = randomValue()
+    var r2 = hlp.randomValue()
+    var r3 = hlp.randomValue()
     send.c2 = this.c2 = this.computeC(1, r2)
     send.c3 = this.c3 = this.computeC(2, r3)
     send.d2 = this.d2 = this.computeD(r2, this.a2, this.c2)
