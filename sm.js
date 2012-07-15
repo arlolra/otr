@@ -115,6 +115,10 @@ SM.prototype = {
     send.q = this.q = multPowMod(G, r, this.g2, this.secret, N)
   },
 
+  computeR: function (send) {
+    send.r = this.r = BigInt.powMod(this.QoQ, this.a3, N)
+  },
+
   computeRab: function (msg) {
     return BigInt.powMod(msg.r, this.a3, N)
   },
@@ -211,8 +215,7 @@ SM.prototype = {
         this.QoQ = divMod(this.q, msg.q, N)
         this.PoP = divMod(this.p, msg.p, N)
 
-        // compute R
-        send.r = this.r = BigInt.powMod(this.QoQ, this.a3, N)
+        this.computeR(send)
 
         // zero-knowledge proof that R
         // was generated according to the protocol
@@ -239,8 +242,7 @@ SM.prototype = {
         var t4 = multPowMod(this.QoQ, msg.d7, msg.r, msg.cR, N)
         console.log('Check cR: ' + ZKP(7, msg.cR, t3, t4))
 
-        // compute R
-        send.r = this.r = BigInt.powMod(this.QoQ, this.a3, N)
+        this.computeR(send)
 
         // zero-knowledge proof that R
         // was generated according to the protocol
