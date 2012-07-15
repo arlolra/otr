@@ -35,8 +35,8 @@ function multPowMod(a, b, c, d, e) {
   return BigInt.multMod(BigInt.powMod(a, b, e), BigInt.powMod(c, d, e), e)
 }
 
-function ZKP(v, c, d, ga) {
-  return BigInt.equals(c, smpHash(v, multPowMod(G, d, ga, c, N)))
+function ZKP(v, c, d, e) {
+  return BigInt.equals(c, smpHash(v, d, e))
 }
 
 // smp machine states
@@ -96,24 +96,6 @@ SM.prototype = {
   // set the initial values
   // also used when aborting
   init: function () {
-    this.a2 = null
-    this.a3 = null
-
-    this.g2a = null
-    this.g3a = null
-
-    this.g2 = null
-    this.g3 = null
-
-    this.p = null
-    this.q = null
-    this.r = null
-
-    this.c2 = null
-    this.c3 = null
-    this.d2 = null
-    this.d3 = null
-
     this.smpstate = SMPSTATE_EXPECT1
   },
 
@@ -162,8 +144,10 @@ SM.prototype = {
       case SMPSTATE_EXPECT1:
 
         // verify znp's
-        console.log('Check c2: ' + ZKP(1, msg.c2, msg.d2, msg.g2a))
-        console.log('Check c3: ' + ZKP(2, msg.c3, msg.d3, msg.g3a))
+        console.log('Check c2: '
+          + ZKP(1, msg.c2, multPowMod(G, msg.d2, msg.g2a, msg.c2, N)))
+        console.log('Check c3: '
+          + ZKP(2, msg.c3, multPowMod(G, msg.d3, msg.g3a, msg.c3, N)))
 
         this.a2 = randomExponent()
         this.a3 = randomExponent()
@@ -200,8 +184,10 @@ SM.prototype = {
       case SMPSTATE_EXPECT2:
 
         // verify znp of c3 / c3
-        console.log('Check c2: ' + ZKP(3, msg.c2, msg.d2, msg.g2a))
-        console.log('Check c3: ' + ZKP(4, msg.c3, msg.d3, msg.g3a))
+        console.log('Check c2: '
+          + ZKP(3, msg.c2, multPowMod(G, msg.d2, msg.g2a, msg.c2, N)))
+        console.log('Check c3: '
+          + ZKP(4, msg.c3, multPowMod(G, msg.d3, msg.g3a, msg.c3, N)))
 
         this.computeGs(msg)
 
@@ -209,8 +195,7 @@ SM.prototype = {
         var t1 = multPowMod(this.g3, msg.d5, msg.p, msg.cP, N)
         var t2 = multPowMod(G, msg.d5, this.g2, msg.d6, N)
         t2 = BigInt.multMod(t2, BigInt.powMod(msg.q, msg.cP, N), N)
-        var cP = smpHash(5, t1, t2)
-        console.log('Check cP: ' + BigInt.equals(msg.cP, cP))
+        console.log('Check cP: ' + ZKP(5, msg.cP, t1, t2))
 
         var r4 = randomExponent()
         this.computePQ(r4, send)
@@ -245,15 +230,13 @@ SM.prototype = {
         var t1 = multPowMod(this.g3, msg.d5, msg.p, msg.cP, N)
         var t2 = multPowMod(G, msg.d5, this.g2, msg.d6, N)
         t2 = BigInt.multMod(t2, BigInt.powMod(msg.q, msg.cP, N), N)
-        var cP = smpHash(6, t1, t2)
-        console.log('Check cP: ' + BigInt.equals(msg.cP, cP))
+        console.log('Check cP: ' + ZKP(6, msg.cP, t1, t2))
 
         // verify znp of cR
         var t3 = multPowMod(G, msg.d7, msg.g3a, msg.cR, N)
         this.QoQ = divMod(msg.q, this.q, N)  // save Q over Q
         var t4 = multPowMod(this.QoQ, msg.d7, msg.r, msg.cR, N)
-        var cR = smpHash(7, t3, t4)
-        console.log('Check cR: ' + BigInt.equals(msg.cR, cR))
+        console.log('Check cR: ' + ZKP(7, msg.cR, t3, t4))
 
         this.computeR(msg, send, true)
 
@@ -281,8 +264,7 @@ SM.prototype = {
         // verify znp of cR
         var t3 = multPowMod(G, msg.d7, msg.g3a, msg.cR, N)
         var t4 = multPowMod(divMod(this.q, msg.q, N), msg.d7, msg.r, msg.cR, N)
-        var cR = smpHash(8, t3, t4)
-        console.log('Check cR: ' + BigInt.equals(msg.cR, cR))
+        console.log('Check cR: ' + ZKP(8, msg.cR, t3, t4))
 
         var rab = this.computeRab(msg)
         console.log('Compare Rab: '
