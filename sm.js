@@ -115,12 +115,6 @@ SM.prototype = {
     send.q = this.q = multPowMod(G, r, this.g2, this.secret, N)
   },
 
-  computeR: function (msg, send, inv) {
-    var q1 = inv ? msg.q : this.q
-    var q2 = inv ? this.q : msg.q
-    send.r = this.r = BigInt.powMod(divMod(q1, q2, N), this.a3, N)
-  },
-
   computeRab: function (msg) {
     return BigInt.powMod(msg.r, this.a3, N)
   },
@@ -148,6 +142,8 @@ SM.prototype = {
           + ZKP(1, msg.c2, multPowMod(G, msg.d2, msg.g2a, msg.c2, N)))
         console.log('Check c3: '
           + ZKP(2, msg.c3, multPowMod(G, msg.d3, msg.g3a, msg.c3, N)))
+
+        this.g3ao = msg.g3a  // save for later
 
         this.a2 = randomExponent()
         this.a3 = randomExponent()
@@ -189,6 +185,8 @@ SM.prototype = {
         console.log('Check c3: '
           + ZKP(4, msg.c3, multPowMod(G, msg.d3, msg.g3a, msg.c3, N)))
 
+        this.g3ao = msg.g3a  // save for later
+
         this.computeGs(msg)
 
         // verify znp of cP
@@ -209,16 +207,19 @@ SM.prototype = {
         send.d5 = this.computeD(r5, r4, send.cP)
         send.d6 = this.computeD(r6, this.secret, send.cP)
 
-        this.computeR(msg, send)
+        // store these
+        this.QoQ = divMod(this.q, msg.q, N)
+        this.PoP = divMod(this.p, msg.p, N)
+
+        // compute R
+        send.r = this.r = BigInt.powMod(this.QoQ, this.a3, N)
 
         // zero-knowledge proof that R
         // was generated according to the protocol
         var r7 = randomExponent()
-        var tmp2 = BigInt.powMod(divMod(this.q, msg.q, N), r7, N)
+        var tmp2 = BigInt.powMod(this.QoQ, r7, N)
         send.cR = smpHash(7, BigInt.powMod(G, r7, N), tmp2)
         send.d7 = this.computeD(r7, this.a3, send.cR)
-
-        send.g3a = this.g3a  // redundant
 
         this.smpstate = SMPSTATE_EXPECT4
         send.type = 4
@@ -233,27 +234,24 @@ SM.prototype = {
         console.log('Check cP: ' + ZKP(6, msg.cP, t1, t2))
 
         // verify znp of cR
-        var t3 = multPowMod(G, msg.d7, msg.g3a, msg.cR, N)
-        var QoQ = divMod(msg.q, this.q, N)  // save Q over Q
-        var t4 = multPowMod(QoQ, msg.d7, msg.r, msg.cR, N)
+        var t3 = multPowMod(G, msg.d7, this.g3ao, msg.cR, N)
+        this.QoQ = divMod(msg.q, this.q, N)  // save Q over Q
+        var t4 = multPowMod(this.QoQ, msg.d7, msg.r, msg.cR, N)
         console.log('Check cR: ' + ZKP(7, msg.cR, t3, t4))
 
-        this.computeR(msg, send, true)
+        // compute R
+        send.r = this.r = BigInt.powMod(this.QoQ, this.a3, N)
 
         // zero-knowledge proof that R
         // was generated according to the protocol
         var r7 = randomExponent()
-        var tmp2 = BigInt.powMod(QoQ, r7, N)
+        var tmp2 = BigInt.powMod(this.QoQ, r7, N)
         send.cR = smpHash(8, BigInt.powMod(G, r7, N), tmp2)
         send.d7 = this.computeD(r7, this.a3, send.cR)
 
         var rab = this.computeRab(msg)
         console.log('Compare Rab: '
           + BigInt.equals(rab, divMod(msg.p, this.p, N)))
-
-        send.p = this.p  // redundant
-        send.q = this.q  // redundant
-        send.g3a = this.g3a  // redundant
 
         send.type = 5
         this.init()
@@ -262,13 +260,12 @@ SM.prototype = {
       case SMPSTATE_EXPECT4:
 
         // verify znp of cR
-        var t3 = multPowMod(G, msg.d7, msg.g3a, msg.cR, N)
-        var t4 = multPowMod(divMod(this.q, msg.q, N), msg.d7, msg.r, msg.cR, N)
+        var t3 = multPowMod(G, msg.d7, this.g3ao, msg.cR, N)
+        var t4 = multPowMod(this.QoQ, msg.d7, msg.r, msg.cR, N)
         console.log('Check cR: ' + ZKP(8, msg.cR, t3, t4))
 
         var rab = this.computeRab(msg)
-        console.log('Compare Rab: '
-          + BigInt.equals(rab, divMod(this.p, msg.p, N)))
+        console.log('Compare Rab: ' + BigInt.equals(rab, this.PoP))
 
         this.init()
         reply = false
@@ -342,7 +339,7 @@ SM.prototype = {
       throw new Error('Nowhere to go?')
 
     // start over
-    if (this.smpstate !== SMPSTATE_EXPECT1) this.error()
+    if (this.smpstate !== SMPSTATE_EXPECT1) this.error('Start over.', cb)
 
     this.a2 = randomValue()
     this.a3 = randomValue()
@@ -365,6 +362,10 @@ SM.prototype = {
     send.type = 2
 
     this.sendMsg(send, cb)
+  },
+
+  abort: function (cb) {
+    this.error('Abort.', cb)
   }
 
 }
