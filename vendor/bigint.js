@@ -1518,4 +1518,5 @@ module.exports = {
   , dup        : dup
   , greater    : greater
   , add        : add
+  , greater    : greater
 }

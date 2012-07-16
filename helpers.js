@@ -38,3 +38,8 @@ exports.multPowMod = function multPowMod(a, b, c, d, e) {
 exports.ZKP = function ZKP(v, c, d, e) {
   return BigInt.equals(c, exports.smpHash(v, d, e))
 }
+
+// greater than, or equal
+exports.GTOE = function GTOE(a, b) {
+  return (BigInt.equals(a, b) || BigInt.greater(a, b))
+}
