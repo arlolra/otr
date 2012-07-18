@@ -1515,8 +1515,10 @@ module.exports = {
   , mod        : mod
   , mult       : mult
   , divInt_    : divInt_
+  , rightShift : rightShift_
   , dup        : dup
   , greater    : greater
   , add        : add
   , greater    : greater
+  , isZero     : isZero
 }
