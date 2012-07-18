@@ -61,8 +61,7 @@ exports.packData = function packData(d) {
 exports.packMPI = function packMIP(mpi) {
   var ba = ''
   while (!BigInt.isZero(mpi)) {
-    test = mpi[0] & 0xff
-    ba = _num2bin[test] + ba
+    ba = _num2bin[mpi[0] & 0xff] + ba
     BigInt.rightShift(mpi, 8)
   }
   return exports.packData(ba)
