@@ -44,7 +44,19 @@ exports.GTOE = function GTOE(a, b) {
   return (BigInt.equals(a, b) || BigInt.greater(a, b))
 }
 
-function pack(d) {
+exports.h2 = function h2(b, secbytes) {
+  var sha256 = CryptoJS.algo.SHA256.create()
+  sha256.update(b)
+  sha256.update(secbytes)
+  var hash = sha256.finalize()
+  return hash.toString(CryptoJS.enc.Latin1)
+}
+
+exports.mask = function mask(n) {
+  return Math.pow(2, n)
+}
+
+exports.pack = function pack(d) {
   // big-endian, unsigned long
   var res = ''
   res += _toString(d >> 24 & 0xFF)
@@ -55,7 +67,7 @@ function pack(d) {
 }
 
 exports.packData = function packData(d) {
-  return pack(d.length) + d
+  return exports.pack(d.length) + d
 }
 
 exports.packMPI = function packMPI(mpi) {

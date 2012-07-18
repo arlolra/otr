@@ -1,5 +1,6 @@
 var AES = require('./vendor/aes.js')
   , SHA256 = require('./vendor/sha256.js')
+  , HmacSHA256 = require('./vendor/hmac-sha256.js')
   , BigInt = require('./vendor/bigint.js')
   , DH = require('./dh.json')
   , hlp = require('./helpers.js')
@@ -49,6 +50,9 @@ OTR.prototype = {
     this.authstate = AUTHSTATE_NONE
     this.ALLOW_V1 = false
     this.ALLOW_V2 = true
+    this.keyId = 0
+    this.privateKey = BigInt.randBigInt(320)
+    this.publicKey = BigInt.powMod(DH.G, this.privateKey, DH.N)
   },
 
   handleAKE: function (msg, cb) {
@@ -60,7 +64,8 @@ OTR.prototype = {
       case '0x02':
         // d-h key message
         this.y = BigInt.randBigInt(320)
-        send.gy = this.gy = BigInt.powMod(G, this.y, N)
+        this.gy = BigInt.powMod(G, this.y, N)
+        send.gy = hlp.packMPI(this.gy)
         this.encrypted = msg.encrypted
         this.hashed = msg.hashed
         send.type = '0x0a'
@@ -70,13 +75,38 @@ OTR.prototype = {
       case '0x0a':
         // reveal signature message
 
+        this.gy = hlp.readMPI(msg.gy)
+
         // verify gy is legal 2 <= gy <= N-2
-        if (!( hlp.GTOE(msg.gy, TWO) && hlp.GTOE(N_MINUS_2, msg.gy) ))
+        if (!( hlp.GTOE(this.gy, TWO) && hlp.GTOE(N_MINUS_2, this.gy) ))
           return this.error('Illegal g^y.')
 
-        this.s = BigInt.powMod(msg.gy, this.x, N)
-        console.log(BigInt.bigInt2str(this.s, 10))
+        this.s = BigInt.powMod(this.gy, this.x, N)
+        var secbytes = hlp.packMPI(this.s)
 
+        var ssid = hlp.h2('0x00', secbytes) & hlp.mask(64)  // first 64-bits
+        var tmp = hlp.h2('0x01', secbytes)
+        var c = tmp & hlp.mask(128)  // first 128-bits
+        var c_prime = (tmp >> 128) & hlp.mask(128)  // second 128-bits
+        var m1 = hlp.h2('0x02', secbytes)
+        var m2 = hlp.h2('0x03', secbytes)
+        var m1_prime = hlp.h2('0x04', secbytes)
+        var m2_prime = hlp.h2('0x05', secbytes)
+
+        this.keyId += 1
+
+        var pc = BigInt.bigInt2str(this.publicKey, 16)
+        var pass = HmacSHA256.enc.Hex.parse(pc)
+        var hmac = HmacSHA256.algo.HMAC.create(HmacSHA256.algo.SHA256, pass)
+
+        hmac.update(hlp.packMPI(this.gx))
+        hmac.update(msg.gy)
+        hmac.update(hlp.packMPI(this.publicKey))
+        hmac.update(hlp.packData(hlp.pack(this.keyId)))
+
+        var mb = hmac.finalize()
+
+        send.r = hlp.packMPI(this.r)
         send.type = '0x11'
         send.version = '0x0002'
         reply = false
@@ -115,14 +145,16 @@ OTR.prototype = {
     this.x = BigInt.randBigInt(320)
 
     this.gx = BigInt.powMod(G, this.x, N)
-    var gx_str = BigInt.bigInt2str(this.gx, 10)
+    var gxmpi = hlp.packMPI(this.gx)
 
     var key = AES.enc.Hex.parse(BigInt.bigInt2str(this.r, 16))
-    var iv = AES.enc.Hex.parse('0')
-    var opts = { mode: AES.mode.CTR, iv: iv }
+    var opts = {
+        mode: AES.mode.CTR
+      , iv: AES.enc.Hex.parse('0')
+    }
 
-    send.encrypted = AES.AES.encrypt(gx_str, key, opts)
-    send.hashed = SHA256.SHA256(gx_str)
+    send.encrypted = AES.AES.encrypt(gxmpi, key, opts)
+    send.hashed = SHA256.SHA256(gxmpi)
 
     this.sendMsg(send, cb)
 
