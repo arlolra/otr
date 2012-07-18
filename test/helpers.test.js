@@ -2,6 +2,9 @@ var assert = require('assert')
   , BigInt = require('../vendor/bigint.js')
   , hlp = require('../helpers.js')
 
+
+assert.equal('\0\0\0\0', hlp.packData(''), 'Empty pack.')
+
 var test = hlp.packMPI(BigInt.str2bigInt('65280', 10))
 assert.equal('\0\0\0\2\xff\0', test, 'They be equal.')
 
@@ -13,3 +16,5 @@ var test2 = hlp.packMPI(two55)
 var str = '\0\0\1\1\1'
 for (var i = 0; i < 256; i++) str += '\0'
 assert.equal(str, test2, 'BigInt')
+
+assert.equal('65280', BigInt.bigInt2str(hlp.readMPI('\0\0\0\2\xff\0'), 10), 'Read MPI.')

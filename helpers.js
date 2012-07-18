@@ -58,13 +58,31 @@ exports.packData = function packData(d) {
   return pack(d.length) + d
 }
 
-exports.packMPI = function packMIP(mpi) {
+exports.packMPI = function packMPI(mpi) {
   var ba = ''
   while (!BigInt.isZero(mpi)) {
     ba = _num2bin[mpi[0] & 0xff] + ba
-    BigInt.rightShift(mpi, 8)
+    BigInt.rightShift_(mpi, 8)
   }
   return exports.packData(ba)
+}
+
+exports.readData = function readData(data) {
+  data = exports.toByteArray(data)
+  var n = (data.splice(0, 4)).reduce(function (p, n) {
+    p <<= 8; return p | n
+  }, 0)
+  return [n, data]
+}
+
+exports.readMPI = function readMPI(data) {
+  data = exports.readData(data)
+  var mpi = BigInt.str2bigInt('0', 10, data[0])
+  data[1].forEach(function (d, i) {
+    if (i) BigInt.leftShift_(mpi, 8)
+    mpi[0] |= d
+  })
+  return mpi
 }
 
 // https://github.com/msgpack/msgpack-javascript/blob/master/msgpack.js
