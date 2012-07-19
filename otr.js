@@ -27,6 +27,10 @@ var N = BigInt.str2bigInt(DH.N, 16)
 var TWO = BigInt.str2bigInt('2', 10)
 var N_MINUS_2 = BigInt.sub(N, TWO)
 
+function checkGroup(g) {
+  return hlp.GTOE(g, TWO) && hlp.GTOE(N_MINUS_2, g)
+}
+
 module.exports = OTR
 
 function OTR() {
@@ -55,6 +59,42 @@ OTR.prototype = {
     this.publicKey = BigInt.powMod(DH.G, this.privateKey, DH.N)
   },
 
+  createAuthKeys: function() {
+    var s = BigInt.powMod(this.gy, this.x, N)
+    var secbytes = hlp.packMPI(s)
+    this.ssid = hlp.h2('0x00', secbytes) & hlp.mask(64)  // first 64-bits
+    var tmp = hlp.h2('0x01', secbytes)
+    this.c = tmp & hlp.mask(128)  // first 128-bits
+    this.c_prime = (tmp >> 128) & hlp.mask(128)  // second 128-bits
+    this.m1 = hlp.h2('0x02', secbytes)
+    this.m2 = hlp.h2('0x03', secbytes)
+    this.m1_prime = hlp.h2('0x04', secbytes)
+    this.m2_prime = hlp.h2('0x05', secbytes)
+  },
+
+  calculatePubkeyAuth: function(c, m) {
+    var pass = HmacSHA256.enc.Latin1.parse(m)
+    var hmac = HmacSHA256.algo.HMAC.create(HmacSHA256.algo.SHA256, pass)
+    hmac.update(hlp.packMPI(this.gx))
+    hmac.update(hlp.packMPI(this.gy))
+    var pk = hlp.packMPI(this.publicKey)
+    hmac.update(pk)
+    var kid = hlp.packData(hlp.pack(this.keyId))
+    hmac.update(kid)
+    var mb = hmac.finalize()
+
+    function sign() {
+      return ''
+    }
+
+    var xb = pk + kid + sign(mb)
+    var opts = {
+        mode: AES.mode.CTR
+      , iv: AES.enc.Hex.parse('0')
+    }
+    return AES.AES.encrypt(xb, c, opts)
+  },
+
   handleAKE: function (msg, cb) {
     var reply = true
       , send = {}
@@ -74,37 +114,15 @@ OTR.prototype = {
 
       case '0x0a':
         // reveal signature message
-
         this.gy = hlp.readMPI(msg.gy)
 
         // verify gy is legal 2 <= gy <= N-2
-        if (!( hlp.GTOE(this.gy, TWO) && hlp.GTOE(N_MINUS_2, this.gy) ))
-          return this.error('Illegal g^y.')
+        if (!checkGroup(this.gy)) return this.error('Illegal g^y.')
 
-        this.s = BigInt.powMod(this.gy, this.x, N)
-        var secbytes = hlp.packMPI(this.s)
-
-        var ssid = hlp.h2('0x00', secbytes) & hlp.mask(64)  // first 64-bits
-        var tmp = hlp.h2('0x01', secbytes)
-        var c = tmp & hlp.mask(128)  // first 128-bits
-        var c_prime = (tmp >> 128) & hlp.mask(128)  // second 128-bits
-        var m1 = hlp.h2('0x02', secbytes)
-        var m2 = hlp.h2('0x03', secbytes)
-        var m1_prime = hlp.h2('0x04', secbytes)
-        var m2_prime = hlp.h2('0x05', secbytes)
-
+        this.createAuthKeys()
         this.keyId += 1
 
-        var pc = BigInt.bigInt2str(this.publicKey, 16)
-        var pass = HmacSHA256.enc.Hex.parse(pc)
-        var hmac = HmacSHA256.algo.HMAC.create(HmacSHA256.algo.SHA256, pass)
-
-        hmac.update(hlp.packMPI(this.gx))
-        hmac.update(msg.gy)
-        hmac.update(hlp.packMPI(this.publicKey))
-        hmac.update(hlp.packData(hlp.pack(this.keyId)))
-
-        var mb = hmac.finalize()
+        var aesctr = this.calculatePubkeyAuth(this.c, this.m1)
 
         send.r = hlp.packMPI(this.r)
         send.type = '0x11'
@@ -153,8 +171,11 @@ OTR.prototype = {
       , iv: AES.enc.Hex.parse('0')
     }
 
-    send.encrypted = AES.AES.encrypt(gxmpi, key, opts)
-    send.hashed = SHA256.SHA256(gxmpi)
+    var encrypt = AES.AES.encrypt(gxmpi, key, opts)
+    send.encrypted = encrypt.toString(AES.enc.Latin1)
+
+    var hash = SHA256.SHA256(gxmpi)
+    send.hashed = hash.toString(SHA256.enc.Latin1)
 
     this.sendMsg(send, cb)
 
