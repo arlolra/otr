@@ -32,6 +32,12 @@ function checkGroup(g) {
   return hlp.GTOE(g, TWO) && hlp.GTOE(N_MINUS_2, g)
 }
 
+function dh() {
+  var dh = { privateKey: BigInt.randBigInt(320) }
+  dh.publicKey = BigInt.powMod(DH.G, this.privateKey, DH.N)
+  return dh
+}
+
 module.exports = OTR
 
 function OTR() {
@@ -56,12 +62,10 @@ OTR.prototype = {
     this.ALLOW_V1 = false
     this.ALLOW_V2 = true
     this.keyId = 0
-    this.privateKey = BigInt.randBigInt(320)
-    this.publicKey = BigInt.powMod(DH.G, this.privateKey, DH.N)
   },
 
   createAuthKeys: function() {
-    var s = BigInt.powMod(this.gy, this.x, N)
+    var s = BigInt.powMod(this.gy, this.dh.privateKey, N)
     var secbytes = hlp.packMPI(s)
     this.ssid = hlp.h2('0x00', secbytes) & hlp.mask(64)  // first 64-bits
     var tmp = hlp.h2('0x01', secbytes)
@@ -76,14 +80,14 @@ OTR.prototype = {
   calculatePubkeyAuth: function(c, m) {
     var pass = HmacSHA256.enc.Latin1.parse(m)
     var hmac = HmacSHA256.algo.HMAC.create(HmacSHA256.algo.SHA256, pass)
-    hmac.update(hlp.packMPI(this.gx))
+    hmac.update(hlp.packMPI(this.dh.publicKey))
     hmac.update(hlp.packMPI(this.gy))
-    var pk = hlp.packMPI(this.publicKey)
+    var pk = this.priv.packPublic()
     hmac.update(pk)
     var kid = hlp.packData(hlp.pack(this.keyId))
     hmac.update(kid)
     var mb = hmac.finalize()
-    var xb = pk + kid + sign(mb.toString(HmacSHA256.enc.Latin1))
+    var xb = pk + kid + dsa.sign(mb.toString(HmacSHA256.enc.Latin1), this.priv)
     var opts = {
         mode: AES.mode.CTR
       , iv: AES.enc.Hex.parse('0')
@@ -100,9 +104,8 @@ OTR.prototype = {
 
       case '0x02':
         // d-h key message
-        this.y = BigInt.randBigInt(320)
-        this.gy = BigInt.powMod(G, this.y, N)
-        send.gy = hlp.packMPI(this.gy)
+        this.dh = dh()
+        send.gy = hlp.packMPI(this.dh.publicKey)
         this.encrypted = msg.encrypted
         this.hashed = msg.hashed
         send.type = '0x0a'
@@ -160,12 +163,10 @@ OTR.prototype = {
      , version: '0x0002'
     }
 
+    this.dh = dh()
+    var gxmpi = hlp.packMPI(this.dh.publicKey)
+
     this.r = hlp.randomValue()
-    this.x = BigInt.randBigInt(320)
-
-    this.gx = BigInt.powMod(G, this.x, N)
-    var gxmpi = hlp.packMPI(this.gx)
-
     var key = AES.enc.Hex.parse(BigInt.bigInt2str(this.r, 16))
     var opts = {
         mode: AES.mode.CTR

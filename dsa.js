@@ -10,12 +10,11 @@ function makeRandom(q) {
 }
 
 function hsign(hm, priv) {
-  var q, p
-  var k = makeRandom(q)
-  var r = BigInt.mod(BigInt.powMod(g, k, p), q)
+  var k = makeRandom(priv.q)
+  var r = BigInt.mod(BigInt.powMod(priv.g, k, priv.p), priv.q)
   if (BigInt.isZero(k)) return hsign(hm, priv)
-  var s = BigInt.inverseMod(k, q)
-  s = BigInt.multMod(s, BigInt.add(hm, BigInt.mult(x, r)), q)
+  var s = BigInt.inverseMod(k, priv.q)
+  s = BigInt.multMod(s, BigInt.add(hm, BigInt.mult(priv.x, r)), priv.q)
   if (BigInt.isZero(s)) return hsign(hm, priv)
   return [r, s]
 }
