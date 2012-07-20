@@ -9,15 +9,21 @@ function makeRandom(q) {
   return BigInt.add(BigInt.mod(c, BigInt.sub(q, one)), one)
 }
 
-exports.sign = function sign(hm, priv) {
+function hsign(hm, priv) {
   var q, p
   var k = makeRandom(q)
   var r = BigInt.mod(BigInt.powMod(g, k, p), q)
-  if (BigInt.isZero(k)) return sign(hm, priv)
+  if (BigInt.isZero(k)) return hsign(hm, priv)
   var s = BigInt.inverseMod(k, q)
   s = BigInt.multMod(s, BigInt.add(hm, BigInt.mult(x, r)), q)
-  if (BigInt.isZero(s)) return sign(hm, priv)
+  if (BigInt.isZero(s)) return hsign(hm, priv)
   return [r, s]
+}
+
+exports.sign = function sign(m, priv) {
+  var hm = SHA256.SHA256(m)
+  hm = BigInt.str2bigInt(hm.toString(SHA256.enc.Hex), 16)
+  return hsign(hm, priv)
 }
 
 exports.verify = function verify() {

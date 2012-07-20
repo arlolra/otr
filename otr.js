@@ -88,7 +88,8 @@ OTR.prototype = {
         mode: AES.mode.CTR
       , iv: AES.enc.Hex.parse('0')
     }
-    return AES.AES.encrypt(xb, c, opts)
+    var aesctr = AES.AES.encrypt(xb, c, opts)
+    return aesctr.toString(AES.enc.Latin1)
   },
 
   handleAKE: function (msg, cb) {
@@ -118,7 +119,11 @@ OTR.prototype = {
         this.createAuthKeys()
         this.keyId += 1
 
-        var aesctr = this.calculatePubkeyAuth(this.c, this.m1)
+        send.aesctr = this.calculatePubkeyAuth(this.c, this.m1)
+
+        var pass = HmacSHA256.enc.Latin1.parse(this.m2)
+        var mac = HmacSHA256.HmacSHA256(send.aesctr, pass)
+        send.mac = mac & hlp.mask(160)
 
         send.r = hlp.packMPI(this.r)
         send.type = '0x11'
