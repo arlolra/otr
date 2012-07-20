@@ -1504,23 +1504,24 @@ function mont_(x,y,n,np) {
 
 
 module.exports = {
-    str2bigInt  : str2bigInt
-  , bigInt2str  : bigInt2str
-  , multMod     : multMod
-  , powMod      : powMod
-  , inverseMod  : inverseMod
-  , randBigInt  : randBigInt
-  , equals      : equals
-  , sub         : sub
-  , mod         : mod
-  , mult        : mult
-  , divInt_     : divInt_
-  , rightShift_ : rightShift_
-  , leftShift_  : leftShift_
-  , dup         : dup
-  , greater     : greater
-  , add         : add
-  , greater     : greater
-  , isZero      : isZero
-  , bitSize     : bitSize
+    str2bigInt    : str2bigInt
+  , bigInt2str    : bigInt2str
+  , multMod       : multMod
+  , powMod        : powMod
+  , inverseMod    : inverseMod
+  , randBigInt    : randBigInt
+  , equals        : equals
+  , sub           : sub
+  , mod           : mod
+  , mult          : mult
+  , divInt_       : divInt_
+  , rightShift_   : rightShift_
+  , leftShift_    : leftShift_
+  , dup           : dup
+  , greater       : greater
+  , add           : add
+  , greater       : greater
+  , isZero        : isZero
+  , bitSize       : bitSize
+  , randTruePrime : randTruePrime
 }

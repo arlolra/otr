@@ -68,14 +68,14 @@ OTR.prototype = {
   createAuthKeys: function() {
     var s = BigInt.powMod(this.gy, this.dh.privateKey, N)
     var secbytes = hlp.packMPI(s)
-    this.ssid = hlp.h2('0x00', secbytes) & hlp.mask(64)  // first 64-bits
-    var tmp = hlp.h2('0x01', secbytes)
+    this.ssid = hlp.h2('\x00', secbytes) & hlp.mask(64)  // first 64-bits
+    var tmp = hlp.h2('\x01', secbytes)
     this.c = tmp & hlp.mask(128)  // first 128-bits
     this.c_prime = (tmp >> 128) & hlp.mask(128)  // second 128-bits
-    this.m1 = hlp.h2('0x02', secbytes)
-    this.m2 = hlp.h2('0x03', secbytes)
-    this.m1_prime = hlp.h2('0x04', secbytes)
-    this.m2_prime = hlp.h2('0x05', secbytes)
+    this.m1 = hlp.h2('\x02', secbytes)
+    this.m2 = hlp.h2('\x03', secbytes)
+    this.m1_prime = hlp.h2('\x04', secbytes)
+    this.m2_prime = hlp.h2('\x05', secbytes)
   },
 
   calculatePubkeyAuth: function(c, m) {
@@ -103,17 +103,17 @@ OTR.prototype = {
 
     switch (msg.type) {
 
-      case '0x02':
+      case '\x02':
         // d-h key message
         this.dh = dh()
         send.gy = hlp.packMPI(this.dh.publicKey)
         this.encrypted = msg.encrypted
         this.hashed = msg.hashed
-        send.type = '0x0a'
-        send.version = '0x0002'
+        send.type = '\x0a'
+        send.version = '\x00\x02'
         break
 
-      case '0x0a':
+      case '\x0a':
         // reveal signature message
         this.gy = hlp.readMPI(msg.gy)
 
@@ -130,21 +130,21 @@ OTR.prototype = {
         send.mac = mac & hlp.mask(160)
 
         send.r = hlp.packMPI(this.r)
-        send.type = '0x11'
-        send.version = '0x0002'
+        send.type = '\x11'
+        send.version = '\x00\x02'
         reply = false
         break
 
-      case '0x11':
+      case '\x11':
         // signature message
-        send.type = '0x12'
-        send.version = '0x0002'
+        send.type = '\x12'
+        send.version = '\x00\x02'
         break
 
-      case '0x12':
+      case '\x12':
         // data message
-        send.type = '0x03'
-        send.version = '0x0002'
+        send.type = '\x03'
+        send.version = '\x00\x02'
         break
 
       default:
@@ -160,8 +160,8 @@ OTR.prototype = {
 
     // d-h commit message
     var send = {
-       type: '0x02'
-     , version: '0x0002'
+       type: '\x02'
+     , version: '\x00\x02'
     }
 
     this.dh = dh()

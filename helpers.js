@@ -70,13 +70,17 @@ exports.packData = function packData(d) {
   return exports.pack(d.length) + d
 }
 
-exports.packMPI = function packMPI(mpi) {
+exports.bigInt2bits = function bitInt2bits(bi) {
   var ba = ''
   while (!BigInt.isZero(mpi)) {
     ba = _num2bin[mpi[0] & 0xff] + ba
     BigInt.rightShift_(mpi, 8)
   }
-  return exports.packData(ba)
+  return ba
+}
+
+exports.packMPI = function packMPI(mpi) {
+  return exports.packData(exports.bitInt2bits(mpi))
 }
 
 exports.readData = function readData(data) {
