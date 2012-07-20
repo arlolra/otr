@@ -3,8 +3,9 @@ var BigInt = require('./vendor/bigint.js')
   , SHA1 = require('./vendor/sha1.js')
   , hlp = require('./helpers.js')
 
-var ONE = BigInt.str2bigInt('1', 10)
-  , ZERO = BigInt.str2bigInt('0', 10)
+var ZERO = BigInt.str2bigInt('0', 10)
+  , ONE = BigInt.str2bigInt('1', 10)
+  , TWO = BigInt.str2bigInt('2', 10)
 
 module.exports = exports = {}
 
@@ -73,7 +74,8 @@ Key.prototype = {
     var seed = BigInt.randBigInt(N)
 
     var u = (SHA1.SHA1(hlp.bigInt2bits(seed))).toString(SHA1.enc.Hex)
-    var tmp = BigInt.mod(BigInt.add(seed, ONE), hlp.twotothe(g))
+    var twotog = hlp.twotothe(g)
+    var tmp = BigInt.mod(BigInt.add(seed, ONE), twotog)
     tmp = (SHA1.SHA1(hlp.bigInt2bits(tmp))).toString(SHA1.enc.Hex)
     u = hlp.bigBitWise(
         'XOR'
@@ -81,8 +83,30 @@ Key.prototype = {
       , BigInt.str2bigInt(u, 16)
     )
 
-    this.q = hlp.bigBitWise('OR', u, hlp.twotothe(159))
+    this.q = hlp.bigBitWise('OR', u, hlp.twotothe(g - 1))
     this.q = hlp.bigBitWise('OR', this.q, ONE)
+
+    // test if q is prime!
+    // if not, rinse and repeat
+
+    var counter = 0
+    var offset = TWO
+
+    var V = new Array(n)
+
+    var cache_seed_plus_offset = BigInt.add(seed, offset)
+
+    var i = 0
+    for (; i < n; i++) {
+      V[i] = BigInt.add(
+          cache_seed_plus_offset
+        , BigInt.str2bigInt(i.toString(), 10)
+      )
+      V[i] = SHA1.SHA1(hlp.bigInt2bits(BigInt.mod(V[i], twotog)))
+    }
+
+    // console.log(V)
+
   },
 
   makeG: function (e) {

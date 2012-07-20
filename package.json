@@ -4,7 +4,7 @@
   "description": "Off-the-Record Messaging Protocol v2",
   "main": "otr.js",
   "scripts": {
-    "test": "find test/*.test.js | xargs node"
+    "test": "test/run.sh"
   },
   "repository": {
     "type": "git",

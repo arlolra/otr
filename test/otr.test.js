@@ -4,4 +4,4 @@ var assert = require('assert')
 var bob = new OTR()
 var alice = new OTR()
 
-bob.initiateAKE(alice.receiveMsg)
+// bob.initiateAKE(alice.receiveMsg)
