@@ -80,7 +80,7 @@ Key.prototype = {
     var seed = BigInt.randBigInt(N)
 
     var u = SHA1.SHA1(hlp.bigInt2bits(seed))
-    var tmp = BigInt.mod(BigInt.add(seed, ONE), 2^g)
+    var tmp = BigInt.mod(BigInt.add(seed, ONE), hlp.twotothe(g))
   },
 
   makeG: function (e) {

@@ -20,3 +20,5 @@ assert.equal(str, hlp.packMPI(BigInt.str2bigInt(two55, 10)), 'BigInt')
 assert.equal('65280', BigInt.bigInt2str(hlp.readMPI('\0\0\0\2\xff\0'), 10), 'Read MPI.')
 
 assert.equal(two55, BigInt.bigInt2str(hlp.readMPI(str), 10))
+
+assert.equal((Math.pow(2, 513)).toString(16), BigInt.bigInt2str(hlp.twotothe(513), 16))

@@ -56,6 +56,14 @@ exports.mask = function mask(n) {
   return Math.pow(2, n)
 }
 
+exports.twotothe = function twotothe(g) {
+  var ex = g % 4
+  g = Math.floor(g / 4)
+  var str = (Math.pow(2, ex)).toString()
+  for (var i = 0; i < g; i++) str += '0'
+  return BigInt.str2bigInt(str, 16)
+}
+
 exports.pack = function pack(d) {
   // big-endian, unsigned long
   var res = ''
@@ -72,15 +80,15 @@ exports.packData = function packData(d) {
 
 exports.bigInt2bits = function bitInt2bits(bi) {
   var ba = ''
-  while (!BigInt.isZero(mpi)) {
-    ba = _num2bin[mpi[0] & 0xff] + ba
-    BigInt.rightShift_(mpi, 8)
+  while (!BigInt.isZero(bi)) {
+    ba = _num2bin[bi[0] & 0xff] + ba
+    BigInt.rightShift_(bi, 8)
   }
   return ba
 }
 
 exports.packMPI = function packMPI(mpi) {
-  return exports.packData(exports.bitInt2bits(mpi))
+  return exports.packData(exports.bigInt2bits(mpi))
 }
 
 exports.readData = function readData(data) {
