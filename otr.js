@@ -62,6 +62,7 @@ OTR.prototype = {
     this.ALLOW_V1 = false
     this.ALLOW_V2 = true
     this.keyId = 0
+    this.priv = dsa.generateKey()
   },
 
   createAuthKeys: function() {

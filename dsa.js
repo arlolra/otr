@@ -28,3 +28,23 @@ exports.sign = function sign(m, priv) {
 exports.verify = function verify() {
   return
 }
+
+exports.generateKey = Key
+
+function Key() {
+  if (!(this instanceof Key)) return new Key()
+
+  this.x
+  this.y
+  this.p
+  this.q
+  this.g
+
+}
+
+Key.prototype = {
+  constructor: Key,
+  packPublic: function () {
+    return
+  }
+}
