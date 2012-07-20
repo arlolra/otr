@@ -82,7 +82,7 @@ Key.prototype = {
     )
 
     this.q = hlp.bigBitWise('OR', u, hlp.twotothe(159))
-    this.q = hlp.bigBitWise('OR', u, ONE)
+    this.q = hlp.bigBitWise('OR', this.q, ONE)
   },
 
   makeG: function (e) {
