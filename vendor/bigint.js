@@ -1522,4 +1522,5 @@ module.exports = {
   , add         : add
   , greater     : greater
   , isZero      : isZero
+  , bitSize     : bitSize
 }

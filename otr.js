@@ -4,6 +4,7 @@ var AES = require('./vendor/aes.js')
   , BigInt = require('./vendor/bigint.js')
   , DH = require('./dh.json')
   , hlp = require('./helpers.js')
+  , dsa = require('./dsa.js')
 
 // ctr mode
 require('./vendor/mode-ctr.js')(AES)
@@ -82,12 +83,7 @@ OTR.prototype = {
     var kid = hlp.packData(hlp.pack(this.keyId))
     hmac.update(kid)
     var mb = hmac.finalize()
-
-    function sign() {
-      return ''
-    }
-
-    var xb = pk + kid + sign(mb)
+    var xb = pk + kid + sign(mb.toString(HmacSHA256.enc.Latin1))
     var opts = {
         mode: AES.mode.CTR
       , iv: AES.enc.Hex.parse('0')
