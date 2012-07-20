@@ -29,12 +29,8 @@ exports.sign = function sign(m, priv) {
   return hsign(hm, priv)
 }
 
-function between(x, a, b) {
-  return (BigInt.greater(x, a) && BigInt.greater(b, x))
-}
-
 exports.verify = function verify(hm, priv, r, s) {
-  if (!between(s, ZERO, priv.q) || !between(s, ZERO, priv.q))
+  if (!hlp.between(s, ZERO, priv.q) || !hlp.between(s, ZERO, priv.q))
     return false
 
   var w = BigInt.inverseMod(s, q)
@@ -59,13 +55,10 @@ function Key() {
 
   this.makePQ(N, L)
 
-  this.q = BigInt.randTruePrime(N)
-  this.p
+  // this.makeG()
 
-  this.makeG()
-
-  this.x
-  this.y
+  // this.x
+  // this.y
 }
 
 Key.prototype = {
@@ -79,8 +72,17 @@ Key.prototype = {
     var g = N
     var seed = BigInt.randBigInt(N)
 
-    var u = SHA1.SHA1(hlp.bigInt2bits(seed))
+    var u = (SHA1.SHA1(hlp.bigInt2bits(seed))).toString(SHA1.enc.Hex)
     var tmp = BigInt.mod(BigInt.add(seed, ONE), hlp.twotothe(g))
+    tmp = (SHA1.SHA1(hlp.bigInt2bits(tmp))).toString(SHA1.enc.Hex)
+    u = hlp.bigBitWise(
+        'XOR'
+      , BigInt.str2bigInt(tmp, 16)
+      , BigInt.str2bigInt(u, 16)
+    )
+
+    this.q = hlp.bigBitWise('OR', u, hlp.twotothe(159))
+    this.q = hlp.bigBitWise('OR', u, ONE)
   },
 
   makeG: function (e) {

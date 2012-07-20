@@ -44,6 +44,26 @@ exports.GTOE = function GTOE(a, b) {
   return (BigInt.equals(a, b) || BigInt.greater(a, b))
 }
 
+exports.between = function between(x, a, b) {
+  return (BigInt.greater(x, a) && BigInt.greater(b, x))
+}
+
+var OPS = {
+    'XOR': function (c, s) { return c ^ s }
+  , 'OR': function (c, s) { return c | s }
+  , 'AND': function (c, s) { return c & s }
+}
+exports.bigBitWise = function bigBitWise(op, a, b) {
+  var tf = (a.length > b.length)
+  var short = tf ? b : a
+  var c = BigInt.dup(tf ? a : b)
+  var i = 0, len = short.length
+  for (; i < len; i++) {
+    c[i] = OPS[op](c[i], short[i])
+  }
+  return c
+}
+
 exports.h2 = function h2(b, secbytes) {
   var sha256 = CryptoJS.algo.SHA256.create()
   sha256.update(b)
