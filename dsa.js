@@ -51,10 +51,9 @@ exports.generateKey = Key
 function Key() {
   if (!(this instanceof Key)) return new Key()
 
-  var N = 160
-  var L = 1024
-
-  this.makePQ(N, L)
+  this.N = 160
+  this.L = 1024
+  this.makePQ()
 
   // this.makeG()
 
@@ -66,16 +65,12 @@ Key.prototype = {
 
   constructor: Key,
 
-  makePQ: function(N, L) {
-    var n = Math.floor(L / N)
-    var b = (L % N) - 1
+  makePQ: function() {
+    var g = this.N
+    this.seed = BigInt.randBigInt(this.N)
 
-    var g = N
-    var seed = BigInt.randBigInt(N)
-
-    var u = (SHA1.SHA1(hlp.bigInt2bits(seed))).toString(SHA1.enc.Hex)
-    var twotog = hlp.twotothe(g)
-    var tmp = BigInt.mod(BigInt.add(seed, ONE), twotog)
+    var u = (SHA1.SHA1(hlp.bigInt2bits(this.seed))).toString(SHA1.enc.Hex)
+    var tmp = BigInt.mod(BigInt.add(this.seed, ONE), hlp.twotothe(g))
     tmp = (SHA1.SHA1(hlp.bigInt2bits(tmp))).toString(SHA1.enc.Hex)
     u = hlp.bigBitWise(
         'XOR'
@@ -86,27 +81,52 @@ Key.prototype = {
     this.q = hlp.bigBitWise('OR', u, hlp.twotothe(g - 1))
     this.q = hlp.bigBitWise('OR', this.q, ONE)
 
-    // test if q is prime!
-    // if not, rinse and repeat
+    if (!BigInt.millerRabin(this.q, TWO)) return this.makePQ()
 
-    var counter = 0
-    var offset = TWO
+    this.counter = 0
+    this.step7(TWO)
+  },
 
-    var V = new Array(n)
+  step7: function step7(offset) {
+    var g = this.N
+    var n = Math.floor(this.L / this.N)
+    var b = (this.L % this.N) - 1
 
-    var cache_seed_plus_offset = BigInt.add(seed, offset)
+    var V = ZERO
+    var W = ZERO
+
+    var cache_seed_plus_offset = BigInt.add(this.seed, offset)
 
     var i = 0
-    for (; i < n; i++) {
-      V[i] = BigInt.add(
+    for (; i < (n + 1); i++) {
+      V = BigInt.add(
           cache_seed_plus_offset
         , BigInt.str2bigInt(i.toString(), 10)
       )
-      V[i] = SHA1.SHA1(hlp.bigInt2bits(BigInt.mod(V[i], twotog)))
+      V = SHA1.SHA1(hlp.bigInt2bits(BigInt.mod(V, hlp.twotothe(g))))
+      V = BigInt.str2bigInt(V.toString(SHA1.enc.Hex), 16)
+      if (i === n) V = BigInt.mod(V, hlp.twotothe(b))
+      V = BigInt.mult(V, hlp.twotothe(g * i))
+      W = BigInt.add(W, V)
     }
 
-    // console.log(V)
+    var Lminus = hlp.twotothe(this.L - 1)
+    var X = BigInt.add(W, Lminus)
+    // console.log(hlp.between(X, Lminus, hlp.twotothe(this.L)))
 
+    var c = BigInt.mod(X, BigInt.mult(TWO, this.q))
+    this.p = BigInt.sub(X, BigInt.sub(c, ONE))
+
+    if (!BigInt.greater(Lminus, this.p)) {
+      // test the primality of p
+      if (BigInt.millerRabin(this.p, TWO)) return
+    }
+
+    offset = BigInt.add(offset, BigInt.str2bigInt((n + 1).toString(), 10))
+    this.counter += 1
+
+    if (this.counter >= 4096) return this.makePQ()
+    this.step7(offset)
   },
 
   makeG: function (e) {

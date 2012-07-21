@@ -1524,4 +1524,5 @@ module.exports = {
   , isZero        : isZero
   , bitSize       : bitSize
   , randTruePrime : randTruePrime
+  , millerRabin   : millerRabin
 }

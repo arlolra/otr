@@ -5,5 +5,7 @@ DIR="$(dirname "$SOURCE")"
 
 for file in $(find $DIR/*.test.js)
 do
+  echo -e "=====" $file "=====\n"
   node $file
+  echo -e ""
 done
