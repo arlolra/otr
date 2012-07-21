@@ -46,6 +46,26 @@ exports.verify = function verify(hm, priv, r, s) {
   return BigInt.equal(v, r)
 }
 
+function pickBase(prime) {
+  var b = BigInt.bitSize(prime)
+  var base = BigInt.randBigInt(b)
+  while (!BigInt.greater(prime, base))  // pick a random that's < ans
+    base = BigInt.randBigInt(b)
+  return base
+}
+
+function MR(prime) {
+  var j = 0, k = true
+  // 40x should give 2^80 confidence
+  for (var j = 0; j < 40; j++) {
+    if (!BigInt.millerRabin(prime, pickBase(prime))) {
+      k = false
+      break
+    }
+  }
+  return k
+}
+
 exports.generateKey = Key
 
 function Key() {
@@ -81,7 +101,7 @@ Key.prototype = {
     this.q = hlp.bigBitWise('OR', u, hlp.twotothe(g - 1))
     this.q = hlp.bigBitWise('OR', this.q, ONE)
 
-    if (!BigInt.millerRabin(this.q, TWO)) return this.makePQ()
+    if (!MR(this.q)) return this.makePQ()
 
     this.counter = 0
     this.step7(TWO)
@@ -119,7 +139,7 @@ Key.prototype = {
 
     if (!BigInt.greater(Lminus, this.p)) {
       // test the primality of p
-      if (BigInt.millerRabin(this.p, TWO)) return
+      if (MR(this.p)) return
     }
 
     offset = BigInt.add(offset, BigInt.str2bigInt((n + 1).toString(), 10))
