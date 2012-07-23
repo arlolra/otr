@@ -1525,4 +1525,5 @@ module.exports = {
   , bitSize       : bitSize
   , randTruePrime : randTruePrime
   , millerRabin   : millerRabin
+  , divide_       : divide_
 }

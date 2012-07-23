@@ -3,10 +3,26 @@ var assert = require('assert')
   , dsa = require('../dsa.js')
   , BigInt = require('../vendor/bigint.js')
 
-var key = new dsa.generateKey()
+var key = new dsa.Key()
 
-assert.ok(hlp.between(key.q, hlp.twotothe(159), hlp.twotothe(160)), 'In between.')
+assert.ok(
+	hlp.between(key.q, hlp.twotothe(159), hlp.twotothe(160)),'In between.')
+
+var quotient = BigInt.str2bigInt('0', 10, BigInt.bitSize(key.p))
+  , remainder = BigInt.str2bigInt('0', 10, BigInt.bitSize(key.p))
+var p_minus = BigInt.sub(key.p, BigInt.str2bigInt('1', 10))
+BigInt.divide_(p_minus, key.q, quotient, remainder)
+// console.log(BigInt.bigInt2str(quotient, 10))
+// console.log(BigInt.bigInt2str(remainder, 10))
+assert.ok(BigInt.isZero(remainder), 'Multiple.')
 
 console.log('p: ' + BigInt.bigInt2str(key.p, 10))
 console.log('q: ' + BigInt.bigInt2str(key.q, 10))
+console.log('y: ' + BigInt.bigInt2str(key.y, 10))
+console.log('x: ' + BigInt.bigInt2str(key.x, 10))
+console.log('g: ' + BigInt.bigInt2str(key.g, 10))
+
 console.log('counter: ' + key.counter)
+
+var s = key.sign('sign me')
+assert.equal(1, key.verify('sign me', s[0], s[1]), 'Verify signed message.')

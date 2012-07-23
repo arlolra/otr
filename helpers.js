@@ -1,201 +1,214 @@
-var CryptoJS = require('./vendor/sha256.js')
-  , BigInt = require('./vendor/bigint.js')
+;(function () {
 
-module.exports = exports = {}
+  var root = this
 
-exports.divMod = function divMod(num, den, n) {
-  return BigInt.multMod(num, BigInt.inverseMod(den, n), n)
-}
-
-exports.subMod = function subMod(one, two, n) {
-  one = BigInt.mod(one, n)
-  two = BigInt.mod(two, n)
-  if (BigInt.greater(two, one)) one = BigInt.add(one, n)
-  return BigInt.sub(one, two)
-}
-
-exports.randomExponent = function randomExponent() {
-  return BigInt.randBigInt(1536)
-}
-
-exports.randomValue = function randomValue() {
-  return BigInt.randBigInt(128)
-}
-
-exports.smpHash = function smpHash(version, fmpi, smpi) {
-  var sha256 = CryptoJS.algo.SHA256.create()
-  sha256.update(version.toString())
-  sha256.update(BigInt.bigInt2str(fmpi, 10))
-  if (smpi) sha256.update(BigInt.bigInt2str(smpi, 10))
-  var hash = sha256.finalize()
-  return BigInt.str2bigInt(hash.toString(CryptoJS.enc.Hex), 16)
-}
-
-exports.multPowMod = function multPowMod(a, b, c, d, e) {
-  return BigInt.multMod(BigInt.powMod(a, b, e), BigInt.powMod(c, d, e), e)
-}
-
-exports.ZKP = function ZKP(v, c, d, e) {
-  return BigInt.equals(c, exports.smpHash(v, d, e))
-}
-
-// greater than, or equal
-exports.GTOE = function GTOE(a, b) {
-  return (BigInt.equals(a, b) || BigInt.greater(a, b))
-}
-
-exports.between = function between(x, a, b) {
-  return (BigInt.greater(x, a) && BigInt.greater(b, x))
-}
-
-var OPS = {
-    'XOR': function (c, s) { return c ^ s }
-  , 'OR': function (c, s) { return c | s }
-  , 'AND': function (c, s) { return c & s }
-}
-exports.bigBitWise = function bigBitWise(op, a, b) {
-  var tf = (a.length > b.length)
-  var short = tf ? b : a
-  var c = BigInt.dup(tf ? a : b)
-  var i = 0, len = short.length
-  for (; i < len; i++) {
-    c[i] = OPS[op](c[i], short[i])
+  var HLP
+  if (typeof exports !== 'undefined') {
+    HLP = exports
+  } else {
+    HLP = root.HLP = {}
   }
-  return c
-}
 
-exports.h2 = function h2(b, secbytes) {
-  var sha256 = CryptoJS.algo.SHA256.create()
-  sha256.update(b)
-  sha256.update(secbytes)
-  var hash = sha256.finalize()
-  return hash.toString(CryptoJS.enc.Latin1)
-}
+  var BigInt = root.BigInt
+    , SHA256 = root.SHA256
 
-exports.mask = function mask(n) {
-  return Math.pow(2, n)
-}
-
-exports.twotothe = function twotothe(g) {
-  var ex = g % 4
-  g = Math.floor(g / 4)
-  var str = (Math.pow(2, ex)).toString()
-  for (var i = 0; i < g; i++) str += '0'
-  return BigInt.str2bigInt(str, 16)
-}
-
-exports.pack = function pack(d) {
-  // big-endian, unsigned long
-  var res = ''
-  res += _toString(d >> 24 & 0xFF)
-  res += _toString(d >> 16 & 0xFF)
-  res += _toString(d >> 8 & 0xFF)
-  res += _toString(d & 0xFF)
-  return res
-}
-
-exports.packData = function packData(d) {
-  return exports.pack(d.length) + d
-}
-
-exports.bigInt2bits = function bitInt2bits(bi) {
-  var ba = ''
-  while (!BigInt.isZero(bi)) {
-    ba = _num2bin[bi[0] & 0xff] + ba
-    BigInt.rightShift_(bi, 8)
+  if (typeof require !== 'undefined') {
+    BigInt || (BigInt = require('./vendor/bigint.js'))
+    SHA256 || (SHA256 = require('./vendor/sha256.js'))
   }
-  return ba
-}
 
-exports.packMPI = function packMPI(mpi) {
-  return exports.packData(exports.bigInt2bits(mpi))
-}
+  HLP.divMod = function divMod(num, den, n) {
+    return BigInt.multMod(num, BigInt.inverseMod(den, n), n)
+  }
 
-exports.readData = function readData(data) {
-  data = exports.toByteArray(data)
-  var n = (data.splice(0, 4)).reduce(function (p, n) {
-    p <<= 8; return p | n
-  }, 0)
-  return [n, data]
-}
+  HLP.subMod = function subMod(one, two, n) {
+    one = BigInt.mod(one, n)
+    two = BigInt.mod(two, n)
+    if (BigInt.greater(two, one)) one = BigInt.add(one, n)
+    return BigInt.sub(one, two)
+  }
 
-exports.readMPI = function readMPI(data) {
-  data = exports.readData(data)
-  var mpi = BigInt.str2bigInt('0', 10, data[0])
-  data[1].forEach(function (d, i) {
-    if (i) BigInt.leftShift_(mpi, 8)
-    mpi[0] |= d
-  })
-  return mpi
-}
+  HLP.randomExponent = function randomExponent() {
+    return BigInt.randBigInt(1536)
+  }
 
-// https://github.com/msgpack/msgpack-javascript/blob/master/msgpack.js
+  HLP.randomValue = function randomValue() {
+    return BigInt.randBigInt(128)
+  }
 
-var _bin2num = {}
-  , _num2bin = {}
-  , _toString = String.fromCharCode
-  , _num2b64 = ("ABCDEFGHIJKLMNOPQRSTUVWXYZ" +
-                "abcdefghijklmnopqrstuvwxyz0123456789+/").split("")
-  , globalScope = this  // meh
+  HLP.smpHash = function smpHash(version, fmpi, smpi) {
+    var sha256 = SHA256.algo.SHA256.create()
+    sha256.update(version.toString())
+    sha256.update(BigInt.bigInt2str(fmpi, 10))
+    if (smpi) sha256.update(BigInt.bigInt2str(smpi, 10))
+    var hash = sha256.finalize()
+    return BigInt.str2bigInt(hash.toString(SHA256.enc.Hex), 16)
+  }
 
-;(function() {
-    var i = 0, v;
+  HLP.multPowMod = function multPowMod(a, b, c, d, e) {
+    return BigInt.multMod(BigInt.powMod(a, b, e), BigInt.powMod(c, d, e), e)
+  }
 
-    for (; i < 0x100; ++i) {
-        v = _toString(i);
-        _bin2num[v] = i; // "\00" -> 0x00
-        _num2bin[i] = v; //     0 -> "\00"
+  HLP.ZKP = function ZKP(v, c, d, e) {
+    return BigInt.equals(c, HLP.smpHash(v, d, e))
+  }
+
+  // greater than, or equal
+  HLP.GTOE = function GTOE(a, b) {
+    return (BigInt.equals(a, b) || BigInt.greater(a, b))
+  }
+
+  HLP.between = function between(x, a, b) {
+    return (BigInt.greater(x, a) && BigInt.greater(b, x))
+  }
+
+  var OPS = {
+      'XOR': function (c, s) { return c ^ s }
+    , 'OR': function (c, s) { return c | s }
+    , 'AND': function (c, s) { return c & s }
+  }
+  HLP.bigBitWise = function bigBitWise(op, a, b) {
+    var tf = (a.length > b.length)
+    var short = tf ? b : a
+    var c = BigInt.dup(tf ? a : b)
+    var i = 0, len = short.length
+    for (; i < len; i++) {
+      c[i] = OPS[op](c[i], short[i])
     }
-    // http://twitter.com/edvakf/statuses/15576483807
-    for (i = 0x80; i < 0x100; ++i) { // [Webkit][Gecko]
-        _bin2num[_toString(0xf700 + i)] = i; // "\f780" -> 0x80
+    return c
+  }
+
+  HLP.h2 = function h2(b, secbytes) {
+    var sha256 = SHA256.algo.SHA256.create()
+    sha256.update(b)
+    sha256.update(secbytes)
+    var hash = sha256.finalize()
+    return hash.toString(SHA256.enc.Latin1)
+  }
+
+  HLP.mask = function mask(n) {
+    return Math.pow(2, n)
+  }
+
+  HLP.twotothe = function twotothe(g) {
+    var ex = g % 4
+    g = Math.floor(g / 4)
+    var str = (Math.pow(2, ex)).toString()
+    for (var i = 0; i < g; i++) str += '0'
+    return BigInt.str2bigInt(str, 16)
+  }
+
+  HLP.pack = function pack(d) {
+    // big-endian, unsigned long
+    var res = ''
+    res += _toString(d >> 24 & 0xFF)
+    res += _toString(d >> 16 & 0xFF)
+    res += _toString(d >> 8 & 0xFF)
+    res += _toString(d & 0xFF)
+    return res
+  }
+
+  HLP.packData = function packData(d) {
+    return HLP.pack(d.length) + d
+  }
+
+  HLP.bigInt2bits = function bitInt2bits(bi) {
+    var ba = ''
+    while (!BigInt.isZero(bi)) {
+      ba = _num2bin[bi[0] & 0xff] + ba
+      BigInt.rightShift_(bi, 8)
     }
-})();
+    return ba
+  }
 
-exports.toByteArray = function toByteArray(data) {
-    var rv = [], bin2num = _bin2num, remain,
-        ary = data.split(""),
-        i = -1, iz;
+  HLP.packMPI = function packMPI(mpi) {
+    return HLP.packData(HLP.bigInt2bits(mpi))
+  }
 
-    iz = ary.length;
-    remain = iz % 8;
+  HLP.readData = function readData(data) {
+    data = HLP.toByteArray(data)
+    var n = (data.splice(0, 4)).reduce(function (p, n) {
+      p <<= 8; return p | n
+    }, 0)
+    return [n, data]
+  }
+
+  HLP.readMPI = function readMPI(data) {
+    data = HLP.readData(data)
+    var mpi = BigInt.str2bigInt('0', 10, data[0])
+    data[1].forEach(function (d, i) {
+      if (i) BigInt.leftShift_(mpi, 8)
+      mpi[0] |= d
+    })
+    return mpi
+  }
+
+  // https://github.com/msgpack/msgpack-javascript/blob/master/msgpack.js
+
+  var _bin2num = {}
+    , _num2bin = {}
+    , _toString = String.fromCharCode
+    , _num2b64 = ("ABCDEFGHIJKLMNOPQRSTUVWXYZ" +
+                  "abcdefghijklmnopqrstuvwxyz0123456789+/").split("")
+    , globalScope = this  // meh
+
+  var i = 0, v
+  for (; i < 0x100; ++i) {
+    v = _toString(i)
+    _bin2num[v] = i  // "\00" -> 0x00
+    _num2bin[i] = v  //     0 -> "\00"
+  }
+  for (i = 0x80; i < 0x100; ++i) {  // [Webkit][Gecko]
+    _bin2num[_toString(0xf700 + i)] = i  // "\f780" -> 0x80
+  }
+
+  HLP.toByteArray = function toByteArray(data) {
+    var rv = [], bin2num = _bin2num, remain
+      , ary = data.split("")
+      , i = -1
+      , iz
+
+    iz = ary.length
+    remain = iz % 8
 
     while (remain--) {
-        ++i;
-        rv[i] = bin2num[ary[i]];
+      ++i
+      rv[i] = bin2num[ary[i]]
     }
-    remain = iz >> 3;
+    remain = iz >> 3
     while (remain--) {
-        rv.push(bin2num[ary[++i]], bin2num[ary[++i]],
-                bin2num[ary[++i]], bin2num[ary[++i]],
-                bin2num[ary[++i]], bin2num[ary[++i]],
-                bin2num[ary[++i]], bin2num[ary[++i]]);
+      rv.push(bin2num[ary[++i]], bin2num[ary[++i]],
+              bin2num[ary[++i]], bin2num[ary[++i]],
+              bin2num[ary[++i]], bin2num[ary[++i]],
+              bin2num[ary[++i]], bin2num[ary[++i]])
     }
-    return rv;
-}
+    return rv
+  }
 
-exports.base64encode = function base64encode(data) {
-    var rv = [],
-        c = 0, i = -1, iz = data.length,
-        pad = [0, 2, 1][data.length % 3],
-        num2bin = _num2bin,
-        num2b64 = _num2b64;
+  HLP.base64encode = function base64encode(data) {
+    var rv = []
+      , c = 0, i = -1, iz = data.length
+      , pad = [0, 2, 1][data.length % 3]
+      , num2bin = _num2bin
+      , num2b64 = _num2b64
 
     if (globalScope.btoa) {
-        while (i < iz) {
-            rv.push(num2bin[data[++i]]);
-        }
-        return btoa(rv.join(""));
+      while (i < iz) {
+        rv.push(num2bin[data[++i]])
+      }
+      return btoa(rv.join(""))
     }
-    --iz;
+    --iz
     while (i < iz) {
-        c = (data[++i] << 16) | (data[++i] << 8) | (data[++i]); // 24bit
-        rv.push(num2b64[(c >> 18) & 0x3f],
-                num2b64[(c >> 12) & 0x3f],
-                num2b64[(c >>  6) & 0x3f],
-                num2b64[ c        & 0x3f]);
+      c = (data[++i] << 16) | (data[++i] << 8) | (data[++i])  // 24bit
+      rv.push(num2b64[(c >> 18) & 0x3f],
+              num2b64[(c >> 12) & 0x3f],
+              num2b64[(c >>  6) & 0x3f],
+              num2b64[ c        & 0x3f])
     }
-    pad > 1 && (rv[rv.length - 2] = "=");
-    pad > 0 && (rv[rv.length - 1] = "=");
-    return rv.join("");
-}
+    pad > 1 && (rv[rv.length - 2] = "=")
+    pad > 0 && (rv[rv.length - 1] = "=")
+    return rv.join("")
+  }
+
+}).call(this)
