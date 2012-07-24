@@ -161,7 +161,8 @@
       var r = BigInt.mod(BigInt.powMod(this.g, k, this.p), this.q)
       if (BigInt.isZero(r)) return this.hsign(hm)
       var s = BigInt.inverseMod(k, this.q)
-      s = BigInt.multMod(s, BigInt.add(hm, BigInt.mult(this.x, r)), this.q)
+      s = BigInt.mult(s, BigInt.add(hm, BigInt.mult(this.x, r)))
+      s = BigInt.mod(s, this.q)
       if (BigInt.isZero(s)) return this.hsign(hm)
       return [r, s]
     },
@@ -187,9 +188,6 @@
       u2 = BigInt.powMod(this.y, u2, this.p)
 
       var v = BigInt.mod(BigInt.multMod(u1, u2, this.p), this.q)
-
-      console.log(v)
-      console.log(r)
 
       return BigInt.equals(v, r)
     }
