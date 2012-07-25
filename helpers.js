@@ -113,6 +113,7 @@
   }
 
   HLP.bigInt2bits = function bitInt2bits(bi) {
+    bi = BigInt.dup(bi)
     var ba = ''
     while (!BigInt.isZero(bi)) {
       ba = _num2bin[bi[0] & 0xff] + ba

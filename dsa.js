@@ -90,14 +90,16 @@
       if (!MR(this.q)) return this.makePQ()
 
       this.counter = 0
-      this.step7(TWO)
-    },
 
-    step7: function (offset) {
-      var g = this.N
       var n = Math.floor(this.L / this.N)
       var b = (this.L % this.N) - 1
 
+      // var start = new Date()
+      this.step7(TWO, this.N, n, b)
+      // console.log(new Date() - start)
+    },
+
+    step7: function (offset, g, n, b) {
       var V = ZERO
       var W = ZERO
 
@@ -132,7 +134,7 @@
       this.counter += 1
 
       if (this.counter >= 4096) return this.makePQ()
-      this.step7(offset)
+      this.step7(offset, g, n, b)
     },
 
     makeG: function (e) {
