@@ -1,6 +1,8 @@
 Off-the Record Messaging Protocol v2 in JavaScript
 ==================================================
 
+[![Build Status](https://secure.travis-ci.org/arlolra/otr.png)](http://travis-ci.org/arlolra/otr)
+
 This is obviously still a WIP.
 
 ---
