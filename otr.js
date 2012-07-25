@@ -54,7 +54,7 @@
 
   function dh() {
     var keys = { privateKey: BigInt.randBigInt(320) }
-    keys.publicKey = BigInt.powMod(DH.G, this.privateKey, DH.N)
+    keys.publicKey = BigInt.powMod(G, keys.privateKey, N)
     return keys
   }
 
@@ -80,7 +80,7 @@
       this.ALLOW_V1 = false
       this.ALLOW_V2 = true
       this.keyId = 0
-      this.priv = dsa.Key()
+      this.priv = new dsa.Key()
     },
 
     createAuthKeys: function() {
@@ -106,7 +106,7 @@
       var kid = hlp.packData(hlp.pack(this.keyId))
       hmac.update(kid)
       var mb = hmac.finalize()
-      var xb = pk + kid + this.priv(mb.toString(HmacSHA256.enc.Latin1))
+      var xb = pk + kid + this.priv.sign(mb.toString(HmacSHA256.enc.Latin1))
       var opts = {
           mode: AES.mode.CTR
         , iv: AES.enc.Hex.parse('0')
