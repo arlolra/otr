@@ -27,6 +27,9 @@
 
     // ctr mode
     require('./vendor/mode-ctr.js')(AES)
+
+    // no padding
+    require('./vendor/pad-nopadding.js')(AES)
   }
 
   // otr message states
@@ -109,10 +112,15 @@
       var xb = pk + kid + this.priv.sign(mb.toString(HmacSHA256.enc.Latin1))
       var opts = {
           mode: AES.mode.CTR
-        , iv: AES.enc.Hex.parse('0')
+        , iv: AES.enc.Latin1.parse(0)
+        , padding: AES.pad.NoPadding
       }
-      var aesctr = AES.AES.encrypt(xb, c, opts)
-      return aesctr.toString(AES.enc.Latin1)
+      var aesctr = AES.AES.encrypt(
+          AES.enc.Latin1.parse(xb)
+        , AES.enc.Latin1.parse(c)
+        , opts
+      )
+      return aesctr.toString()
     },
 
     handleAKE: function (msg, cb) {
@@ -150,13 +158,27 @@
           send.r = hlp.packMPI(this.r)
           send.type = '\x11'
           send.version = '\x00\x02'
-          reply = false
           break
 
         case '\x11':
           // signature message
+          this.r = hlp.readMPI(msg.r)
+
+          var key = AES.enc.Hex.parse(BigInt.bigInt2str(this.r, 16))
+          var opts = {
+              mode: AES.mode.CTR
+            , iv: AES.enc.Latin1.parse(0)
+            , padding: AES.pad.NoPadding
+          }
+          var gxmpi = AES.AES.decrypt(this.encrypted, key, opts)
+          this.gy = hlp.readMPI(gxmpi.toString(AES.enc.Latin1))
+
+          this.createAuthKeys()
+          this.keyId += 1
+
           send.type = '\x12'
           send.version = '\x00\x02'
+          reply = false
           break
 
         case '\x12':
@@ -175,7 +197,6 @@
     },
 
     initiateAKE: function (cb) {
-
       // d-h commit message
       var send = {
          type: '\x02'
@@ -189,11 +210,12 @@
       var key = AES.enc.Hex.parse(BigInt.bigInt2str(this.r, 16))
       var opts = {
           mode: AES.mode.CTR
-        , iv: AES.enc.Hex.parse('0')
+        , iv: AES.enc.Latin1.parse(0)
+        , padding: AES.pad.NoPadding
       }
 
-      var encrypt = AES.AES.encrypt(gxmpi, key, opts)
-      send.encrypted = encrypt.toString(AES.enc.Latin1)
+      var encrypt = AES.AES.encrypt(AES.enc.Latin1.parse(gxmpi), key, opts)
+      send.encrypted = encrypt.toString()
 
       var hash = SHA256.SHA256(gxmpi)
       send.hashed = hash.toString(SHA256.enc.Latin1)
