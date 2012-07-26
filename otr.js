@@ -171,7 +171,17 @@
             , padding: AES.pad.NoPadding
           }
           var gxmpi = AES.AES.decrypt(this.encrypted, key, opts)
-          this.gy = hlp.readMPI(gxmpi.toString(AES.enc.Latin1))
+          gxmpi = gxmpi.toString(AES.enc.Latin1)
+          this.gy = hlp.readMPI(gxmpi)
+
+          // verify hash
+          var hash = SHA256.SHA256(gxmpi)
+
+          if (this.hashed !== hash.toString(SHA256.enc.Latin1))
+            return this.error('Hashed g^x does not match.')
+
+          // verify gy is legal 2 <= gy <= N-2
+          if (!checkGroup(this.gy)) return this.error('Illegal g^y.')
 
           this.createAuthKeys()
           this.keyId += 1
