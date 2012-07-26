@@ -89,10 +89,10 @@
     createAuthKeys: function() {
       var s = BigInt.powMod(this.gy, this.dh.privateKey, N)
       var secbytes = hlp.packMPI(s)
-      this.ssid = hlp.h2('\x00', secbytes) & hlp.mask(64)  // first 64-bits
+      this.ssid = hlp.mask(hlp.h2('\x00', secbytes), 0, 64)  // first 64-bits
       var tmp = hlp.h2('\x01', secbytes)
-      this.c = tmp & hlp.mask(128)  // first 128-bits
-      this.c_prime = (tmp >> 128) & hlp.mask(128)  // second 128-bits
+      this.c = hlp.mask(tmp, 0, 128)  // first 128-bits
+      this.c_prime = hlp.mask(tmp, 128, 128)  // second 128-bits
       this.m1 = hlp.h2('\x02', secbytes)
       this.m2 = hlp.h2('\x03', secbytes)
       this.m1_prime = hlp.h2('\x04', secbytes)
@@ -109,7 +109,8 @@
       var kid = hlp.packData(hlp.pack(this.keyId))
       hmac.update(kid)
       var mb = hmac.finalize()
-      var xb = pk + kid + this.priv.sign(mb.toString(HmacSHA256.enc.Latin1))
+      var sign = this.priv.sign(mb.toString(HmacSHA256.enc.Latin1))
+      var xb = pk + kid + hlp.bigInt2bits(sign[0]) + hlp.bigInt2bits(sign[1])
       var opts = {
           mode: AES.mode.CTR
         , iv: AES.enc.Latin1.parse(0)
@@ -124,7 +125,8 @@
     },
 
     handleAKE: function (msg, cb) {
-      var reply = true
+      var pass, mac, opts
+        , reply = true
         , send = {}
 
       switch (msg.type) {
@@ -151,9 +153,9 @@
 
           send.aesctr = this.calculatePubkeyAuth(this.c, this.m1)
 
-          var pass = HmacSHA256.enc.Latin1.parse(this.m2)
-          var mac = HmacSHA256.HmacSHA256(send.aesctr, pass)
-          send.mac = mac & hlp.mask(160)
+          pass = HmacSHA256.enc.Latin1.parse(this.m2)
+          mac = HmacSHA256.HmacSHA256(send.aesctr, pass)
+          send.mac = hlp.mask(mac.toString(HmacSHA256.enc.Latin1), 0, 160)
 
           send.r = hlp.packMPI(this.r)
           send.type = '\x11'
@@ -165,7 +167,7 @@
           this.r = hlp.readMPI(msg.r)
 
           var key = AES.enc.Hex.parse(BigInt.bigInt2str(this.r, 16))
-          var opts = {
+          opts = {
               mode: AES.mode.CTR
             , iv: AES.enc.Latin1.parse(0)
             , padding: AES.pad.NoPadding
@@ -176,7 +178,6 @@
 
           // verify hash
           var hash = SHA256.SHA256(gxmpi)
-
           if (this.hashed !== hash.toString(SHA256.enc.Latin1))
             return this.error('Hashed g^x does not match.')
 
@@ -184,7 +185,25 @@
           if (!checkGroup(this.gy)) return this.error('Illegal g^y.')
 
           this.createAuthKeys()
-          this.keyId += 1
+
+          // verify mac
+          pass = HmacSHA256.enc.Latin1.parse(this.m2)
+          mac = HmacSHA256.HmacSHA256(msg.aesctr, pass)
+          mac = hlp.mask(mac.toString(HmacSHA256.enc.Latin1), 0, 160)
+          if (msg.mac !== mac) return this.error('MACs do not match.')
+
+          // decrypt xb
+          opts = {
+              mode: AES.mode.CTR
+            , iv: AES.enc.Latin1.parse(0)
+            , padding: AES.pad.NoPadding
+          }
+          var aesctr = AES.AES.decrypt(
+              msg.aesctr
+            , AES.enc.Latin1.parse(this.c)
+            , opts
+          )
+          var xb = aesctr.toString(AES.enc.Latin1)
 
           send.type = '\x12'
           send.version = '\x00\x02'
