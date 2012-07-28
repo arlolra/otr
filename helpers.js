@@ -113,6 +113,10 @@
     return HLP.pack(d.length) + d
   }
 
+  HLP.unpackData = function unpackData(d) {
+    return d.substring(4)
+  }
+
   HLP.bigInt2bits = function bitInt2bits(bi) {
     bi = BigInt.dup(bi)
     var ba = ''
@@ -134,8 +138,8 @@
     return [n, data]
   }
 
-  function retMPI(n, data) {
-    var mpi = BigInt.str2bigInt('0', 10, n)
+  HLP.retMPI = function retMPI(data) {
+    var mpi = BigInt.str2bigInt('0', 10, data.length)
     data.forEach(function (d, i) {
       if (i) BigInt.leftShift_(mpi, 8)
       mpi[0] |= d
@@ -146,7 +150,7 @@
   HLP.readMPI = function readMPI(data) {
     data = HLP.toByteArray(data)
     data = HLP.readData(data)
-    return retMPI(data[0], data[1])
+    return HLP.retMPI(data[1])
   }
 
   HLP.parseStr = function parseStr(str) {
@@ -154,8 +158,18 @@
     str = HLP.toByteArray(str)
     while (str.length) {
       str = HLP.readData(str)
-      s.push(retMPI(str[0], str[1].splice(0, str[0])))
+      s.push(str[1].splice(0, str[0]))
       str = str[1]
+    }
+    return s
+  }
+
+  HLP.parseToStrs = function parseToStrs(str) {
+    var n, s = []
+    while (str.length) {
+      n = (HLP.readData(HLP.toByteArray(str.substring(0, 4))))[0] + 4
+      s.push(str.substring(0, n))
+      str = str.substring(n)
     }
     return s
   }

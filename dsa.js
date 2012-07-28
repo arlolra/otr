@@ -155,7 +155,7 @@
       str += hlp.packMPI(this.q)
       str += hlp.packMPI(this.g)
       str += hlp.packMPI(this.y)
-      return str
+      return hlp.packData(str)
     },
 
     hsign: function (hm) {
@@ -178,13 +178,14 @@
   }
 
   DSA.parsePublic = function (str) {
+    str = hlp.unpackData(str)
     str = str.substring(2)  // \x00\x00
     str = hlp.parseStr(str)
     return {
-        p: str[0]
-      , q: str[1]
-      , g: str[2]
-      , y: str[3]
+        p: hlp.retMPI(str[0])
+      , q: hlp.retMPI(str[1])
+      , g: hlp.retMPI(str[2])
+      , y: hlp.retMPI(str[3])
     }
   }
 

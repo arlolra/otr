@@ -106,12 +106,12 @@
       hmac.update(hlp.packMPI(gy))
       hmac.update(pk)
       hmac.update(kid)
-      return hmac.finalize()
+      return (hmac.finalize()).toString(HmacSHA256.enc.Latin1)
     },
 
     makeAes: function (pk, kid, mb, c) {
-      var sign = this.priv.sign(mb.toString(HmacSHA256.enc.Latin1))
-      var xb = pk + kid + hlp.bigInt2bits(sign[0]) + hlp.bigInt2bits(sign[1])
+      var sign = this.priv.sign(mb)
+      var xb = pk + kid + hlp.packMPI(sign[0]) + hlp.packMPI(sign[1])
       var opts = {
           mode: AES.mode.CTR
         , iv: AES.enc.Latin1.parse(0)
@@ -216,21 +216,21 @@
             , opts
           )
           var xb = aesctr.toString(AES.enc.Latin1)
-          // xb = hlp.parseStr(xb)
+          xb = hlp.parseToStrs(xb)
 
-          // mb = this.calculatePubkeyAuth(
-          //     this.gx
-          //   , this.dh.publicKey
-          //   , xb[0]
-          //   , xb[1]
-          //   , this.m1
-          // )
+          mb = this.calculatePubkeyAuth(
+              this.gx
+            , this.dh.publicKey
+            , xb[0]
+            , xb[1]
+            , this.m1
+          )
 
-          // var pubb = dsa.parsePublic(xb[0])
+          var pubb = dsa.parsePublic(xb[0])
 
-          // // verify sign mb
-          // if (!dsa.verify(pubb, mb, xb[3], xb[4]))
-          //   return this.error('Cannot verify signature of mb.')
+          // verify sign mb
+          if (!dsa.verify(pubb, mb, hlp.readMPI(xb[2]), hlp.readMPI(xb[3])))
+            return this.error('Cannot verify signature of mb.')
 
           this.keyId += 1
 
