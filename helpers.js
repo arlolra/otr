@@ -128,7 +128,7 @@
   }
 
   HLP.packMPI = function packMPI(mpi) {
-    return HLP.packData(HLP.bigInt2bits(mpi))
+    return HLP.packData(HLP.bigInt2bits(BigInt.trim(mpi, 0)))
   }
 
   HLP.readData = function readData(data) {

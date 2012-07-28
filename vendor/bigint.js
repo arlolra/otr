@@ -1526,4 +1526,5 @@ module.exports = {
   , randTruePrime : randTruePrime
   , millerRabin   : millerRabin
   , divide_       : divide_
+  , trim          : trim
 }

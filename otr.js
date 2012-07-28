@@ -84,6 +84,7 @@
       this.ALLOW_V2 = true
       this.keyId = 0
       this.priv = new dsa.Key()
+      this.dh = dh()
     },
 
     createAuthKeys: function(g) {
@@ -178,7 +179,6 @@
 
         case '\x02':
           // d-h key message
-          this.dh = dh()
           send.gy = hlp.packMPI(this.dh.publicKey)
           this.encrypted = msg.encrypted
           this.hashed = msg.hashed
@@ -279,7 +279,6 @@
        , version: '\x00\x02'
       }
 
-      this.dh = dh()
       var gxmpi = hlp.packMPI(this.dh.publicKey)
 
       this.r = hlp.randomValue()
