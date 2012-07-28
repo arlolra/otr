@@ -131,10 +131,48 @@
       return hlp.mask(mac.toString(HmacSHA256.enc.Latin1), 0, 160)
     },
 
+    verifySignMac: function (msg, m2, c, gx, gy, m1) {
+      // verify mac
+      var mac = this.makeMac(msg.aesctr, m2)
+      if (msg.mac !== mac) return 'MACs do not match.'
+
+      // decrypt x
+      var opts = {
+          mode: AES.mode.CTR
+        , iv: AES.enc.Latin1.parse(0)
+        , padding: AES.pad.NoPadding
+      }
+
+      var aesctr = AES.AES.decrypt(
+          msg.aesctr
+        , AES.enc.Latin1.parse(c)
+        , opts
+      )
+
+      var x = aesctr.toString(AES.enc.Latin1)
+      x = hlp.parseToStrs(x)
+
+      var m = this.calculatePubkeyAuth(gx, gy, x[0], x[1], m1)
+      var pub = dsa.parsePublic(x[0])
+
+      // verify sign m
+      if (!dsa.verify(pub, m, hlp.readMPI(x[2]), hlp.readMPI(x[3])))
+        return 'Cannot verify signature of m.'
+    },
+
+    makeM: function (send, g, m1, c, m2) {
+      var pk = this.priv.packPublic()
+      var kid = hlp.packData(hlp.pack(this.keyId))
+      var m = this.calculatePubkeyAuth(this.dh.publicKey, g, pk, kid, m1)
+      send.aesctr = this.makeAes(pk, kid, m, c)
+      send.mac = this.makeMac(send.aesctr, m2)
+    },
+
     handleAKE: function (msg, cb) {
-      var pass, mac, opts, mb, pk, kid
+      var opts
         , reply = true
         , send = {}
+        , err
 
       switch (msg.type) {
 
@@ -157,20 +195,8 @@
 
           this.createAuthKeys(this.gy)
           this.keyId += 1
+          this.makeM(send, this.gy, this.m1, this.c, this.m2)
 
-          pk = this.priv.packPublic()
-          kid = hlp.packData(hlp.pack(this.keyId))
-
-          mb = this.calculatePubkeyAuth(
-              this.dh.publicKey
-            , this.gy
-            , pk
-            , kid
-            , this.m1
-          )
-
-          send.aesctr = this.makeAes(pk, kid, mb, this.c)
-          send.mac = this.makeMac(send.aesctr, this.m2)
           send.r = hlp.packMPI(this.r)
           send.type = '\x11'
           send.version = '\x00\x02'
@@ -200,67 +226,34 @@
 
           this.createAuthKeys(this.gx)
 
-          // verify mac
-          pass = HmacSHA256.enc.Latin1.parse(this.m2)
-          mac = HmacSHA256.HmacSHA256(msg.aesctr, pass)
-          mac = hlp.mask(mac.toString(HmacSHA256.enc.Latin1), 0, 160)
-          if (msg.mac !== mac) return this.error('MACs do not match.')
-
-          // decrypt xb
-          opts = {
-              mode: AES.mode.CTR
-            , iv: AES.enc.Latin1.parse(0)
-            , padding: AES.pad.NoPadding
-          }
-          var aesctr = AES.AES.decrypt(
-              msg.aesctr
-            , AES.enc.Latin1.parse(this.c)
-            , opts
-          )
-          var xb = aesctr.toString(AES.enc.Latin1)
-          xb = hlp.parseToStrs(xb)
-
-          mb = this.calculatePubkeyAuth(
-              this.gx
+          err = this.verifySignMac(
+              msg
+            , this.m2
+            , this.c
+            , this.gx
             , this.dh.publicKey
-            , xb[0]
-            , xb[1]
             , this.m1
           )
-
-          var pubb = dsa.parsePublic(xb[0])
-
-          // verify sign mb
-          if (!dsa.verify(pubb, mb, hlp.readMPI(xb[2]), hlp.readMPI(xb[3])))
-            return this.error('Cannot verify signature of mb.')
+          if (err) return this.error(err)
 
           this.keyId += 1
+          this.makeM(send, this.gx, this.m1_prime, this.c_prime, this.m2_prime)
 
-          pk = this.priv.packPublic()
-          kid = hlp.packData(hlp.pack(this.keyId))
-
-          var ma = this.calculatePubkeyAuth(
-              this.dh.publicKey
-            , this.gx
-            , pk
-            , kid
-            , this.m1_prime
-          )
-
-          send.aesctr = this.makeAes(pk, kid, ma, this.c_prime)
-          send.mac = this.makeMac(send.aesctr, this.m2_prime)
           send.type = '\x12'
           send.version = '\x00\x02'
           break
 
         case '\x12':
           // data message
-
-          // verify mac
-          pass = HmacSHA256.enc.Latin1.parse(this.m2_prime)
-          mac = HmacSHA256.HmacSHA256(msg.aesctr, pass)
-          mac = hlp.mask(mac.toString(HmacSHA256.enc.Latin1), 0, 160)
-          if (msg.mac !== mac) return this.error('MACs do not match.')
+          err = this.verifySignMac(
+              msg
+            , this.m2_prime
+            , this.c_prime
+            , this.gy
+            , this.dh.publicKey
+            , this.m1_prime
+          )
+          if (err) return this.error(err)
 
           send.type = '\x03'
           send.version = '\x00\x02'
@@ -304,7 +297,6 @@
       send.hashed = hash.toString(SHA256.enc.Latin1)
 
       this.sendMsg(send, cb)
-
     },
 
     sendMsg: function (send, cb) {
