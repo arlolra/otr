@@ -109,24 +109,30 @@
       return (hmac.finalize()).toString(HmacSHA256.enc.Latin1)
     },
 
-    makeAes: function (pk, kid, mb, c) {
-      var sign = this.priv.sign(mb)
-      var xb = pk + kid + hlp.packMPI(sign[0]) + hlp.packMPI(sign[1])
+    makeAes: function (pk, kid, m, c) {
+      var sign = this.priv.sign(m)
+      var x = pk + kid + hlp.packMPI(sign[0]) + hlp.packMPI(sign[1])
       var opts = {
           mode: AES.mode.CTR
         , iv: AES.enc.Latin1.parse(0)
         , padding: AES.pad.NoPadding
       }
       var aesctr = AES.AES.encrypt(
-          AES.enc.Latin1.parse(xb)
+          AES.enc.Latin1.parse(x)
         , AES.enc.Latin1.parse(c)
         , opts
       )
       return aesctr.toString()
     },
 
+    makeMac: function (aesctr, m) {
+      var pass = HmacSHA256.enc.Latin1.parse(m)
+      var mac = HmacSHA256.HmacSHA256(aesctr, pass)
+      return hlp.mask(mac.toString(HmacSHA256.enc.Latin1), 0, 160)
+    },
+
     handleAKE: function (msg, cb) {
-      var pass, mac, opts, mb
+      var pass, mac, opts, mb, pk, kid
         , reply = true
         , send = {}
 
@@ -152,8 +158,8 @@
           this.createAuthKeys(this.gy)
           this.keyId += 1
 
-          var pk = this.priv.packPublic()
-            , kid = hlp.packData(hlp.pack(this.keyId))
+          pk = this.priv.packPublic()
+          kid = hlp.packData(hlp.pack(this.keyId))
 
           mb = this.calculatePubkeyAuth(
               this.dh.publicKey
@@ -164,11 +170,7 @@
           )
 
           send.aesctr = this.makeAes(pk, kid, mb, this.c)
-
-          pass = HmacSHA256.enc.Latin1.parse(this.m2)
-          mac = HmacSHA256.HmacSHA256(send.aesctr, pass)
-          send.mac = hlp.mask(mac.toString(HmacSHA256.enc.Latin1), 0, 160)
-
+          send.mac = this.makeMac(send.aesctr, this.m2)
           send.r = hlp.packMPI(this.r)
           send.type = '\x11'
           send.version = '\x00\x02'
@@ -234,6 +236,19 @@
 
           this.keyId += 1
 
+          pk = this.priv.packPublic()
+          kid = hlp.packData(hlp.pack(this.keyId))
+
+          var ma = this.calculatePubkeyAuth(
+              this.dh.publicKey
+            , this.gx
+            , pk
+            , kid
+            , this.m1_prime
+          )
+
+          send.aesctr = this.makeAes(pk, kid, ma, this.c_prime)
+          send.mac = this.makeMac(send.aesctr, this.m2_prime)
           send.type = '\x12'
           send.version = '\x00\x02'
           reply = false
