@@ -251,13 +251,23 @@
           send.mac = this.makeMac(send.aesctr, this.m2_prime)
           send.type = '\x12'
           send.version = '\x00\x02'
-          reply = false
           break
 
         case '\x12':
           // data message
+
+          // verify mac
+          pass = HmacSHA256.enc.Latin1.parse(this.m2_prime)
+          mac = HmacSHA256.HmacSHA256(msg.aesctr, pass)
+          mac = hlp.mask(mac.toString(HmacSHA256.enc.Latin1), 0, 160)
+          if (msg.mac !== mac) return this.error('MACs do not match.')
+
           send.type = '\x03'
           send.version = '\x00\x02'
+          break
+
+        case '\x03':
+          reply = false
           break
 
         default:
