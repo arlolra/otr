@@ -177,8 +177,15 @@
 
   }
 
-  DSA.parsePublic = function () {
-    
+  DSA.parsePublic = function (str) {
+    str = str.substring(2)  // \x00\x00
+    str = hlp.parseStr(str)
+    return {
+        p: str[0]
+      , q: str[1]
+      , g: str[2]
+      , y: str[3]
+    }
   }
 
   DSA.verify = function (key, m, r, s) {

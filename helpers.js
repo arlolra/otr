@@ -128,21 +128,36 @@
   }
 
   HLP.readData = function readData(data) {
-    data = HLP.toByteArray(data)
     var n = (data.splice(0, 4)).reduce(function (p, n) {
       p <<= 8; return p | n
     }, 0)
     return [n, data]
   }
 
-  HLP.readMPI = function readMPI(data) {
-    data = HLP.readData(data)
-    var mpi = BigInt.str2bigInt('0', 10, data[0])
-    data[1].forEach(function (d, i) {
+  function retMPI(n, data) {
+    var mpi = BigInt.str2bigInt('0', 10, n)
+    data.forEach(function (d, i) {
       if (i) BigInt.leftShift_(mpi, 8)
       mpi[0] |= d
     })
     return mpi
+  }
+
+  HLP.readMPI = function readMPI(data) {
+    data = HLP.toByteArray(data)
+    data = HLP.readData(data)
+    return retMPI(data[0], data[1])
+  }
+
+  HLP.parseStr = function parseStr(str) {
+    var s = []
+    str = HLP.toByteArray(str)
+    while (str.length) {
+      str = HLP.readData(str)
+      s.push(retMPI(str[0], str[1].splice(0, str[0])))
+      str = str[1]
+    }
+    return s
   }
 
   // https://github.com/msgpack/msgpack-javascript/blob/master/msgpack.js

@@ -22,3 +22,9 @@ console.log('counter: ' + key.counter)
 
 var s = key.sign('abc')
 assert.equal(1, dsa.verify(key, 'abc', s[0], s[1]), 'Verify signed message.')
+
+var par = dsa.parsePublic(key.packPublic())
+assert.ok(BigInt.equals(key.p, par.p), 'Pees are good.')
+assert.ok(BigInt.equals(key.q, par.q), 'Qs.')
+assert.ok(BigInt.equals(key.g, par.g), 'Gs.')
+assert.ok(BigInt.equals(key.y, par.y), 'Ys.')
