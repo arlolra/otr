@@ -21,4 +21,4 @@ console.log('g: ' + BigInt.bigInt2str(key.g, 10))
 console.log('counter: ' + key.counter)
 
 var s = key.sign('abc')
-assert.equal(1, key.verify('abc', s[0], s[1]), 'Verify signed message.')
+assert.equal(1, dsa.verify(key, 'abc', s[0], s[1]), 'Verify signed message.')

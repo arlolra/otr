@@ -86,8 +86,8 @@
       this.priv = new dsa.Key()
     },
 
-    createAuthKeys: function() {
-      var s = BigInt.powMod(this.gy, this.dh.privateKey, N)
+    createAuthKeys: function(g) {
+      var s = BigInt.powMod(g, this.dh.privateKey, N)
       var secbytes = hlp.packMPI(s)
       this.ssid = hlp.mask(hlp.h2('\x00', secbytes), 0, 64)  // first 64-bits
       var tmp = hlp.h2('\x01', secbytes)
@@ -99,16 +99,17 @@
       this.m2_prime = hlp.h2('\x05', secbytes)
     },
 
-    calculatePubkeyAuth: function(c, m) {
+    calculatePubkeyAuth: function(gx, gy, pk, kid, m) {
       var pass = HmacSHA256.enc.Latin1.parse(m)
       var hmac = HmacSHA256.algo.HMAC.create(HmacSHA256.algo.SHA256, pass)
-      hmac.update(hlp.packMPI(this.dh.publicKey))
-      hmac.update(hlp.packMPI(this.gy))
-      var pk = this.priv.packPublic()
+      hmac.update(hlp.packMPI(gx))
+      hmac.update(hlp.packMPI(gy))
       hmac.update(pk)
-      var kid = hlp.packData(hlp.pack(this.keyId))
       hmac.update(kid)
-      var mb = hmac.finalize()
+      return hmac.finalize()
+    },
+
+    makeAes: function (pk, kid, mb, c) {
       var sign = this.priv.sign(mb.toString(HmacSHA256.enc.Latin1))
       var xb = pk + kid + hlp.bigInt2bits(sign[0]) + hlp.bigInt2bits(sign[1])
       var opts = {
@@ -125,7 +126,7 @@
     },
 
     handleAKE: function (msg, cb) {
-      var pass, mac, opts
+      var pass, mac, opts, mb
         , reply = true
         , send = {}
 
@@ -148,10 +149,21 @@
           // verify gy is legal 2 <= gy <= N-2
           if (!checkGroup(this.gy)) return this.error('Illegal g^y.')
 
-          this.createAuthKeys()
+          this.createAuthKeys(this.gy)
           this.keyId += 1
 
-          send.aesctr = this.calculatePubkeyAuth(this.c, this.m1)
+          var pk = this.priv.packPublic()
+            , kid = hlp.packData(hlp.pack(this.keyId))
+
+          mb = this.calculatePubkeyAuth(
+              this.dh.publicKey
+            , this.gy
+            , pk
+            , kid
+            , this.m1
+          )
+
+          send.aesctr = this.makeAes(pk, kid, mb, this.c)
 
           pass = HmacSHA256.enc.Latin1.parse(this.m2)
           mac = HmacSHA256.HmacSHA256(send.aesctr, pass)
@@ -174,17 +186,17 @@
           }
           var gxmpi = AES.AES.decrypt(this.encrypted, key, opts)
           gxmpi = gxmpi.toString(AES.enc.Latin1)
-          this.gy = hlp.readMPI(gxmpi)
+          this.gx = hlp.readMPI(gxmpi)
 
           // verify hash
           var hash = SHA256.SHA256(gxmpi)
           if (this.hashed !== hash.toString(SHA256.enc.Latin1))
             return this.error('Hashed g^x does not match.')
 
-          // verify gy is legal 2 <= gy <= N-2
-          if (!checkGroup(this.gy)) return this.error('Illegal g^y.')
+          // verify gx is legal 2 <= gy <= N-2
+          if (!checkGroup(this.gx)) return this.error('Illegal g^x.')
 
-          this.createAuthKeys()
+          this.createAuthKeys(this.gx)
 
           // verify mac
           pass = HmacSHA256.enc.Latin1.parse(this.m2)
@@ -204,6 +216,23 @@
             , opts
           )
           var xb = aesctr.toString(AES.enc.Latin1)
+          // xb = hlp.parseStr(xb)
+
+          // mb = this.calculatePubkeyAuth(
+          //     this.gx
+          //   , this.dh.publicKey
+          //   , xb[0]
+          //   , xb[1]
+          //   , this.m1
+          // )
+
+          // var pubb = dsa.parsePublic(xb[0])
+
+          // // verify sign mb
+          // if (!dsa.verify(pubb, mb, xb[3], xb[4]))
+          //   return this.error('Cannot verify signature of mb.')
+
+          this.keyId += 1
 
           send.type = '\x12'
           send.version = '\x00\x02'
