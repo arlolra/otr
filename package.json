@@ -4,7 +4,7 @@
   "description": "Off-the-Record Messaging Protocol v2",
   "main": "otr.js",
   "scripts": {
-    "test": "test/run.sh"
+    "test": "./node_modules/.bin/mocha -R spec test/spec/unit/*.js"
   },
   "repository": {
     "type": "git",
@@ -19,6 +19,9 @@
     "socialist millionaire",
     "dsa"
   ],
+  "devDependencies": {
+    "mocha": "*"
+  },
   "author": "Arlo Breault",
   "license": "LGPL"
 }
