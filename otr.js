@@ -332,16 +332,17 @@
       }
 
       var ind = start + OTR_TAG.length
+      var com = msg[ind]
 
       // message fragment
-      if (msg[ind] === ',') {
+      if (com === ',') {
         return this.msgFragment(msg.substring(ind + 1))
       }
 
       this.initFragment()
 
       // query message
-      if (~['?', 'v'].indexOf(msg[ind])) {
+      if (~['?', 'v'].indexOf(com)) {
 
         var wi = ind
 
@@ -369,7 +370,17 @@
         return ''
       }
 
-      return "OTR"
+      // otr message
+      if (com === ':') {
+        msg = 'OTR'
+      }
+
+      // error message
+      if (msg.substring(ind, ind + 7) === ' Error:') {
+        return new Error(msg.substring(ind + 7))
+      }
+
+      return msg
     },
 
     initFragment: function () {
@@ -408,7 +419,7 @@
       if (n === k) {
         msg = this.fragment
         this.initFragment()
-        return msg
+        return this.parseMsg(msg)
       }
 
       return ''
