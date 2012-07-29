@@ -14,12 +14,12 @@
 
   var BigInt = root.BigInt
     , SHA1 = root.SHA1
-    , hlp = root.hlp
+    , HLP = root.HLP
 
   if (typeof require !== 'undefined') {
     BigInt || (BigInt = require('./vendor/bigint.js'))
     SHA1 || (SHA1 = require('./vendor/sha1.js'))
-    hlp || (hlp = require('./helpers.js'))
+    HLP || (HLP = require('./helpers.js'))
   }
 
   var ZERO = BigInt.str2bigInt('0', 10)
@@ -28,7 +28,7 @@
 
   function makeRandom(min, max) {
     var c = BigInt.randBigInt(BigInt.bitSize(max))
-    if (!hlp.between(c, min, max)) return makeRandom(min, max)
+    if (!HLP.between(c, min, max)) return makeRandom(min, max)
     return c
   }
 
@@ -75,17 +75,17 @@
       var g = this.N
       this.seed = BigInt.randBigInt(this.N)
 
-      var u = (SHA1.SHA1(hlp.bigInt2bits(this.seed))).toString(SHA1.enc.Hex)
-      var tmp = BigInt.mod(BigInt.add(this.seed, ONE), hlp.twotothe(g))
-      tmp = (SHA1.SHA1(hlp.bigInt2bits(tmp))).toString(SHA1.enc.Hex)
-      u = hlp.bigBitWise(
+      var u = (SHA1.SHA1(HLP.bigInt2bits(this.seed))).toString(SHA1.enc.Hex)
+      var tmp = BigInt.mod(BigInt.add(this.seed, ONE), HLP.twotothe(g))
+      tmp = (SHA1.SHA1(HLP.bigInt2bits(tmp))).toString(SHA1.enc.Hex)
+      u = HLP.bigBitWise(
           'XOR'
         , BigInt.str2bigInt(tmp, 16)
         , BigInt.str2bigInt(u, 16)
       )
 
-      this.q = hlp.bigBitWise('OR', u, hlp.twotothe(g - 1))
-      this.q = hlp.bigBitWise('OR', this.q, ONE)
+      this.q = HLP.bigBitWise('OR', u, HLP.twotothe(g - 1))
+      this.q = HLP.bigBitWise('OR', this.q, ONE)
 
       if (!MR(this.q)) return this.makePQ()
 
@@ -111,16 +111,16 @@
             cache_seed_plus_offset
           , BigInt.str2bigInt(i.toString(), 10)
         )
-        V = SHA1.SHA1(hlp.bigInt2bits(BigInt.mod(V, hlp.twotothe(g))))
+        V = SHA1.SHA1(HLP.bigInt2bits(BigInt.mod(V, HLP.twotothe(g))))
         V = BigInt.str2bigInt(V.toString(SHA1.enc.Hex), 16)
-        if (i === n) V = BigInt.mod(V, hlp.twotothe(b))
-        V = BigInt.mult(V, hlp.twotothe(g * i))
+        if (i === n) V = BigInt.mod(V, HLP.twotothe(b))
+        V = BigInt.mult(V, HLP.twotothe(g * i))
         W = BigInt.add(W, V)
       }
 
-      var Lminus = hlp.twotothe(this.L - 1)
+      var Lminus = HLP.twotothe(this.L - 1)
       var X = BigInt.add(W, Lminus)
-      // console.log(hlp.between(X, Lminus, hlp.twotothe(this.L)))
+      // console.log(HLP.between(X, Lminus, HLP.twotothe(this.L)))
 
       var c = BigInt.mod(X, BigInt.mult(TWO, this.q))
       this.p = BigInt.sub(X, BigInt.sub(c, ONE))
@@ -151,11 +151,11 @@
 
     packPublic: function () {
       var str = '\x00\x00'
-      str += hlp.packMPI(this.p)
-      str += hlp.packMPI(this.q)
-      str += hlp.packMPI(this.g)
-      str += hlp.packMPI(this.y)
-      return hlp.packData(str)
+      str += HLP.packMPI(this.p)
+      str += HLP.packMPI(this.q)
+      str += HLP.packMPI(this.g)
+      str += HLP.packMPI(this.y)
+      return HLP.packData(str)
     },
 
     hsign: function (hm) {
@@ -178,19 +178,19 @@
   }
 
   DSA.parsePublic = function (str) {
-    str = hlp.unpackData(str)
+    str = HLP.unpackData(str)
     str = str.substring(2)  // \x00\x00
-    str = hlp.parseStr(str)
+    str = HLP.parseStr(str)
     return {
-        p: hlp.retMPI(str[0])
-      , q: hlp.retMPI(str[1])
-      , g: hlp.retMPI(str[2])
-      , y: hlp.retMPI(str[3])
+        p: HLP.retMPI(str[0])
+      , q: HLP.retMPI(str[1])
+      , g: HLP.retMPI(str[2])
+      , y: HLP.retMPI(str[3])
     }
   }
 
   DSA.verify = function (key, m, r, s) {
-    if (!hlp.between(r, ZERO, key.q) || !hlp.between(s, ZERO, key.q))
+    if (!HLP.between(r, ZERO, key.q) || !HLP.between(s, ZERO, key.q))
       return false
 
     var hm = SHA1.SHA1(m)

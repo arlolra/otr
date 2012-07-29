@@ -1,12 +1,12 @@
 var assert = require('assert')
-  , hlp = require('../helpers.js')
-  , dsa = require('../dsa.js')
+  , HLP = require('../helpers.js')
+  , DSA = require('../dsa.js')
   , BigInt = require('../vendor/bigint.js')
 
-var key = new dsa.Key()
+var key = new DSA.Key()
 
 assert.ok(
-	hlp.between(key.q, hlp.twotothe(159), hlp.twotothe(160)),'In between.')
+	HLP.between(key.q, HLP.twotothe(159), HLP.twotothe(160)),'In between.')
 
 var quotient = BigInt.str2bigInt('0', 10, BigInt.bitSize(key.p))
   , remainder = BigInt.str2bigInt('0', 10, BigInt.bitSize(key.p))
@@ -21,9 +21,9 @@ console.log('g: ' + BigInt.bigInt2str(key.g, 10))
 console.log('counter: ' + key.counter)
 
 var s = key.sign('abc')
-assert.equal(1, dsa.verify(key, 'abc', s[0], s[1]), 'Verify signed message.')
+assert.equal(1, DSA.verify(key, 'abc', s[0], s[1]), 'Verify signed message.')
 
-var par = dsa.parsePublic(key.packPublic())
+var par = DSA.parsePublic(key.packPublic())
 assert.ok(BigInt.equals(key.p, par.p), 'Pees are good.')
 assert.ok(BigInt.equals(key.q, par.q), 'Qs.')
 assert.ok(BigInt.equals(key.g, par.g), 'Gs.')

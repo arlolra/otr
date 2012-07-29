@@ -13,8 +13,9 @@
     , HmacSHA256 = root.HmacSHA256
     , BigInt = root.BigInt
     , DH = root.DH
-    , hlp = root.hlp
-    , dsa = root.dsa
+    , HLP = root.HLP
+    , DSA = root.DSA
+    , ParseOTR = root.ParseOTR
 
   if (typeof require !== 'undefined') {
     AES || (AES = require('./vendor/aes.js'))
@@ -22,8 +23,9 @@
     SHA256 || (SHA256 = require('./vendor/sha256.js'))
     HmacSHA256 || (HmacSHA256 = require('./vendor/hmac-sha256.js'))
     DH || (DH = require('./dh.json'))
-    hlp || (hlp = require('./helpers.js'))
-    dsa || (dsa = require('./dsa.js'))
+    HLP || (HLP = require('./helpers.js'))
+    DSA || (DSA = require('./dsa.js'))
+    ParseOTR || (ParseOTR = require('./parse.js'))
 
     // ctr mode
     require('./vendor/mode-ctr.js')(AES)
@@ -44,10 +46,6 @@
     , AUTHSTATE_AWAITING_SIG = 3
     , AUTHSTATE_V1_SETUP = 4
 
-  // otr versions
-  var OTR_VERSION_1 = '\x00\x01'
-  var OTR_VERSION_2 = '\x00\x02'
-
   // diffie-hellman modulus and generator
   // see group 5, RFC 3526
   var G = BigInt.str2bigInt(DH.G, 10)
@@ -55,12 +53,9 @@
   var TWO = BigInt.str2bigInt('2', 10)
   var N_MINUS_2 = BigInt.sub(N, TWO)
 
-  // tags
-  var OTR_TAG = '?OTR'
-
   // some helpers
   function checkGroup(g) {
-    return hlp.GTOE(g, TWO) && hlp.GTOE(N_MINUS_2, g)
+    return HLP.GTOE(g, TWO) && HLP.GTOE(N_MINUS_2, g)
   }
 
   function dh() {
@@ -70,18 +65,15 @@
   }
 
   // OTR contructor
-  function OTR() {
-    if (!(this instanceof OTR)) return new OTR()
+  function OTR(priv) {
+    if (!(this instanceof OTR)) return new OTR(priv)
 
-    // this.init()
-    this.initFragment()
-    this.versions = {}
+    if (priv && !(priv instanceof DSA.Key))
+      throw new Error('Requires ')
 
-    // bind methods
-    var self = this
-    ;['sendMsg', 'receiveMsg'].forEach(function (meth) {
-      self[meth] = self[meth].bind(self)
-    })
+    this.priv = priv ? priv : new DSA.Key()
+
+    this.init()
   }
 
   OTR.prototype = {
@@ -93,29 +85,45 @@
       this.authstate = AUTHSTATE_NONE
       this.ALLOW_V1 = false
       this.ALLOW_V2 = true
-      this.keyId = 0
-      this.priv = new dsa.Key()
-      this.dh = dh()
+
+      this.initFragment()
+
+      this.versions = {}
+      this.otrEnabled = false
+
+      this.ackKeys = {
+          myLatest: { key: {}, id: 0 }
+        , theirLatest: { key: {}, id: 0 }
+      }
+      this.counter = 0
+
+      // key management
+      this.their_y = {}
+      this.our_dh = {
+          '0': dh()
+        , '1': dh()
+      }
+      this.our_keyid = 2
     },
 
     createAuthKeys: function(g) {
-      var s = BigInt.powMod(g, this.dh.privateKey, N)
-      var secbytes = hlp.packMPI(s)
-      this.ssid = hlp.mask(hlp.h2('\x00', secbytes), 0, 64)  // first 64-bits
-      var tmp = hlp.h2('\x01', secbytes)
-      this.c = hlp.mask(tmp, 0, 128)  // first 128-bits
-      this.c_prime = hlp.mask(tmp, 128, 128)  // second 128-bits
-      this.m1 = hlp.h2('\x02', secbytes)
-      this.m2 = hlp.h2('\x03', secbytes)
-      this.m1_prime = hlp.h2('\x04', secbytes)
-      this.m2_prime = hlp.h2('\x05', secbytes)
+      var s = BigInt.powMod(g, this.our_dh[this.our_keyid - 1].privateKey, N)
+      var secbytes = HLP.packMPI(s)
+      this.ssid = HLP.mask(HLP.h2('\x00', secbytes), 0, 64)  // first 64-bits
+      var tmp = HLP.h2('\x01', secbytes)
+      this.c = HLP.mask(tmp, 0, 128)  // first 128-bits
+      this.c_prime = HLP.mask(tmp, 128, 128)  // second 128-bits
+      this.m1 = HLP.h2('\x02', secbytes)
+      this.m2 = HLP.h2('\x03', secbytes)
+      this.m1_prime = HLP.h2('\x04', secbytes)
+      this.m2_prime = HLP.h2('\x05', secbytes)
     },
 
     calculatePubkeyAuth: function(gx, gy, pk, kid, m) {
       var pass = HmacSHA256.enc.Latin1.parse(m)
       var hmac = HmacSHA256.algo.HMAC.create(HmacSHA256.algo.SHA256, pass)
-      hmac.update(hlp.packMPI(gx))
-      hmac.update(hlp.packMPI(gy))
+      hmac.update(HLP.packMPI(gx))
+      hmac.update(HLP.packMPI(gy))
       hmac.update(pk)
       hmac.update(kid)
       return (hmac.finalize()).toString(HmacSHA256.enc.Latin1)
@@ -123,7 +131,7 @@
 
     makeAes: function (pk, kid, m, c) {
       var sign = this.priv.sign(m)
-      var x = pk + kid + hlp.packMPI(sign[0]) + hlp.packMPI(sign[1])
+      var x = pk + kid + HLP.packMPI(sign[0]) + HLP.packMPI(sign[1])
       var opts = {
           mode: AES.mode.CTR
         , iv: AES.enc.Latin1.parse(0)
@@ -140,7 +148,7 @@
     makeMac: function (aesctr, m) {
       var pass = HmacSHA256.enc.Latin1.parse(m)
       var mac = HmacSHA256.HmacSHA256(aesctr, pass)
-      return hlp.mask(mac.toString(HmacSHA256.enc.Latin1), 0, 160)
+      return HLP.mask(mac.toString(HmacSHA256.enc.Latin1), 0, 160)
     },
 
     verifySignMac: function (msg, m2, c, gx, gy, m1) {
@@ -162,25 +170,33 @@
       )
 
       var x = aesctr.toString(AES.enc.Latin1)
-      x = hlp.parseToStrs(x)
+      x = HLP.parseToStrs(x)
 
       var m = this.calculatePubkeyAuth(gx, gy, x[0], x[1], m1)
-      var pub = dsa.parsePublic(x[0])
+      var pub = DSA.parsePublic(x[0])
 
       // verify sign m
-      if (!dsa.verify(pub, m, hlp.readMPI(x[2]), hlp.readMPI(x[3])))
+      if (!DSA.verify(pub, m, HLP.readMPI(x[2]), HLP.readMPI(x[3])))
         return 'Cannot verify signature of m.'
     },
 
     makeM: function (send, g, m1, c, m2) {
       var pk = this.priv.packPublic()
-      var kid = hlp.packData(hlp.pack(this.keyId))
-      var m = this.calculatePubkeyAuth(this.dh.publicKey, g, pk, kid, m1)
+      var kid = HLP.packData(HLP.pack(this.our_keyid - 1))
+      var m = this.calculatePubkeyAuth(this.our_dh[this.our_keyid - 1].publicKey, g, pk, kid, m1)
       send.aesctr = this.makeAes(pk, kid, m, c)
       send.mac = this.makeMac(send.aesctr, m2)
     },
 
-    handleAKE: function (msg, cb) {
+    updateMyKey: function () {
+      this.ackKeys.myLatest = {
+          key: this.our_dh[this.our_keyid - 1]
+        , id: this.our_keyid - 1
+      }
+      this.our_keyid += 1
+    },
+
+    handleAKE: function (msg) {
       var opts
         , reply = true
         , send = {}
@@ -190,7 +206,7 @@
 
         case '\x02':
           // d-h key message
-          send.gy = hlp.packMPI(this.dh.publicKey)
+          send.gy = HLP.packMPI(this.our_dh[this.our_keyid - 1].publicKey)
           this.encrypted = msg.encrypted
           this.hashed = msg.hashed
           send.type = '\x0a'
@@ -199,23 +215,23 @@
 
         case '\x0a':
           // reveal signature message
-          this.gy = hlp.readMPI(msg.gy)
+          this.gy = HLP.readMPI(msg.gy)
 
           // verify gy is legal 2 <= gy <= N-2
           if (!checkGroup(this.gy)) return this.error('Illegal g^y.')
 
           this.createAuthKeys(this.gy)
-          this.keyId += 1
+          this.updateMyKey()
           this.makeM(send, this.gy, this.m1, this.c, this.m2)
 
-          send.r = hlp.packMPI(this.r)
+          send.r = HLP.packMPI(this.r)
           send.type = '\x11'
           send.version = '\x00\x02'
           break
 
         case '\x11':
           // signature message
-          this.r = hlp.readMPI(msg.r)
+          this.r = HLP.readMPI(msg.r)
 
           var key = AES.enc.Hex.parse(BigInt.bigInt2str(this.r, 16))
           opts = {
@@ -225,7 +241,7 @@
           }
           var gxmpi = AES.AES.decrypt(this.encrypted, key, opts)
           gxmpi = gxmpi.toString(AES.enc.Latin1)
-          this.gx = hlp.readMPI(gxmpi)
+          this.gx = HLP.readMPI(gxmpi)
 
           // verify hash
           var hash = SHA256.SHA256(gxmpi)
@@ -242,12 +258,12 @@
             , this.m2
             , this.c
             , this.gx
-            , this.dh.publicKey
+            , this.our_dh[this.our_keyid - 1].publicKey
             , this.m1
           )
           if (err) return this.error(err)
 
-          this.keyId += 1
+          this.updateMyKey()
           this.makeM(send, this.gx, this.m1_prime, this.c_prime, this.m2_prime)
 
           send.type = '\x12'
@@ -261,7 +277,7 @@
             , this.m2_prime
             , this.c_prime
             , this.gy
-            , this.dh.publicKey
+            , this.our_dh[this.our_keyid - 1].publicKey
             , this.m1_prime
           )
           if (err) return this.error(err)
@@ -271,28 +287,26 @@
           break
 
         case '\x03':
-          reply = false
           break
 
         default:
-          this.error('Invalid message type.')
-          reply = false
+          return this.error('Invalid message type.')
 
       }
 
-      if (reply) this.sendMsg(send, cb)
+      return send
     },
 
-    initiateAKE: function (cb) {
+    initiateAKE: function () {
       // d-h commit message
       var send = {
          type: '\x02'
        , version: '\x00\x02'
       }
 
-      var gxmpi = hlp.packMPI(this.dh.publicKey)
+      var gxmpi = HLP.packMPI(this.our_dh[this.our_keyid - 1].publicKey)
 
-      this.r = hlp.randomValue()
+      this.r = HLP.randomValue()
       var key = AES.enc.Hex.parse(BigInt.bigInt2str(this.r, 16))
       var opts = {
           mode: AES.mode.CTR
@@ -306,142 +320,56 @@
       var hash = SHA256.SHA256(gxmpi)
       send.hashed = hash.toString(SHA256.enc.Latin1)
 
-      this.sendMsg(send, cb)
+      this.sendMsg(send)
     },
 
-    sendMsg: function (send, cb) {
-      console.log('sending')
-      cb(send, this.receiveMsg)
+    prepareMsg: function (msg) {
+      var key_a = this.ackKeys.myLatest.key
+      var keyid_a = this.ackKeys.myLatest.id
+
+      if (this.keyId === keyid_a) {
+        this.next_dh = dh()
+        this.next_keyid = keyid_a + 1
+      }
+
+      var key_b = this.ackKeys.theirLatest.key
+      var keyid_b = this.ackKeys.theirLatest.id
+
+      // var ek
+      // var mk
+
+      var oldMacKeys = []
+      oldMacKeys = oldMacKeys.reduce(function (p, c) {
+        p += HLP.packMPI(c)
+      }, '')
+
+      this.counter += 1
+      var ctr = this.counter
+
+      function packKey(k) {
+        return HLP.packData(HLP.pack(k))
+      }
+
+      var ta = packKey(keyid_a)
+      ta += packKey(keyid_b)
+      ta += HLP.packMPI(this.next_dh.publicKey)
+      ta += packKey(ctr)
+
+      var send = ta + ta + oldMacKeys
+      return send
     },
 
-    receiveMsg: function (msg, cb) {
-      if (typeof cb !== 'function')
-        throw new Error('Nowhere to go?')
+    sendMsg: function (msg) {
+      if (this.otrEnabled) msg = this.prepareMsg(msg)
+      return msg
+    },
 
-      this.handleAKE(msg, cb)
+    receiveMsg: function (msg) {
+      return this.handleAKE(msg)
     },
 
     error: function (err) {
       console.log(err)
-    },
-
-    parseMsg: function (msg) {
-
-      // is this otr?
-      var start = msg.indexOf(OTR_TAG)
-      if (!~start) {
-        // check for tags
-        this.initFragment()
-        return msg
-      }
-
-      var ind = start + OTR_TAG.length
-      var com = msg[ind]
-
-      // message fragment
-      if (com === ',') {
-        return this.msgFragment(msg.substring(ind + 1))
-      }
-
-      this.initFragment()
-
-      // query message
-      if (~['?', 'v'].indexOf(com)) {
-
-        // version 1
-        if (msg[ind] === '?') {
-          this.versions['1'] = true
-          ind += 1
-        }
-
-        // other versions
-        var qs = msg.substring(ind + 1)
-        var qi = qs.indexOf('?')
-
-        if (qi < 1) return ''
-
-        qs = qs.substring(0, qi).split('')
-        var self = this
-
-        if (msg[ind] === 'v') {
-          qs.forEach(function (q) {
-            self.versions[q] = true
-          })
-        }
-
-        return ''
-      }
-
-      // otr message
-      if (com === ':') {
-
-        var info = msg.substring(ind + 1, ind + 5)
-        if (info.length < 4) return msg
-        info = AES.enc.Base64.parse(info).toString(AES.enc.Latin1)
-
-        var version = info.substring(0, 2)
-        var type = info.substring(2)
-
-        // only supporting otr version 2
-        if (version !== OTR_VERSION_2) return msg
-
-        var end = msg.substring(ind + 4).indexOf('.')
-        if (!~end) return msg
-
-        return this.handle(version, type, msg.substring(ind + 4, end))
-      }
-
-      // error message
-      if (msg.substring(ind, ind + 7) === ' Error:') {
-        return new Error(msg.substring(ind + 7))
-      }
-
-      return msg
-    },
-
-    handle: function (version, type, msg) {
-      return 'OTR'
-    },
-
-    initFragment: function () {
-      this.fragment = ''
-      this.fragInfo = { j: 0, k: 0 }
-    },
-
-    msgFragment: function (msg) {
-      msg = msg.split(',')
-
-      if (msg.length < 4 ||
-        isNaN(parseInt(msg[0], 10)) ||
-        isNaN(parseInt(msg[1], 10))
-      ) return ''
-
-      var k = parseInt(msg[0], 10)
-      var n = parseInt(msg[1], 10)
-      msg = msg[2]
-
-      if (n < k || n === 0 || k === 0) {
-        this.initFragment()
-        return ''
-      }
-
-      if (k === 1) {
-        this.initFragment()
-        this.fragment = msg
-        this.fragInfo = { k: 1, n: n }
-      } else if (n === this.fragInfo.n && k === (this.fragInfo.k + 1)) {
-        this.fragment += msg
-        this.fragInfo.k += 1
-      } else {
-        this.initFragment()
-      }
-
-      if (n === k) {
-        msg = this.fragment
-        this.initFragment()
-        return this.parseMsg(msg)
-      }
-
       return ''
     }
 
