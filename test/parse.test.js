@@ -1,7 +1,6 @@
 var assert = require('assert')
   , OTR = function () { this.versions = {} }  // just a constructor
-  , P = require('../../../parse.js')
-
+  , P = require('../parse.js')
 
 describe('OTR', function(){
   var otr;
@@ -52,7 +51,6 @@ describe('OTR', function(){
     assert.ok(otr.versions['4'], 'version 2, 4, x')
     assert.ok(otr.versions.x, 'version 2, 4, x')
   });
-
 
   it('should parse otr "Version 2, 4, x" query message', function(){
     P.parseMsg(otr, '?OTR?v24x?')
