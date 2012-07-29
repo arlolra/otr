@@ -326,6 +326,7 @@
       var start = msg.indexOf(OTR_TAG)
       if (!~start) {
         // check for tags
+        this.initFragment()
         return msg
       }
 
@@ -335,6 +336,8 @@
       if (msg[ind] === ',') {
         return this.msgFragment(msg.substring(ind + 1))
       }
+
+      this.initFragment()
 
       return "OTR"
     },
@@ -352,27 +355,27 @@
         isNaN(parseInt(msg[1], 10))
       ) return ''
 
-      var j = parseInt(msg[0], 10)
-      var k = parseInt(msg[1], 10)
+      var k = parseInt(msg[0], 10)
+      var n = parseInt(msg[1], 10)
       msg = msg[2]
 
-      if (k < j || j === 0 || k === 0) {
+      if (n < k || n === 0 || k === 0) {
         this.initFragment()
         return ''
       }
 
-      if (j === 1) {
+      if (k === 1) {
         this.initFragment()
         this.fragment = msg
-        this.fragInfo = { j: 1, k: k }
-      } else if (k === this.fragInfo.k && j === (this.fragInfo.j + 1)) {
+        this.fragInfo = { k: 1, n: n }
+      } else if (n === this.fragInfo.n && k === (this.fragInfo.k + 1)) {
         this.fragment += msg
-        this.fragInfo.j += 1
+        this.fragInfo.k += 1
       } else {
         this.initFragment()
       }
 
-      if (j === k) {
+      if (n === k) {
         msg = this.fragment
         this.initFragment()
         return msg
