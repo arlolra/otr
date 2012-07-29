@@ -44,6 +44,10 @@
     , AUTHSTATE_AWAITING_SIG = 3
     , AUTHSTATE_V1_SETUP = 4
 
+  // otr versions
+  var OTR_VERSION_1 = '\x00\x01'
+  var OTR_VERSION_2 = '\x00\x02'
+
   // diffie-hellman modulus and generator
   // see group 5, RFC 3526
   var G = BigInt.str2bigInt(DH.G, 10)
@@ -377,6 +381,9 @@
 
         var version = info.substring(0, 2)
         var type = info.substring(2)
+
+        // only supporting otr version 2
+        if (version !== OTR_VERSION_2) return msg
 
         var end = msg.substring(ind + 4).indexOf('.')
         if (!~end) return msg
