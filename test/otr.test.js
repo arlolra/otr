@@ -14,3 +14,43 @@ var MSGFRAG = '?OTR:AAEDAAAAAQAAAAEAAADAVf3Ei72ZgFeKqWvLMnuVPVCwxktsOZ1QdjeLp6jn
 assert.equal('', otr.parseMsg(MSGFRAG1), 'Message fragment 1.')
 assert.equal('', otr.parseMsg(MSGFRAG2), 'Message fragment 2.')
 assert.equal(MSGFRAG, otr.parseMsg(MSGFRAG3), 'Message fragment 3.')
+
+otr = new OTR()
+otr.parseMsg('?OTR?')
+assert.equal(1, Object.keys(otr.versions).length, 'version 1')
+assert.ok(otr.versions['1'], 'version 1')
+
+otr = new OTR()
+otr.parseMsg('?OTRv2?')
+assert.equal(1, Object.keys(otr.versions).length, 'version 2')
+assert.ok(otr.versions['2'], 'version 2')
+
+otr = new OTR()
+otr.parseMsg('?OTR?v2?')
+assert.equal(2, Object.keys(otr.versions).length, 'version 1 & 2')
+assert.ok(otr.versions['1'], 'version 1 & 2')
+assert.ok(otr.versions['2'], 'version 1 & 2')
+
+otr = new OTR()
+otr.parseMsg('?OTRv24x?')
+assert.equal(3, Object.keys(otr.versions).length, 'version 2, 4, x')
+assert.ok(otr.versions['2'], 'version 2, 4, x')
+assert.ok(otr.versions['4'], 'version 2, 4, x')
+assert.ok(otr.versions.x, 'version 2, 4, x')
+
+otr = new OTR()
+otr.parseMsg('?OTR?v24x?')
+assert.equal(4, Object.keys(otr.versions).length, 'version 1, 2, 4, x')
+assert.ok(otr.versions['1'], 'version 1, 2, 4, x')
+assert.ok(otr.versions['2'], 'version 1, 2, 4, x')
+assert.ok(otr.versions['4'], 'version 1, 2, 4, x')
+assert.ok(otr.versions.x, 'version 1, 2, 4, x')
+
+otr = new OTR()
+otr.parseMsg('?OTR?v?')
+assert.equal(1, Object.keys(otr.versions).length, 'version 1 ?')
+assert.ok(otr.versions['1'], 'version 1 ?')
+
+otr = new OTR()
+otr.parseMsg('?OTRv?')
+assert.equal(0, Object.keys(otr.versions).length, 'version bizarre')

@@ -71,6 +71,7 @@
 
     // this.init()
     this.initFragment()
+    this.versions = {}
 
     // bind methods
     var self = this
@@ -338,6 +339,35 @@
       }
 
       this.initFragment()
+
+      // query message
+      if (~['?', 'v'].indexOf(msg[ind])) {
+
+        var wi = ind
+
+        // version 1
+        if (msg[wi] === '?') {
+          this.versions['1'] = true
+          wi += 1
+        }
+
+        // other versions
+        var qs = msg.substring(wi + 1)
+        var qi = qs.indexOf('?')
+
+        if (qi < 1) return ''
+
+        qs = qs.substring(0, qi).split('')
+        var self = this
+
+        if (msg[wi] === 'v') {
+          qs.forEach(function (q) {
+            self.versions[q] = true
+          })
+        }
+
+        return ''
+      }
 
       return "OTR"
     },
