@@ -51,6 +51,10 @@
   var TWO = BigInt.str2bigInt('2', 10)
   var N_MINUS_2 = BigInt.sub(N, TWO)
 
+  // tags
+  var OTR_TAG = '?OTR'
+
+  // some helpers
   function checkGroup(g) {
     return hlp.GTOE(g, TWO) && hlp.GTOE(N_MINUS_2, g)
   }
@@ -61,10 +65,12 @@
     return keys
   }
 
+  // OTR contructor
   function OTR() {
     if (!(this instanceof OTR)) return new OTR()
 
-    this.init()
+    // this.init()
+    this.initFragment()
 
     // bind methods
     var self = this
@@ -312,6 +318,67 @@
 
     error: function (err) {
       console.log(err)
+    },
+
+    parseMsg: function (msg) {
+
+      // is this otr?
+      var start = msg.indexOf(OTR_TAG)
+      if (!~start) {
+        // check for tags
+        return msg
+      }
+
+      var ind = start + OTR_TAG.length
+
+      // message fragment
+      if (msg[ind] === ',') {
+        return this.msgFragment(msg.substring(ind + 1))
+      }
+
+      return "OTR"
+    },
+
+    initFragment: function () {
+      this.fragment = ''
+      this.fragInfo = { j: 0, k: 0 }
+    },
+
+    msgFragment: function (msg) {
+      msg = msg.split(',')
+
+      if (msg.length < 4 ||
+        isNaN(parseInt(msg[0], 10)) ||
+        isNaN(parseInt(msg[1], 10))
+      ) return ''
+
+      var j = parseInt(msg[0], 10)
+      var k = parseInt(msg[1], 10)
+      msg = msg[2]
+
+      if (k < j || j === 0 || k === 0) {
+        this.initFragment()
+        return ''
+      }
+
+      if (j === 1) {
+        this.initFragment()
+        this.fragment = msg
+        this.fragInfo = { j: 1, k: k }
+      } else if (k === this.fragInfo.k && j === (this.fragInfo.j + 1)) {
+        this.fragment += msg
+        this.fragInfo.j += 1
+      } else {
+        this.initFragment()
+      }
+
+      if (j === k) {
+        msg = this.fragment
+        this.initFragment()
+        return msg
+      }
+
+      return ''
     }
 
   }
