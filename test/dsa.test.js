@@ -1,7 +1,7 @@
 var assert = require('assert')
-  , HLP = require('../helpers.js')
-  , DSA = require('../dsa.js')
-  , BigInt = require('../vendor/bigint.js')
+  , HLP = require('../../../helpers.js')
+  , DSA = require('../../../dsa.js')
+  , BigInt = require('../../../vendor/bigint.js')
 
 describe('DSA', function(){
   var key;
@@ -16,7 +16,7 @@ describe('DSA', function(){
 
   it('should generate a key with q > 2^159 and q < 2^160', function(){
     assert.ok(
-            hlp.between(key.q, hlp.twotothe(159), hlp.twotothe(160)),'In between.')
+            HLP.between(key.q, HLP.twotothe(159), HLP.twotothe(160)),'In between.')
   });
 
   it('should generate a key with q being a multiple of q', function(){
@@ -29,11 +29,11 @@ describe('DSA', function(){
 
   it('should verify a valid signature', function(){
     var s = key.sign('abc')
-    assert.equal(1, dsa.verify(key, 'abc', s[0], s[1]), 'Verify signed message.')
+    assert.equal(1, DSA.verify(key, 'abc', s[0], s[1]), 'Verify signed message.')
   });
 
   it('should parse a given public key into the correct parameters', function(){
-      var par = dsa.parsePublic(key.packPublic())
+      var par = DSA.parsePublic(key.packPublic())
       assert.ok(BigInt.equals(key.p, par.p), 'Pees are good.')
       assert.ok(BigInt.equals(key.q, par.q), 'Qs.')
       assert.ok(BigInt.equals(key.g, par.g), 'Gs.')

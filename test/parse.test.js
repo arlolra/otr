@@ -1,6 +1,6 @@
 var assert = require('assert')
   , OTR = function () { this.versions = {} }  // just a constructor
-  , P = require('../parse.js')
+  , P = require('../../../parse.js')
 
 describe('OTR', function(){
   var otr;
