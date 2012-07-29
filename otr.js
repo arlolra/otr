@@ -344,16 +344,14 @@
       // query message
       if (~['?', 'v'].indexOf(com)) {
 
-        var wi = ind
-
         // version 1
-        if (msg[wi] === '?') {
+        if (msg[ind] === '?') {
           this.versions['1'] = true
-          wi += 1
+          ind += 1
         }
 
         // other versions
-        var qs = msg.substring(wi + 1)
+        var qs = msg.substring(ind + 1)
         var qi = qs.indexOf('?')
 
         if (qi < 1) return ''
@@ -361,7 +359,7 @@
         qs = qs.substring(0, qi).split('')
         var self = this
 
-        if (msg[wi] === 'v') {
+        if (msg[ind] === 'v') {
           qs.forEach(function (q) {
             self.versions[q] = true
           })
@@ -372,7 +370,18 @@
 
       // otr message
       if (com === ':') {
-        msg = 'OTR'
+
+        var info = msg.substring(ind + 1, ind + 5)
+        if (info.length < 4) return msg
+        info = AES.enc.Base64.parse(info).toString(AES.enc.Latin1)
+
+        var version = info.substring(0, 2)
+        var type = info.substring(2)
+
+        var end = msg.substring(ind + 4).indexOf('.')
+        if (!~end) return msg
+
+        return this.handle(version, type, msg.substring(ind + 4, end))
       }
 
       // error message
@@ -381,6 +390,10 @@
       }
 
       return msg
+    },
+
+    handle: function (version, type, msg) {
+      return 'OTR'
     },
 
     initFragment: function () {
