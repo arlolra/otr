@@ -109,6 +109,12 @@
     return res
   }
 
+  HLP.unpack = function (arr) {
+    return arr.reduce(function (p, n) {
+      return (p << 8) | n
+    }, 0)
+  }
+
   HLP.packData = function packData(d) {
     return HLP.pack(d.length) + d
   }
@@ -131,10 +137,17 @@
     return HLP.packData(HLP.bigInt2bits(BigInt.trim(mpi, 0)))
   }
 
+  HLP.packInt = function (int) {
+    return HLP.packData(HLP.pack(int))
+  }
+
+  HLP.readInt = function (int) {
+    var data = HLP.toByteArray(int)
+    return HLP.unpack(data.slice(4))
+  }
+
   HLP.readData = function readData(data) {
-    var n = (data.splice(0, 4)).reduce(function (p, n) {
-      p <<= 8; return p | n
-    }, 0)
+    var n = HLP.unpack(data.splice(0, 4))
     return [n, data]
   }
 

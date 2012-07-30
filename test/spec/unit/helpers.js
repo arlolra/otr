@@ -40,4 +40,11 @@ describe('Helpers', function(){
       assert.equal((Math.pow(2, 513)).toString(16), BigInt.bigInt2str(HLP.twotothe(513), 16))
     });
   });
+
+  describe('readInt', function () {
+    it('should short pack and read an int', function () {
+      assert.equal(1235, HLP.readInt(HLP.packInt(1235), 'Read Int.'))
+    })
+  })
+
 });
