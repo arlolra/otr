@@ -99,11 +99,13 @@
 
       // key management
       this.their_y = {}
+      this.their_keyid = 0
       this.our_dh = {
           '0': dh()
         , '1': dh()
       }
       this.our_keyid = 2
+      this.oldMacKeys = []
     },
 
     createAuthKeys: function(g) {
@@ -178,11 +180,17 @@
       // verify sign m
       if (!DSA.verify(pub, m, HLP.readMPI(x[2]), HLP.readMPI(x[3])))
         return 'Cannot verify signature of m.'
+
+      // store their keys
+      this.their_keyid = HLP.readInt(x[1])
+      this.their_y = {}
+      this.their_y[this.their_keyid] = gx
+      this.their_y[this.their_keyid - 1] = null
     },
 
     makeM: function (send, g, m1, c, m2) {
       var pk = this.priv.packPublic()
-      var kid = HLP.packData(HLP.pack(this.our_keyid - 1))
+      var kid = HLP.packInt(this.our_keyid - 1)
       var m = this.calculatePubkeyAuth(this.our_dh[this.our_keyid - 1].publicKey, g, pk, kid, m1)
       send.aesctr = this.makeAes(pk, kid, m, c)
       send.mac = this.makeMac(send.aesctr, m2)
@@ -221,7 +229,7 @@
           if (!checkGroup(this.gy)) return this.error('Illegal g^y.')
 
           this.createAuthKeys(this.gy)
-          this.updateMyKey()
+          // this.updateMyKey()
           this.makeM(send, this.gy, this.m1, this.c, this.m2)
 
           send.r = HLP.packMPI(this.r)
@@ -263,7 +271,7 @@
           )
           if (err) return this.error(err)
 
-          this.updateMyKey()
+          // this.updateMyKey()
           this.makeM(send, this.gx, this.m1_prime, this.c_prime, this.m2_prime)
 
           send.type = '\x12'
@@ -338,22 +346,19 @@
       // var ek
       // var mk
 
-      var oldMacKeys = []
-      oldMacKeys = oldMacKeys.reduce(function (p, c) {
-        p += HLP.packMPI(c)
-      }, '')
+      var oldMacKeys = ''
+      this.oldMacKeys.reduce(function (p, c) {
+        return p += HLP.packMPI(c)
+      }, oldMacKeys)
+      this.oldMacKeys = []
 
       this.counter += 1
       var ctr = this.counter
 
-      function packKey(k) {
-        return HLP.packData(HLP.pack(k))
-      }
-
-      var ta = packKey(keyid_a)
-      ta += packKey(keyid_b)
+      var ta = HLP.packInt(keyid_a)
+      ta += HLP.packInt(keyid_b)
       ta += HLP.packMPI(this.next_dh.publicKey)
-      ta += packKey(ctr)
+      ta += HLP.packInt(ctr)
 
       var send = ta + ta + oldMacKeys
       return send
