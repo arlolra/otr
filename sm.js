@@ -9,13 +9,13 @@
   }
 
   var BigInt = root.BigInt
-    , SHA256 = root.SHA256
+    , CryptoJS = root.CryptoJS
     , DH = root.DH
     , HLP = root.HLP
 
   if (typeof require !== 'undefined') {
     BigInt || (BigInt = require('./vendor/bigint.js'))
-    SHA256 || (SHA256 = require('./vendor/sha256.js'))
+    CryptoJS || (CryptoJS = require('./vendor/cryptojs/cryptojs.js'))
     DH || (DH = require('./dh.json'))
     HLP || (HLP = require('./helpers.js'))
   }
@@ -38,14 +38,14 @@
   function SM(secret) {
     if (!(this instanceof SM)) return new SM(secret)
 
-    var sha256 = SHA256.algo.SHA256.create()
+    var sha256 = CryptoJS.algo.SHA256.create()
     sha256.update('1')      // version of smp
     sha256.update('123')    // initiator fingerprint
     sha256.update('456')    // responder fingerprint
     sha256.update('ssid')   // secure session id
     sha256.update(secret)   // user input string
     var hash = sha256.finalize()
-    this.secret = BigInt.str2bigInt(hash.toString(SHA256.enc.Hex), 16)
+    this.secret = BigInt.str2bigInt(hash.toString(CryptoJS.enc.Hex), 16)
 
     // initialize vars
     this.init()

@@ -8,9 +8,7 @@
     root.OTR = OTR
   }
 
-  var AES = root.AES
-    , SHA256 = root.SHA256
-    , HmacSHA256 = root.HmacSHA256
+  var CryptoJS = root.CryptoJS
     , BigInt = root.BigInt
     , DH = root.DH
     , HLP = root.HLP
@@ -18,20 +16,12 @@
     , ParseOTR = root.ParseOTR
 
   if (typeof require !== 'undefined') {
-    AES || (AES = require('./vendor/aes.js'))
+    CryptoJS || (CryptoJS = require('./vendor/cryptojs/cryptojs.js'))
     BigInt || (BigInt = require('./vendor/bigint.js'))
-    SHA256 || (SHA256 = require('./vendor/sha256.js'))
-    HmacSHA256 || (HmacSHA256 = require('./vendor/hmac-sha256.js'))
     DH || (DH = require('./dh.json'))
     HLP || (HLP = require('./helpers.js'))
     DSA || (DSA = require('./dsa.js'))
     ParseOTR || (ParseOTR = require('./parse.js'))
-
-    // ctr mode
-    require('./vendor/mode-ctr.js')(AES)
-
-    // no padding
-    require('./vendor/pad-nopadding.js')(AES)
   }
 
   // otr message states
@@ -122,35 +112,35 @@
     },
 
     calculatePubkeyAuth: function(gx, gy, pk, kid, m) {
-      var pass = HmacSHA256.enc.Latin1.parse(m)
-      var hmac = HmacSHA256.algo.HMAC.create(HmacSHA256.algo.SHA256, pass)
+      var pass = CryptoJS.enc.Latin1.parse(m)
+      var hmac = CryptoJS.algo.HMAC.create(CryptoJS.algo.SHA256, pass)
       hmac.update(HLP.packMPI(gx))
       hmac.update(HLP.packMPI(gy))
       hmac.update(pk)
       hmac.update(kid)
-      return (hmac.finalize()).toString(HmacSHA256.enc.Latin1)
+      return (hmac.finalize()).toString(CryptoJS.enc.Latin1)
     },
 
     makeAes: function (pk, kid, m, c) {
       var sign = this.priv.sign(m)
       var x = pk + kid + HLP.packMPI(sign[0]) + HLP.packMPI(sign[1])
       var opts = {
-          mode: AES.mode.CTR
-        , iv: AES.enc.Latin1.parse(0)
-        , padding: AES.pad.NoPadding
+          mode: CryptoJS.mode.CTR
+        , iv: CryptoJS.enc.Latin1.parse(0)
+        , padding: CryptoJS.pad.NoPadding
       }
-      var aesctr = AES.AES.encrypt(
-          AES.enc.Latin1.parse(x)
-        , AES.enc.Latin1.parse(c)
+      var aesctr = CryptoJS.AES.encrypt(
+          CryptoJS.enc.Latin1.parse(x)
+        , CryptoJS.enc.Latin1.parse(c)
         , opts
       )
       return aesctr.toString()
     },
 
     makeMac: function (aesctr, m) {
-      var pass = HmacSHA256.enc.Latin1.parse(m)
-      var mac = HmacSHA256.HmacSHA256(aesctr, pass)
-      return HLP.mask(mac.toString(HmacSHA256.enc.Latin1), 0, 160)
+      var pass = CryptoJS.enc.Latin1.parse(m)
+      var mac = CryptoJS.HmacSHA256(aesctr, pass)
+      return HLP.mask(mac.toString(CryptoJS.enc.Latin1), 0, 160)
     },
 
     verifySignMac: function (msg, m2, c, gx, gy, m1) {
@@ -160,18 +150,18 @@
 
       // decrypt x
       var opts = {
-          mode: AES.mode.CTR
-        , iv: AES.enc.Latin1.parse(0)
-        , padding: AES.pad.NoPadding
+          mode: CryptoJS.mode.CTR
+        , iv: CryptoJS.enc.Latin1.parse(0)
+        , padding: CryptoJS.pad.NoPadding
       }
 
-      var aesctr = AES.AES.decrypt(
+      var aesctr = CryptoJS.AES.decrypt(
           msg.aesctr
-        , AES.enc.Latin1.parse(c)
+        , CryptoJS.enc.Latin1.parse(c)
         , opts
       )
 
-      var x = aesctr.toString(AES.enc.Latin1)
+      var x = aesctr.toString(CryptoJS.enc.Latin1)
       x = HLP.parseToStrs(x)
 
       var m = this.calculatePubkeyAuth(gx, gy, x[0], x[1], m1)
@@ -241,19 +231,19 @@
           // signature message
           this.r = HLP.readMPI(msg.r)
 
-          var key = AES.enc.Hex.parse(BigInt.bigInt2str(this.r, 16))
+          var key = CryptoJS.enc.Hex.parse(BigInt.bigInt2str(this.r, 16))
           opts = {
-              mode: AES.mode.CTR
-            , iv: AES.enc.Latin1.parse(0)
-            , padding: AES.pad.NoPadding
+              mode: CryptoJS.mode.CTR
+            , iv: CryptoJS.enc.Latin1.parse(0)
+            , padding: CryptoJS.pad.NoPadding
           }
-          var gxmpi = AES.AES.decrypt(this.encrypted, key, opts)
-          gxmpi = gxmpi.toString(AES.enc.Latin1)
+          var gxmpi = CryptoJS.AES.decrypt(this.encrypted, key, opts)
+          gxmpi = gxmpi.toString(CryptoJS.enc.Latin1)
           this.gx = HLP.readMPI(gxmpi)
 
           // verify hash
-          var hash = SHA256.SHA256(gxmpi)
-          if (this.hashed !== hash.toString(SHA256.enc.Latin1))
+          var hash = CryptoJS.SHA256(gxmpi)
+          if (this.hashed !== hash.toString(CryptoJS.enc.Latin1))
             return this.error('Hashed g^x does not match.')
 
           // verify gx is legal 2 <= gy <= N-2
@@ -315,18 +305,18 @@
       var gxmpi = HLP.packMPI(this.our_dh[this.our_keyid - 1].publicKey)
 
       this.r = HLP.randomValue()
-      var key = AES.enc.Hex.parse(BigInt.bigInt2str(this.r, 16))
+      var key = CryptoJS.enc.Hex.parse(BigInt.bigInt2str(this.r, 16))
       var opts = {
-          mode: AES.mode.CTR
-        , iv: AES.enc.Latin1.parse(0)
-        , padding: AES.pad.NoPadding
+          mode: CryptoJS.mode.CTR
+        , iv: CryptoJS.enc.Latin1.parse(0)
+        , padding: CryptoJS.pad.NoPadding
       }
 
-      var encrypt = AES.AES.encrypt(AES.enc.Latin1.parse(gxmpi), key, opts)
+      var encrypt = CryptoJS.AES.encrypt(CryptoJS.enc.Latin1.parse(gxmpi), key, opts)
       send.encrypted = encrypt.toString()
 
-      var hash = SHA256.SHA256(gxmpi)
-      send.hashed = hash.toString(SHA256.enc.Latin1)
+      var hash = CryptoJS.SHA256(gxmpi)
+      send.hashed = hash.toString(CryptoJS.enc.Latin1)
 
       this.sendMsg(send)
     },
