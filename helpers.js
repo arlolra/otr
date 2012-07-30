@@ -10,11 +10,11 @@
   }
 
   var BigInt = root.BigInt
-    , SHA256 = root.SHA256
+    , CryptoJS = root.CryptoJS
 
   if (typeof require !== 'undefined') {
     BigInt || (BigInt = require('./vendor/bigint.js'))
-    SHA256 || (SHA256 = require('./vendor/sha256.js'))
+    CryptoJS || (CryptoJS = require('./vendor/cryptojs/cryptojs.js'))
   }
 
   HLP.divMod = function divMod(num, den, n) {
@@ -37,12 +37,12 @@
   }
 
   HLP.smpHash = function smpHash(version, fmpi, smpi) {
-    var sha256 = SHA256.algo.SHA256.create()
+    var sha256 = CryptoJS.algo.SHA256.create()
     sha256.update(version.toString())
     sha256.update(BigInt.bigInt2str(fmpi, 10))
     if (smpi) sha256.update(BigInt.bigInt2str(smpi, 10))
     var hash = sha256.finalize()
-    return BigInt.str2bigInt(hash.toString(SHA256.enc.Hex), 16)
+    return BigInt.str2bigInt(hash.toString(CryptoJS.enc.Hex), 16)
   }
 
   HLP.multPowMod = function multPowMod(a, b, c, d, e) {
@@ -79,11 +79,11 @@
   }
 
   HLP.h2 = function h2(b, secbytes) {
-    var sha256 = SHA256.algo.SHA256.create()
+    var sha256 = CryptoJS.algo.SHA256.create()
     sha256.update(b)
     sha256.update(secbytes)
     var hash = sha256.finalize()
-    return hash.toString(SHA256.enc.Latin1)
+    return hash.toString(CryptoJS.enc.Latin1)
   }
 
   HLP.mask = function mask(bytes, start, n) {
