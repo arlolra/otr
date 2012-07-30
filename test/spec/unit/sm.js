@@ -1,5 +1,5 @@
 var assert = require('assert')
-  , SM = require('../sm.js')
+  , SM = require('../../../sm.js')
 
 describe('SM', function(){
   it('', function(){
