@@ -13,12 +13,12 @@
   }
 
   var BigInt = root.BigInt
-    , SHA1 = root.SHA1
+    , CryptoJS = root.CryptoJS
     , HLP = root.HLP
 
   if (typeof require !== 'undefined') {
     BigInt || (BigInt = require('./vendor/bigint.js'))
-    SHA1 || (SHA1 = require('./vendor/sha1.js'))
+    CryptoJS || (CryptoJS = require('./vendor/cryptojs/cryptojs.js'))
     HLP || (HLP = require('./helpers.js'))
   }
 
@@ -75,9 +75,9 @@
       var g = this.N
       this.seed = BigInt.randBigInt(this.N)
 
-      var u = (SHA1.SHA1(HLP.bigInt2bits(this.seed))).toString(SHA1.enc.Hex)
+      var u = (CryptoJS.SHA1(HLP.bigInt2bits(this.seed))).toString(CryptoJS.enc.Hex)
       var tmp = BigInt.mod(BigInt.add(this.seed, ONE), HLP.twotothe(g))
-      tmp = (SHA1.SHA1(HLP.bigInt2bits(tmp))).toString(SHA1.enc.Hex)
+      tmp = (CryptoJS.SHA1(HLP.bigInt2bits(tmp))).toString(CryptoJS.enc.Hex)
       u = HLP.bigBitWise(
           'XOR'
         , BigInt.str2bigInt(tmp, 16)
@@ -111,8 +111,8 @@
             cache_seed_plus_offset
           , BigInt.str2bigInt(i.toString(), 10)
         )
-        V = SHA1.SHA1(HLP.bigInt2bits(BigInt.mod(V, HLP.twotothe(g))))
-        V = BigInt.str2bigInt(V.toString(SHA1.enc.Hex), 16)
+        V = CryptoJS.SHA1(HLP.bigInt2bits(BigInt.mod(V, HLP.twotothe(g))))
+        V = BigInt.str2bigInt(V.toString(CryptoJS.enc.Hex), 16)
         if (i === n) V = BigInt.mod(V, HLP.twotothe(b))
         V = BigInt.mult(V, HLP.twotothe(g * i))
         W = BigInt.add(W, V)
@@ -170,8 +170,8 @@
     },
 
     sign: function (m) {
-      var hm = SHA1.SHA1(m)
-      hm = BigInt.str2bigInt(hm.toString(SHA1.enc.Hex), 16)
+      var hm = CryptoJS.SHA1(m)
+      hm = BigInt.str2bigInt(hm.toString(CryptoJS.enc.Hex), 16)
       return this.hsign(hm)
     }
 
@@ -193,8 +193,8 @@
     if (!HLP.between(r, ZERO, key.q) || !HLP.between(s, ZERO, key.q))
       return false
 
-    var hm = SHA1.SHA1(m)
-    hm = BigInt.str2bigInt(hm.toString(SHA1.enc.Hex), 16)
+    var hm = CryptoJS.SHA1(m)
+    hm = BigInt.str2bigInt(hm.toString(CryptoJS.enc.Hex), 16)
 
     var w = BigInt.inverseMod(s, key.q)
     var u1 = BigInt.multMod(hm, w, key.q)

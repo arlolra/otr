@@ -9,10 +9,10 @@
     ParseOTR = root.ParseOTR = {}
   }
 
-  var AES = root.AES
+  var CryptoJS = root.CryptoJS
 
   if (typeof require !== 'undefined') {
-    AES || (AES = require('./vendor/aes.js'))
+    CryptoJS || (CryptoJS = require('./vendor/cryptojs/cryptojs.js'))
   }
 
   // tags
@@ -72,7 +72,7 @@
 
       var info = msg.substring(ind + 1, ind + 5)
       if (info.length < 4) return msg
-      info = AES.enc.Base64.parse(info).toString(AES.enc.Latin1)
+      info = CryptoJS.enc.Base64.parse(info).toString(CryptoJS.enc.Latin1)
 
       var version = info.substring(0, 2)
       var type = info.substring(2)
