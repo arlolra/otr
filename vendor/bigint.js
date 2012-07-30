@@ -837,7 +837,7 @@ function negative(x) {
 //shift is a nonnegative integer
 function greaterShift(x,y,shift) {
   var i, kx=x.length, ky=y.length;
-  k=((kx+shift)<ky) ? (kx+shift) : ky;
+  var k=((kx+shift)<ky) ? (kx+shift) : ky;
   for (i=ky-1-shift; i<kx && i>=0; i++) 
     if (x[i]>0)
       return 1; //if there are nonzeros in x to the left of the first column of y, then x is bigger
