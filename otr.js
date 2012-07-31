@@ -139,7 +139,7 @@
 
     },
 
-    rotateDHKeys: function () {
+    rotateOurKeys: function () {
 
       // reveal old mac keys
       this.sessKeys[1].forEach(function (sk) {
@@ -158,6 +158,26 @@
           this.their_y ? new dhSession(this.our_dh, this.their_y) : null
         , this.their_old_y ? new dhSession(this.our_dh, this.their_old_y) : null
       ]
+
+    },
+
+    rotateTheirKeys: function (their_y) {
+
+      // reveal old mac keys
+      this.sessKeys.forEach(function (sk) {
+        if (sk[1].sendmacused) this.oldMacKeys.push(sk[1].sendmac)
+        if (sk[1].rcvmacused) this.oldMacKeys.push(sk[1].rcvmac)
+      })
+
+      // rotate their keys / session
+      this.their_old_y = this.their_y
+      this.sessKeys[0][1] = this.sessKeys[0][0]
+      this.sessKeys[1][1] = this.sessKeys[1][0]
+
+      // new keys / sessions
+      this.their_y = their_y
+      this.sessKeys[0][0] = new dhSession(this.our_dh, this.their_y)
+      this.sessKeys[1][0] = new dhSession(this.our_old_dh, this.their_y)
 
     },
 
