@@ -102,6 +102,7 @@
 
   // session constructor
   function dhSession(our_dh, their_y) {
+    if (!(this instanceof dhSession)) return new dhSession(our_dh, their_y)
 
     // shared secret
     var s = BigInt.powMod(their_y, our_dh.privateKey, N)
