@@ -69,11 +69,13 @@
   }
   HLP.bigBitWise = function bigBitWise(op, a, b) {
     var tf = (a.length > b.length)
-    var short = tf ? b : a
-    var c = BigInt.dup(tf ? a : b)
-    var i = 0, len = short.length
+      , short = tf ? b : a
+      , long  = tf ? a : b
+      , len = long.length
+      , c = BigInt.expand(short, len)
+      , i = 0
     for (; i < len; i++) {
-      c[i] = OPS[op](c[i], short[i])
+      c[i] = OPS[op](c[i], long[i])
     }
     return c
   }

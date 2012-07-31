@@ -1520,11 +1520,11 @@ module.exports = {
   , dup           : dup
   , greater       : greater
   , add           : add
-  , greater       : greater
   , isZero        : isZero
   , bitSize       : bitSize
   , randTruePrime : randTruePrime
   , millerRabin   : millerRabin
   , divide_       : divide_
   , trim          : trim
+  , expand        : expand
 }
