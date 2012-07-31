@@ -56,6 +56,26 @@
     return keys
   }
 
+  function makeAes(msg, c, iv) {
+    var opts = {
+        mode: CryptoJS.mode.CTR
+      , iv: CryptoJS.enc.Latin1.parse(iv)
+      , padding: CryptoJS.pad.NoPadding
+    }
+    var aesctr = CryptoJS.AES.encrypt(
+        CryptoJS.enc.Latin1.parse(msg)
+      , CryptoJS.enc.Latin1.parse(c)
+      , opts
+    )
+    return aesctr.toString()
+  }
+
+  function makeMac(aesctr, m) {
+    var pass = CryptoJS.enc.Latin1.parse(m)
+    var mac = CryptoJS.HmacSHA256(aesctr, pass)
+    return HLP.mask(mac.toString(CryptoJS.enc.Latin1), 0, 160)
+  }
+
   function dhSession(our_dh, their_y) {
 
     // shared secret
@@ -87,6 +107,9 @@
     this.rcvmac = CryptoJS.SHA1(this.rcvenc)
     this.rcvmacused = false
 
+    // counter
+    this.counter = 0
+
   }
 
   // OTR contructor
@@ -94,7 +117,7 @@
     if (!(this instanceof OTR)) return new OTR(priv)
 
     if (priv && !(priv instanceof DSA.Key))
-      throw new Error('Requires ')
+      throw new Error('Requires long-lived DSA key.')
 
     this.priv = priv ? priv : new DSA.Key()
 
@@ -117,8 +140,6 @@
 
       this.versions = {}
       this.otrEnabled = false
-
-      this.counter = 0
 
       // their keys
       this.their_y = null
@@ -204,28 +225,6 @@
       return (hmac.finalize()).toString(CryptoJS.enc.Latin1)
     },
 
-    makeAes: function (pk, kid, m, c) {
-      var sign = this.priv.sign(m)
-      var x = pk + kid + HLP.packMPI(sign[0]) + HLP.packMPI(sign[1])
-      var opts = {
-          mode: CryptoJS.mode.CTR
-        , iv: CryptoJS.enc.Latin1.parse(0)
-        , padding: CryptoJS.pad.NoPadding
-      }
-      var aesctr = CryptoJS.AES.encrypt(
-          CryptoJS.enc.Latin1.parse(x)
-        , CryptoJS.enc.Latin1.parse(c)
-        , opts
-      )
-      return aesctr.toString()
-    },
-
-    makeMac: function (aesctr, m) {
-      var pass = CryptoJS.enc.Latin1.parse(m)
-      var mac = CryptoJS.HmacSHA256(aesctr, pass)
-      return HLP.mask(mac.toString(CryptoJS.enc.Latin1), 0, 160)
-    },
-
     verifySignMac: function (msg, m2, c, gx, gy, m1) {
       // verify mac
       var mac = this.makeMac(msg.aesctr, m2)
@@ -265,8 +264,10 @@
       var pk = this.priv.packPublic()
       var kid = HLP.packInt(this.our_keyid - 1)
       var m = this.calculatePubkeyAuth(this.our_dh[this.our_keyid - 1].publicKey, g, pk, kid, m1)
-      send.aesctr = this.makeAes(pk, kid, m, c)
-      send.mac = this.makeMac(send.aesctr, m2)
+      var sign = this.priv.sign(m)
+      var msg = pk + kid + HLP.packMPI(sign[0]) + HLP.packMPI(sign[1])
+      send.aesctr = makeAes(msg, c, 0)
+      send.mac = makeMac(send.aesctr, m2)
     },
 
     updateMyKey: function () {
@@ -405,44 +406,34 @@
     },
 
     prepareMsg: function (msg) {
-      var key_a = this.ackKeys.myLatest.key
-      var keyid_a = this.ackKeys.myLatest.id
 
-      if (this.keyId === keyid_a) {
-        this.next_dh = dh()
-        this.next_keyid = keyid_a + 1
-      }
+      if (this.msgstate !== MSGSTATE_ENCRYPTED || this.their_keyid === 0)
+        return this.error('Not ready to encrypt.')
 
-      var key_b = this.ackKeys.theirLatest.key
-      var keyid_b = this.ackKeys.theirLatest.id
+      var sessKeys = this.sessKeys[1][0]
+      sessKeys.counter += 1
 
-      // var ek
-      // var mk
-
-      var oldMacKeys = ''
-      this.oldMacKeys.reduce(function (p, c) {
-        return p += HLP.packMPI(c)
-      }, oldMacKeys)
+      var oldMacKeys = this.oldMacKeys.join('')
       this.oldMacKeys = []
 
-      this.counter += 1
-      var ctr = this.counter
+      var ta = HLP.packInt(this.our_keyid - 1)
+      ta += HLP.packInt(this.their_keyid)
+      ta += HLP.packMPI(this.our_dh.publicKey)
+      ta += HLP.packInt(sessKeys.counter)
+      ta += makeAes(msg, sessKeys.sendenc, sessKeys.counter)
 
-      var ta = HLP.packInt(keyid_a)
-      ta += HLP.packInt(keyid_b)
-      ta += HLP.packMPI(this.next_dh.publicKey)
-      ta += HLP.packInt(ctr)
+      var mta = makeMac(ta, sessKeys.sendmac)
 
-      var send = ta + ta + oldMacKeys
-      return send
+      return ta + mta + oldMacKeys
+
     },
 
-    sendMsg: function (msg) {
+    sendMsg: function (msg, retcb) {
       if (this.otrEnabled) msg = this.prepareMsg(msg)
-      return msg
+      retcb(msg)
     },
 
-    receiveMsg: function (msg) {
+    receiveMsg: function (msg, uicb, retcb) {
       return this.handleAKE(msg)
     },
 
