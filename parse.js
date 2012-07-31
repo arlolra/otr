@@ -99,8 +99,7 @@
   }
 
   ParseOTR.initFragment = function (otr) {
-    otr.fragment = ''
-    otr.fragInfo = { j: 0, k: 0 }
+    otr.fragment = { s: '', j: 0, k: 0 }
   }
 
   ParseOTR.msgFragment = function (otr, msg) {
@@ -122,17 +121,16 @@
 
     if (k === 1) {
       this.initFragment(otr)
-      otr.fragment = msg
-      otr.fragInfo = { k: 1, n: n }
-    } else if (n === otr.fragInfo.n && k === (otr.fragInfo.k + 1)) {
-      otr.fragment += msg
-      otr.fragInfo.k += 1
+      otr.fragment = { k: 1, n: n, s: msg }
+    } else if (n === otr.fragment.n && k === (otr.fragment.k + 1)) {
+      otr.fragment.s += msg
+      otr.fragment.k += 1
     } else {
       this.initFragment(otr)
     }
 
     if (n === k) {
-      msg = otr.fragment
+      msg = otr.fragment.s
       this.initFragment(otr)
       return this.parseMsg(otr, msg)
     }

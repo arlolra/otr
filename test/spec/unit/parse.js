@@ -2,12 +2,12 @@ var assert = require('assert')
   , OTR = function () { this.versions = {} }  // just a constructor
   , P = require('../../../parse.js')
 
-describe('OTR', function(){
-  var otr;
+describe('Parse', function () {
+  var otr
 
-  beforeEach(function(){
-    otr = new OTR();
-  });
+  beforeEach(function () {
+    otr = new OTR()
+  })
 
   it('should detect message fragments', function(){
     assert.equal('hi', P.parseMsg(otr, 'hi'), 'Hi.')
@@ -74,5 +74,6 @@ describe('OTR', function(){
 
   it('should parse otr error message', function(){
     assert.equal('This is an error.', (P.parseMsg(otr, '?OTR Error:This is an error.')).message, 'Err.')
-  });
-});
+  })
+
+})

@@ -35,15 +35,15 @@
   var Q = BigInt.sub(N, BigInt.str2bigInt('1', 10))
   BigInt.divInt_(Q, 2)  // meh
 
-  function SM(secret) {
-    if (!(this instanceof SM)) return new SM(secret)
+  function SM(secret, ssid, ifp, rfp) {
+    if (!(this instanceof SM)) return new SM(secret, ssid, ifp, rfp)
 
     var sha256 = CryptoJS.algo.SHA256.create()
-    sha256.update('1')      // version of smp
-    sha256.update('123')    // initiator fingerprint
-    sha256.update('456')    // responder fingerprint
-    sha256.update('ssid')   // secure session id
-    sha256.update(secret)   // user input string
+    sha256.update('1')     // version of smp
+    sha256.update(ifp)     // initiator fingerprint
+    sha256.update(rfp)     // responder fingerprint
+    sha256.update(ssid)    // secure session id
+    sha256.update(secret)  // user input string
     var hash = sha256.finalize()
     this.secret = BigInt.str2bigInt(hash.toString(CryptoJS.enc.Hex), 16)
 

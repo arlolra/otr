@@ -12,6 +12,7 @@
     , BigInt = root.BigInt
     , DH = root.DH
     , HLP = root.HLP
+    , SM = root.SM
     , DSA = root.DSA
     , ParseOTR = root.ParseOTR
 
@@ -20,6 +21,7 @@
     BigInt || (BigInt = require('./vendor/bigint.js'))
     DH || (DH = require('./dh.json'))
     HLP || (HLP = require('./helpers.js'))
+    SM || (SM = require('./sm.js'))
     DSA || (DSA = require('./dsa.js'))
     ParseOTR || (ParseOTR = require('./parse.js'))
   }
@@ -54,23 +56,23 @@
     return keys
   }
 
-  function dhSession(session, our_dh, their_y) {
+  function dhSession(our_dh, their_y) {
 
     // shared secret
     var s = BigInt.powMod(their_y, our_dh.privateKey, N)
     var secbytes = HLP.packMPI(s)
 
     // session id
-    session.id = HLP.mask(HLP.h2('\x00', secbytes), 0, 64)  // first 64-bits
+    this.id = HLP.mask(HLP.h2('\x00', secbytes), 0, 64)  // first 64-bits
     var tmp = HLP.h2('\x01', secbytes)
 
     // keys for ake
-    session.c = HLP.mask(tmp, 0, 128)  // first 128-bits
-    session.c_prime = HLP.mask(tmp, 128, 128)  // second 128-bits
-    session.m1 = HLP.h2('\x02', secbytes)
-    session.m2 = HLP.h2('\x03', secbytes)
-    session.m1_prime = HLP.h2('\x04', secbytes)
-    session.m2_prime = HLP.h2('\x05', secbytes)
+    this.c = HLP.mask(tmp, 0, 128)  // first 128-bits
+    this.c_prime = HLP.mask(tmp, 128, 128)  // second 128-bits
+    this.m1 = HLP.h2('\x02', secbytes)
+    this.m2 = HLP.h2('\x03', secbytes)
+    this.m1_prime = HLP.h2('\x04', secbytes)
+    this.m2_prime = HLP.h2('\x05', secbytes)
 
     // are we the high or low end of the connection?
     var sq = BigInt.greater(our_dh.publicKey, their_y)
@@ -78,10 +80,10 @@
     var rcvbyte =  sq ? '\x02' : '\x01'
 
     // sending and receiving keys
-    session.sendenc = HLP.mask(HLP.h1(sendbyte, secbytes), 0, 128)  // f16 bytes
-    session.sendmac = CryptoJS.SHA1(session.sendenc)
-    session.rcvenc = HLP.mask(HLP.h1(rcvbyte, secbytes), 0, 128)
-    session.rcvmac = CryptoJS.SHA1(session.rcvenc)
+    this.sendenc = HLP.mask(HLP.h1(sendbyte, secbytes), 0, 128)  // f16 bytes
+    this.sendmac = CryptoJS.SHA1(this.sendenc)
+    this.rcvenc = HLP.mask(HLP.h1(rcvbyte, secbytes), 0, 128)
+    this.rcvmac = CryptoJS.SHA1(this.rcvenc)
 
   }
 
@@ -102,31 +104,58 @@
     constructor: OTR,
 
     init: function () {
+
       this.msgstate = MSGSTATE_PLAINTEXT
       this.authstate = AUTHSTATE_NONE
+
       this.ALLOW_V1 = false
       this.ALLOW_V2 = true
 
-      this.initFragment()
+      this.initFragment()  // ParseOTR
 
       this.versions = {}
       this.otrEnabled = false
 
-      this.ackKeys = {
-          myLatest: { key: {}, id: 0 }
-        , theirLatest: { key: {}, id: 0 }
-      }
       this.counter = 0
 
-      // key management
-      this.their_y = {}
+      // their keys
+      this.their_y = null
+      this.their_old_y = null
       this.their_keyid = 0
-      this.our_dh = {
-          '0': dh()
-        , '1': dh()
-      }
+
+      // our keys
+      this.our_dh = new dh()
+      this.our_old_dh = new dh()
       this.our_keyid = 2
+
+      // session keys
+      this.sessKeys = new Array(2)
+
       this.oldMacKeys = []
+
+      this.sm = new SM()
+
+    },
+
+    rotateDHKeys: function () {
+
+      // reveal old mac keys
+      if (false) {
+        this.oldMackeys.push('')
+      }
+
+      // rotate our keys
+      this.our_old_dh = this.our_dh
+      this.our_dh = new dh()
+      this.our_keyid += 1
+
+      // session keys
+      this.sessKeys[1] = this.sessKeys[0]
+      this.sessKeys[0] = [
+          this.their_y ? new dhSession(this.our_dh, this.their_y) : null
+        , this.their_old_y ? new dhSession(this.our_dh, this.their_old_y) : null
+      ]
+
     },
 
     createAuthKeys: function(g) {
