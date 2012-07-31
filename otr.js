@@ -130,18 +130,23 @@
   }
 
   // AKE constructor
-  function AKE(priv, our_dh) {
-    if (!(this instanceof AKE)) return new AKE(priv, our_dh)
+  function AKE(otr) {
+    if (!(this instanceof AKE)) return new AKE(otr)
 
-    this.our_dh = our_dh
+    if (!(otr instanceof OTR)) throw new Error('Not OTR instance.')
+    this.otr = otr
+
+    this.our_dh = otr.our_dh
     this.our_keyid = 1
 
     this.their_y = null
     this.their_keyid = null
+    this.their_priv_pk = null
 
     this.ssid = null
+    this.transmittedRS = false
     this.r = null
-    this.priv = priv
+    this.priv = otr.priv
   }
 
   AKE.prototype = {
@@ -177,8 +182,9 @@
       if (!DSA.verify(pub, m, HLP.readMPI(x[2]), HLP.readMPI(x[3])))
         return 'Cannot verify signature of m.'
 
-      // store their key id
+      // store their key
       this.their_keyid = HLP.readInt(x[1])
+      this.their_priv_pk = pub
     },
 
     makeM: function (send, their_y, m1, c, m2) {
@@ -189,6 +195,27 @@
       var msg = pk + kid + HLP.packMPI(m[0]) + HLP.packMPI(m[1])
       send.aesctr = makeAes(msg, c, 0)
       send.mac = makeMac(send.aesctr, m2)
+    },
+
+    akeSuccess: function () {
+      if (BigInt.equals(this.their_y, this.our_dh.publicKey))
+        throw new Error('equal keys - we have a problem.')
+
+      // their keys
+      this.otr.their_y = this.their_y
+      this.otr.their_keyid = this.their_keyid
+      this.otr.their_priv_pk = this.their_priv_pk
+
+      // ake info
+      this.otr.ssid = this.ssid
+      this.otr.transmittedRS = this.transmittedRS
+
+      // rotate keys
+      this.otr.sessKeys[0][0] = dhSession(this.otr.our_dh, this.otr.their_y)
+      this.otr.rotateOurKeys()
+
+      // go encrypted
+      this.otr.msgstate = MSGSTATE_ENCRYPTED
     },
 
     handleAKE: function (msg) {
@@ -250,6 +277,8 @@
           )
           if (err) return this.error(err)
 
+          this.akeSuccess()
+
           this.makeM(send, this.their_y, this.m1_prime, this.c_prime, this.m2_prime)
 
           send.type = '\x12'
@@ -267,6 +296,10 @@
             , this.m1_prime
           )
           if (err) return this.error(err)
+
+          this.transmittedRS = true
+          this.akeSuccess()
+
           break
 
         default:
@@ -337,6 +370,7 @@
       this.their_y = null
       this.their_old_y = null
       this.their_keyid = 0
+      this.their_priv_pk = null
 
       // our keys
       this.our_dh = new dh()
@@ -352,7 +386,9 @@
 
       // when ake is complete
       // save their keys and the session
-      this.ake = new AKE(this.priv, this.our_dh)
+      this.ake = new AKE(this)
+      this.transmittedRS = false
+      this.ssid = null
 
     },
 
