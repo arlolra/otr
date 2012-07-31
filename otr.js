@@ -132,7 +132,7 @@
 
   // AKE constructor
   function AKE(priv, our_dh) {
-    if (!(this instanceof AKE)) return new AKE(our_dh)
+    if (!(this instanceof AKE)) return new AKE(priv, our_dh)
 
     this.our_dh = our_dh
     this.our_keyid = 1
