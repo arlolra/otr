@@ -82,8 +82,10 @@
     // sending and receiving keys
     this.sendenc = HLP.mask(HLP.h1(sendbyte, secbytes), 0, 128)  // f16 bytes
     this.sendmac = CryptoJS.SHA1(this.sendenc)
+    this.sendmacused = false
     this.rcvenc = HLP.mask(HLP.h1(rcvbyte, secbytes), 0, 128)
     this.rcvmac = CryptoJS.SHA1(this.rcvenc)
+    this.rcvmacused = false
 
   }
 
@@ -129,7 +131,7 @@
       this.our_keyid = 2
 
       // session keys
-      this.sessKeys = new Array(2)
+      this.sessKeys = [ new Array(2), new Array(2) ]
 
       this.oldMacKeys = []
 
@@ -140,9 +142,10 @@
     rotateDHKeys: function () {
 
       // reveal old mac keys
-      if (false) {
-        this.oldMackeys.push('')
-      }
+      this.sessKeys[1].forEach(function (sk) {
+        if (sk.sendmacused) this.oldMacKeys.push(sk.sendmac)
+        if (sk.rcvmacused) this.oldMacKeys.push(sk.rcvmac)
+      })
 
       // rotate our keys
       this.our_old_dh = this.our_dh
