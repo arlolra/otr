@@ -78,6 +78,10 @@
     return c
   }
 
+  HLP.h1 = function h1(b, secbytes) {
+    return (CryptoJS.SHA1(b + secbytes)).toString(CryptoJS.enc.Latin1)
+  }
+
   HLP.h2 = function h2(b, secbytes) {
     var sha256 = CryptoJS.algo.SHA256.create()
     sha256.update(b)

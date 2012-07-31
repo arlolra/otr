@@ -54,6 +54,37 @@
     return keys
   }
 
+  function dhSession(session, our_dh, their_y) {
+
+    // shared secret
+    var s = BigInt.powMod(their_y, our_dh.privateKey, N)
+    var secbytes = HLP.packMPI(s)
+
+    // session id
+    session.id = HLP.mask(HLP.h2('\x00', secbytes), 0, 64)  // first 64-bits
+    var tmp = HLP.h2('\x01', secbytes)
+
+    // keys for ake
+    session.c = HLP.mask(tmp, 0, 128)  // first 128-bits
+    session.c_prime = HLP.mask(tmp, 128, 128)  // second 128-bits
+    session.m1 = HLP.h2('\x02', secbytes)
+    session.m2 = HLP.h2('\x03', secbytes)
+    session.m1_prime = HLP.h2('\x04', secbytes)
+    session.m2_prime = HLP.h2('\x05', secbytes)
+
+    // are we the high or low end of the connection?
+    var sq = BigInt.greater(our_dh.publicKey, their_y)
+    var sendbyte = sq ? '\x01' : '\x02'
+    var rcvbyte =  sq ? '\x02' : '\x01'
+
+    // sending and receiving keys
+    session.sendenc = HLP.mask(HLP.h1(sendbyte, secbytes), 0, 128)  // f16 bytes
+    session.sendmac = CryptoJS.SHA1(session.sendenc)
+    session.rcvenc = HLP.mask(HLP.h1(rcvbyte, secbytes), 0, 128)
+    session.rcvmac = CryptoJS.SHA1(session.rcvenc)
+
+  }
+
   // OTR contructor
   function OTR(priv) {
     if (!(this instanceof OTR)) return new OTR(priv)
