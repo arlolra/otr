@@ -127,7 +127,6 @@
 
     // counter
     this.counter = 0
-
   }
 
   // AKE constructor
@@ -309,6 +308,12 @@
     this.priv = priv ? priv : new DSA.Key()
 
     this.init()
+
+    // bind methods
+    var self = this
+    ;['sendMsg', 'receiveMsg'].forEach(function (meth) {
+      self[meth] = self[meth].bind(self)
+    })
   }
 
   OTR.prototype = {
