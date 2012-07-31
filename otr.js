@@ -70,12 +70,37 @@
     return aesctr.toString()
   }
 
+  function decryptAes(msg, c, iv) {
+    var opts = {
+        mode: CryptoJS.mode.CTR
+      , iv: CryptoJS.enc.Latin1.parse(iv)
+      , padding: CryptoJS.pad.NoPadding
+    }
+    var aesctr = CryptoJS.AES.decrypt(
+        msg
+      , CryptoJS.enc.Latin1.parse(c)
+      , opts
+    )
+    return aesctr.toString(CryptoJS.enc.Latin1)
+  }
+
   function makeMac(aesctr, m) {
     var pass = CryptoJS.enc.Latin1.parse(m)
     var mac = CryptoJS.HmacSHA256(aesctr, pass)
     return HLP.mask(mac.toString(CryptoJS.enc.Latin1), 0, 160)
   }
 
+  function hMac(gx, gy, pk, kid, m) {
+      var pass = CryptoJS.enc.Latin1.parse(m)
+      var hmac = CryptoJS.algo.HMAC.create(CryptoJS.algo.SHA256, pass)
+      hmac.update(HLP.packMPI(gx))
+      hmac.update(HLP.packMPI(gy))
+      hmac.update(pk)
+      hmac.update(kid)
+      return (hmac.finalize()).toString(CryptoJS.enc.Latin1)
+    }
+
+  // session constructor
   function dhSession(our_dh, their_y) {
 
     // shared secret
@@ -85,14 +110,6 @@
     // session id
     this.id = HLP.mask(HLP.h2('\x00', secbytes), 0, 64)  // first 64-bits
     var tmp = HLP.h2('\x01', secbytes)
-
-    // keys for ake
-    this.c = HLP.mask(tmp, 0, 128)  // first 128-bits
-    this.c_prime = HLP.mask(tmp, 128, 128)  // second 128-bits
-    this.m1 = HLP.h2('\x02', secbytes)
-    this.m2 = HLP.h2('\x03', secbytes)
-    this.m1_prime = HLP.h2('\x04', secbytes)
-    this.m2_prime = HLP.h2('\x05', secbytes)
 
     // are we the high or low end of the connection?
     var sq = BigInt.greater(our_dh.publicKey, their_y)
@@ -109,6 +126,175 @@
 
     // counter
     this.counter = 0
+
+  }
+
+  // AKE constructor
+  function AKE(priv, our_dh) {
+    if (!(this instanceof AKE)) return new AKE(our_dh)
+
+    this.our_dh = our_dh
+    this.our_keyid = 1
+
+    this.their_y = null
+    this.their_keyid = null
+
+    this.ssid = null
+    this.r = null
+    this.priv = priv
+  }
+
+  AKE.prototype = {
+
+    constructor: AKE,
+
+    createKeys: function(g) {
+      var s = BigInt.powMod(g, this.our_dh.privateKey, N)
+      var secbytes = HLP.packMPI(s)
+      this.ssid = HLP.mask(HLP.h2('\x00', secbytes), 0, 64)  // first 64-bits
+      var tmp = HLP.h2('\x01', secbytes)
+      this.c = HLP.mask(tmp, 0, 128)  // first 128-bits
+      this.c_prime = HLP.mask(tmp, 128, 128)  // second 128-bits
+      this.m1 = HLP.h2('\x02', secbytes)
+      this.m2 = HLP.h2('\x03', secbytes)
+      this.m1_prime = HLP.h2('\x04', secbytes)
+      this.m2_prime = HLP.h2('\x05', secbytes)
+    },
+
+    verifySignMac: function (msg, m2, c, their_y, our_dh_pk, m1) {
+      // verify mac
+      var mac = this.makeMac(msg.aesctr, m2)
+      if (msg.mac !== mac) return 'MACs do not match.'
+
+      // decrypt x
+      var x = decryptAes(msg.aesctr, c, 0)
+      x = HLP.parseToStrs(x)
+
+      var m = hMac(their_y, our_dh_pk, x[0], x[1], m1)
+      var pub = DSA.parsePublic(x[0])
+
+      // verify sign m
+      if (!DSA.verify(pub, m, HLP.readMPI(x[2]), HLP.readMPI(x[3])))
+        return 'Cannot verify signature of m.'
+
+      // store their key id
+      this.their_keyid = HLP.readInt(x[1])
+    },
+
+    makeM: function (send, their_y, m1, c, m2) {
+      var pk = this.priv.packPublic()
+      var kid = HLP.packInt(this.our_keyid)
+      var m = hMac(this.our_dh.publicKey, their_y, pk, kid, m1)
+      m = this.priv.sign(m)
+      var msg = pk + kid + HLP.packMPI(m[0]) + HLP.packMPI(m[1])
+      send.aesctr = makeAes(msg, c, 0)
+      send.mac = makeMac(send.aesctr, m2)
+    },
+
+    handleAKE: function (msg) {
+      var send = {}
+        , err
+
+      switch (msg.type) {
+
+        case '\x02':
+          // d-h key message
+          send.gy = HLP.packMPI(this.our_dh.publicKey)
+          this.encrypted = msg.encrypted
+          this.hashed = msg.hashed
+          send.type = '\x0a'
+          send.version = '\x00\x02'
+          break
+
+        case '\x0a':
+          // reveal signature message
+          this.their_y = HLP.readMPI(msg.gy)
+
+          // verify gy is legal 2 <= gy <= N-2
+          if (!checkGroup(this.their_y)) return this.error('Illegal g^y.')
+
+          this.createKeys(this.their_y)
+          this.makeM(send, this.their_y, this.m1, this.c, this.m2)
+
+          send.r = HLP.packMPI(this.r)
+          send.type = '\x11'
+          send.version = '\x00\x02'
+          break
+
+        case '\x11':
+          // signature message
+          this.r = HLP.readMPI(msg.r)
+
+          // decrypt their_y
+          var key = CryptoJS.enc.Hex.parse(BigInt.bigInt2str(this.r, 16))
+          var gxmpi = decryptAes(this.encrypted, key, 0)
+          this.their_y = HLP.readMPI(gxmpi)
+
+          // verify hash
+          var hash = CryptoJS.SHA256(gxmpi)
+          if (this.hashed !== hash.toString(CryptoJS.enc.Latin1))
+            return this.error('Hashed g^x does not match.')
+
+          // verify gx is legal 2 <= g^x <= N-2
+          if (!checkGroup(this.their_y)) return this.error('Illegal g^x.')
+
+          this.createKeys(this.their_y)
+
+          err = this.verifySignMac(
+              msg
+            , this.m2
+            , this.c
+            , this.their_y
+            , this.our_dh.publicKey
+            , this.m1
+          )
+          if (err) return this.error(err)
+
+          this.makeM(send, this.their_y, this.m1_prime, this.c_prime, this.m2_prime)
+
+          send.type = '\x12'
+          send.version = '\x00\x02'
+          break
+
+        case '\x12':
+          // data message
+          err = this.verifySignMac(
+              msg
+            , this.m2_prime
+            , this.c_prime
+            , this.their_y
+            , this.our_dh.publicKey
+            , this.m1_prime
+          )
+          if (err) return this.error(err)
+          break
+
+        default:
+          return this.error('Invalid message type.')
+
+      }
+
+      return send
+    },
+
+    initiateAKE: function () {
+      // d-h commit message
+      var send = {
+         type: '\x02'
+       , version: '\x00\x02'
+      }
+
+      var gxmpi = HLP.packMPI(this.our_dh.publicKey)
+
+      this.r = HLP.randomValue()
+      var key = CryptoJS.enc.Hex.parse(BigInt.bigInt2str(this.r, 16))
+      send.encrypted = makeAes(CryptoJS.enc.Latin1.parse(gxmpi), key, 0) 
+
+      var hash = CryptoJS.SHA256(gxmpi)
+      send.hashed = hash.toString(CryptoJS.enc.Latin1)
+
+      this.sendMsg(send)
+    }
 
   }
 
@@ -158,6 +344,10 @@
 
       this.sm = new SM()
 
+      // when ake is complete
+      // save their keys and the session
+      this.ake = new AKE(this.priv, this.our_dh)
+
     },
 
     rotateOurKeys: function () {
@@ -200,209 +390,6 @@
       this.sessKeys[0][0] = new dhSession(this.our_dh, this.their_y)
       this.sessKeys[1][0] = new dhSession(this.our_old_dh, this.their_y)
 
-    },
-
-    createAuthKeys: function(g) {
-      var s = BigInt.powMod(g, this.our_dh[this.our_keyid - 1].privateKey, N)
-      var secbytes = HLP.packMPI(s)
-      this.ssid = HLP.mask(HLP.h2('\x00', secbytes), 0, 64)  // first 64-bits
-      var tmp = HLP.h2('\x01', secbytes)
-      this.c = HLP.mask(tmp, 0, 128)  // first 128-bits
-      this.c_prime = HLP.mask(tmp, 128, 128)  // second 128-bits
-      this.m1 = HLP.h2('\x02', secbytes)
-      this.m2 = HLP.h2('\x03', secbytes)
-      this.m1_prime = HLP.h2('\x04', secbytes)
-      this.m2_prime = HLP.h2('\x05', secbytes)
-    },
-
-    calculatePubkeyAuth: function(gx, gy, pk, kid, m) {
-      var pass = CryptoJS.enc.Latin1.parse(m)
-      var hmac = CryptoJS.algo.HMAC.create(CryptoJS.algo.SHA256, pass)
-      hmac.update(HLP.packMPI(gx))
-      hmac.update(HLP.packMPI(gy))
-      hmac.update(pk)
-      hmac.update(kid)
-      return (hmac.finalize()).toString(CryptoJS.enc.Latin1)
-    },
-
-    verifySignMac: function (msg, m2, c, gx, gy, m1) {
-      // verify mac
-      var mac = this.makeMac(msg.aesctr, m2)
-      if (msg.mac !== mac) return 'MACs do not match.'
-
-      // decrypt x
-      var opts = {
-          mode: CryptoJS.mode.CTR
-        , iv: CryptoJS.enc.Latin1.parse(0)
-        , padding: CryptoJS.pad.NoPadding
-      }
-
-      var aesctr = CryptoJS.AES.decrypt(
-          msg.aesctr
-        , CryptoJS.enc.Latin1.parse(c)
-        , opts
-      )
-
-      var x = aesctr.toString(CryptoJS.enc.Latin1)
-      x = HLP.parseToStrs(x)
-
-      var m = this.calculatePubkeyAuth(gx, gy, x[0], x[1], m1)
-      var pub = DSA.parsePublic(x[0])
-
-      // verify sign m
-      if (!DSA.verify(pub, m, HLP.readMPI(x[2]), HLP.readMPI(x[3])))
-        return 'Cannot verify signature of m.'
-
-      // store their keys
-      this.their_keyid = HLP.readInt(x[1])
-      this.their_y = {}
-      this.their_y[this.their_keyid] = gx
-      this.their_y[this.their_keyid - 1] = null
-    },
-
-    makeM: function (send, g, m1, c, m2) {
-      var pk = this.priv.packPublic()
-      var kid = HLP.packInt(this.our_keyid - 1)
-      var m = this.calculatePubkeyAuth(this.our_dh[this.our_keyid - 1].publicKey, g, pk, kid, m1)
-      var sign = this.priv.sign(m)
-      var msg = pk + kid + HLP.packMPI(sign[0]) + HLP.packMPI(sign[1])
-      send.aesctr = makeAes(msg, c, 0)
-      send.mac = makeMac(send.aesctr, m2)
-    },
-
-    updateMyKey: function () {
-      this.ackKeys.myLatest = {
-          key: this.our_dh[this.our_keyid - 1]
-        , id: this.our_keyid - 1
-      }
-      this.our_keyid += 1
-    },
-
-    handleAKE: function (msg) {
-      var opts
-        , reply = true
-        , send = {}
-        , err
-
-      switch (msg.type) {
-
-        case '\x02':
-          // d-h key message
-          send.gy = HLP.packMPI(this.our_dh[this.our_keyid - 1].publicKey)
-          this.encrypted = msg.encrypted
-          this.hashed = msg.hashed
-          send.type = '\x0a'
-          send.version = '\x00\x02'
-          break
-
-        case '\x0a':
-          // reveal signature message
-          this.gy = HLP.readMPI(msg.gy)
-
-          // verify gy is legal 2 <= gy <= N-2
-          if (!checkGroup(this.gy)) return this.error('Illegal g^y.')
-
-          this.createAuthKeys(this.gy)
-          // this.updateMyKey()
-          this.makeM(send, this.gy, this.m1, this.c, this.m2)
-
-          send.r = HLP.packMPI(this.r)
-          send.type = '\x11'
-          send.version = '\x00\x02'
-          break
-
-        case '\x11':
-          // signature message
-          this.r = HLP.readMPI(msg.r)
-
-          var key = CryptoJS.enc.Hex.parse(BigInt.bigInt2str(this.r, 16))
-          opts = {
-              mode: CryptoJS.mode.CTR
-            , iv: CryptoJS.enc.Latin1.parse(0)
-            , padding: CryptoJS.pad.NoPadding
-          }
-          var gxmpi = CryptoJS.AES.decrypt(this.encrypted, key, opts)
-          gxmpi = gxmpi.toString(CryptoJS.enc.Latin1)
-          this.gx = HLP.readMPI(gxmpi)
-
-          // verify hash
-          var hash = CryptoJS.SHA256(gxmpi)
-          if (this.hashed !== hash.toString(CryptoJS.enc.Latin1))
-            return this.error('Hashed g^x does not match.')
-
-          // verify gx is legal 2 <= gy <= N-2
-          if (!checkGroup(this.gx)) return this.error('Illegal g^x.')
-
-          this.createAuthKeys(this.gx)
-
-          err = this.verifySignMac(
-              msg
-            , this.m2
-            , this.c
-            , this.gx
-            , this.our_dh[this.our_keyid - 1].publicKey
-            , this.m1
-          )
-          if (err) return this.error(err)
-
-          // this.updateMyKey()
-          this.makeM(send, this.gx, this.m1_prime, this.c_prime, this.m2_prime)
-
-          send.type = '\x12'
-          send.version = '\x00\x02'
-          break
-
-        case '\x12':
-          // data message
-          err = this.verifySignMac(
-              msg
-            , this.m2_prime
-            , this.c_prime
-            , this.gy
-            , this.our_dh[this.our_keyid - 1].publicKey
-            , this.m1_prime
-          )
-          if (err) return this.error(err)
-
-          send.type = '\x03'
-          send.version = '\x00\x02'
-          break
-
-        case '\x03':
-          break
-
-        default:
-          return this.error('Invalid message type.')
-
-      }
-
-      return send
-    },
-
-    initiateAKE: function () {
-      // d-h commit message
-      var send = {
-         type: '\x02'
-       , version: '\x00\x02'
-      }
-
-      var gxmpi = HLP.packMPI(this.our_dh[this.our_keyid - 1].publicKey)
-
-      this.r = HLP.randomValue()
-      var key = CryptoJS.enc.Hex.parse(BigInt.bigInt2str(this.r, 16))
-      var opts = {
-          mode: CryptoJS.mode.CTR
-        , iv: CryptoJS.enc.Latin1.parse(0)
-        , padding: CryptoJS.pad.NoPadding
-      }
-
-      var encrypt = CryptoJS.AES.encrypt(CryptoJS.enc.Latin1.parse(gxmpi), key, opts)
-      send.encrypted = encrypt.toString()
-
-      var hash = CryptoJS.SHA256(gxmpi)
-      send.hashed = hash.toString(CryptoJS.enc.Latin1)
-
-      this.sendMsg(send)
     },
 
     prepareMsg: function (msg) {
