@@ -16,7 +16,7 @@ communicating with, instantiate an OTR object.
 	var OTR = require('otr')
 	  , DSA = require('dsa')
 
-	var myKey = new DAS.Key()
+	var myKey = new DSA.Key()
 
 	var buddyList = {
 		  'userA': new OTR(myKey)
