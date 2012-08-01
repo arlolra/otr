@@ -45,6 +45,10 @@
   var TWO = BigInt.str2bigInt('2', 10)
   var N_MINUS_2 = BigInt.sub(N, TWO)
 
+  // otr message wrapper begin and end
+  var WRAPPER_BEGIN = "?OTR:"
+  var WRAPPER_END = "."
+
   // some helpers
   function checkGroup(g) {
     return HLP.GTOE(g, TWO) && HLP.GTOE(N_MINUS_2, g)
@@ -67,7 +71,9 @@
       , CryptoJS.enc.Latin1.parse(c)
       , opts
     )
-    return aesctr.toString()
+
+    var aesctr_decoded = CryptoJS.enc.Base64.parse(aesctr.toString())
+    return CryptoJS.enc.Latin1.stringify(aesctr_decoded)
   }
 
   function decryptAes(msg, c, iv) {
@@ -310,6 +316,30 @@
       return send
     },
 
+    sendMsg: function(msg){
+      var bm = msg.version + msg.type
+      switch(msg.type){
+        // d-h commit message
+        case '\x02':
+          bm += msg.encrypted
+          bm += msg.hashed
+          break
+        // d-h key message
+        case '\x0a':
+          bm += msg.gy
+        // reveal sig message
+        case '\x11':
+          bm += msg.r
+          bm += msg.aesctr
+          bm += msg.mac
+        // sig message
+        case '\x12':
+          bm += msg.aesctr
+          bm += msg.mac
+      }
+      return WRAPPER_BEGIN + CryptoJS.enc.Base64.stringify(CryptoJS.enc.Latin1.parse(bm)) + WRAPPER_END
+    },
+
     initiateAKE: function () {
       // d-h commit message
       var send = {
@@ -321,12 +351,12 @@
 
       this.r = HLP.randomValue()
       var key = CryptoJS.enc.Hex.parse(BigInt.bigInt2str(this.r, 16))
-      send.encrypted = makeAes(CryptoJS.enc.Latin1.parse(gxmpi), key, 0) 
+      send.encrypted = HLP.packData(makeAes(gxmpi, key, 0))
 
       var hash = CryptoJS.SHA256(gxmpi)
-      send.hashed = hash.toString(CryptoJS.enc.Latin1)
+      send.hashed = HLP.packData(hash.toString(CryptoJS.enc.Latin1))
 
-      this.sendMsg(send)
+      return this.sendMsg(send)
     }
 
   }
