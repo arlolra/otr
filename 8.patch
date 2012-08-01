@@ -1,0 +1,25 @@
+From c532d47c7c6e55f5dc264873205cf8b9b2ba5146 Mon Sep 17 00:00:00 2001
+From: Nadim Kobeissi <nadim@nadim.cc>
+Date: Wed, 1 Aug 2012 18:00:49 -0300
+Subject: [PATCH] Fixed typo
+
+---
+ readme.md |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/readme.md b/readme.md
+index de32205..3260c16 100644
+--- a/readme.md
++++ b/readme.md
+@@ -16,7 +16,7 @@ communicating with, instantiate an OTR object.
+ 	var OTR = require('otr')
+ 	  , DSA = require('dsa')
+ 
+-	var myKey = new DAS.Key()
++	var myKey = new DSA.Key()
+ 
+ 	var buddyList = {
+ 		  'userA': new OTR(myKey)
+-- 
+1.7.10
+
