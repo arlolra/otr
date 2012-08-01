@@ -5,15 +5,15 @@
   </head>
   <body></body>
   <script src="../vendor/bigint.js"></script>
-  <script src="http://crypto-js.googlecode.com/svn/tags/3.0.2/build/components/core.js"></script>
-  <script src="http://crypto-js.googlecode.com/svn/tags/3.0.2/build/components/enc-base64.js"></script>
-  <script src="http://crypto-js.googlecode.com/svn/tags/3.0.2/build/components/cipher-core.js"></script>
-  <script src="http://crypto-js.googlecode.com/svn/tags/3.0.2/build/components/aes.js"></script>
-  <script src="http://crypto-js.googlecode.com/svn/tags/3.0.2/build/components/sha1.js"></script>
-  <script src="http://crypto-js.googlecode.com/svn/tags/3.0.2/build/components/sha256.js"></script>
-  <script src="http://crypto-js.googlecode.com/svn/tags/3.0.2/build/components/hmac.js"></script>
-  <script src="http://crypto-js.googlecode.com/svn/tags/3.0.2/build/components/pad-nopadding.js"></script>
-  <script src="http://crypto-js.googlecode.com/svn/tags/3.0.2/build/components/mode-ctr.js"></script>
+  <script src="http://crypto-js.googlecode.com/svn/tags/3.0.2/build/components/core.js" type="text/javascript"></script>
+  <script src="http://crypto-js.googlecode.com/svn/tags/3.0.2/build/components/enc-base64.js" type="text/javascript"></script>
+  <script src="http://crypto-js.googlecode.com/svn/tags/3.0.2/build/components/cipher-core.js" type="text/javascript"></script>
+  <script src="http://crypto-js.googlecode.com/svn/tags/3.0.2/build/components/aes.js" type="text/javascript"></script>
+  <script src="http://crypto-js.googlecode.com/svn/tags/3.0.2/build/components/sha1.js" type="text/javascript"></script>
+  <script src="http://crypto-js.googlecode.com/svn/tags/3.0.2/build/components/sha256.js" type="text/javascript"></script>
+  <script src="http://crypto-js.googlecode.com/svn/tags/3.0.2/build/components/hmac.js" type="text/javascript"></script>
+  <script src="http://crypto-js.googlecode.com/svn/tags/3.0.2/build/components/pad-nopadding.js" type="text/javascript"></script>
+  <script src="http://crypto-js.googlecode.com/svn/tags/3.0.2/build/components/mode-ctr.js" type="text/javascript"></script>
   <script>
     var DH = {
         "N": "FFFFFFFFFFFFFFFFC90FDAA22168C234C4C6628B80DC1CD129024E088A67CC74020BBEA63B139B22514A08798E3404DDEF9519B3CD3A431B302B0A6DF25F14374FE1356D6D51C245E485B576625E7EC6F44C42E9A637ED6B0BFF5CB6F406B7EDEE386BFB5A899FA5AE9F24117C4B1FE649286651ECE45B3DC2007CB8A163BF0598DA48361C55D39A69163FA8FD24CF5F83655D23DCA3AD961C62F356208552BB9ED529077096966D670C354E4ABC9804F1746C08CA237327FFFFFFFFFFFFFFFF"
@@ -26,8 +26,8 @@
   <script src="../parse.js"></script>
   <script src="../otr.js"></script>
   <script>
-    var start = (new Date()).getTime()
-    var user = new OTR()
-    console.log((new Date()).getTime() - start)
+    var start = (new Date()).getTime();
+    var user = new OTR();
+   document.write('generating OTR object took <strong>' + ((new Date()).getTime() - start) + 'ms</strong>');
   </script>
 </html>
