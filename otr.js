@@ -37,6 +37,7 @@
     , AUTHSTATE_AWAITING_REVEALSIG = 2
     , AUTHSTATE_AWAITING_SIG = 3
     , AUTHSTATE_V1_SETUP = 4
+    , AUTHSTATE_V2_SETUP = 5
 
   // diffie-hellman modulus and generator
   // see group 5, RFC 3526
@@ -198,14 +199,15 @@
       this.their_priv_pk = pub
     },
 
-    makeM: function (send, their_y, m1, c, m2) {
+    makeM: function (their_y, m1, c, m2) {
       var pk = this.priv.packPublic()
       var kid = HLP.packInt(this.our_keyid)
       var m = hMac(this.our_dh.publicKey, their_y, pk, kid, m1)
       m = this.priv.sign(m)
       var msg = pk + kid + HLP.packMPI(m[0]) + HLP.packMPI(m[1])
-      send.aesctr = makeAes(msg, c, 0)
-      send.mac = makeMac(send.aesctr, m2)
+      var aesctr = makeAes(msg, c, 0)
+      var mac = makeMac(aesctr, m2)
+      return aesctr + mac
     },
 
     akeSuccess: function () {
@@ -230,37 +232,51 @@
     },
 
     handleAKE: function (msg) {
-      var send = {}
-        , err
 
+      var send, err
       switch (msg.type) {
 
         case '\x02':
           // d-h key message
-          send.gy = HLP.packMPI(this.our_dh.publicKey)
+          if (this.otr.authstate !== AUTHSTATE_NONE) {
+            // something something
+          }
+          this.otr.authstate = AUTHSTATE_AWAITING_REVEALSIG
+
+          send = '\x0a'
+          send += HLP.packMPI(this.our_dh.publicKey)
+
+          // parse out these vals
           this.encrypted = msg.encrypted
           this.hashed = msg.hashed
-          send.type = '\x0a'
-          send.version = '\x00\x02'
           break
 
         case '\x0a':
           // reveal signature message
+          if (this.otr.authstate !== AUTHSTATE_AWAITING_DHKEY) {
+            // something something
+          }
+          this.otr.authstate = AUTHSTATE_AWAITING_SIG
+
           this.their_y = HLP.readMPI(msg.gy)
 
           // verify gy is legal 2 <= gy <= N-2
           if (!checkGroup(this.their_y)) return this.error('Illegal g^y.')
 
           this.createKeys(this.their_y)
-          this.makeM(send, this.their_y, this.m1, this.c, this.m2)
 
-          send.r = HLP.packMPI(this.r)
           send.type = '\x11'
-          send.version = '\x00\x02'
+          send += HLP.packMPI(this.r)
+          send += this.makeM(this.their_y, this.m1, this.c, this.m2)
           break
 
         case '\x11':
           // signature message
+          if (this.otr.authstate !== AUTHSTATE_AWAITING_REVEALSIG) {
+            // something something
+          }
+          this.otr.authstate = AUTHSTATE_V2_SETUP
+
           this.r = HLP.readMPI(msg.r)
 
           // decrypt their_y
@@ -290,14 +306,22 @@
 
           this.akeSuccess()
 
-          this.makeM(send, this.their_y, this.m1_prime, this.c_prime, this.m2_prime)
-
-          send.type = '\x12'
-          send.version = '\x00\x02'
+          send = '\x12'
+          send += this.makeM(
+              this.their_y
+            , this.m1_prime
+            , this.c_prime
+            , this.m2_prime
+          )
           break
 
         case '\x12':
           // data message
+          if (this.otr.authstate !== AUTHSTATE_AWAITING_SIG) {
+            // something something
+          }
+          this.otr.authstate = AUTHSTATE_V2_SETUP
+
           err = this.verifySignMac(
               msg
             , this.m2_prime
@@ -310,7 +334,6 @@
 
           this.transmittedRS = true
           this.akeSuccess()
-
           break
 
         default:
@@ -318,59 +341,32 @@
 
       }
 
-      return send
+      return this.sendMsg(send)
     },
 
     sendMsg: function (msg) {
-      var bm = msg.version + msg.type
-      switch (msg.type) {
-        // d-h commit message
-        case '\x02':
-          bm += msg.encrypted
-          bm += msg.hashed
-          break
-        // d-h key message
-        case '\x0a':
-          bm += msg.gy
-          break
-        // reveal sig message
-        case '\x11':
-          bm += msg.r
-          bm += msg.aesctr
-          bm += msg.mac
-          break
-        // sig message
-        case '\x12':
-          bm += msg.aesctr
-          bm += msg.mac
-          break
-        default:
-          throw new Error('Not AKE message.')
-      }
-      return this.otr.sendMsg(wrapMsg(bm))
+      msg = '\x00\x02' + msg
+      return this.otr.sendMsg(wrapMsg(msg))
     },
 
     initiateAKE: function () {
       // d-h commit message
-      var send = {
-          type: '\x02'
-        , version: '\x00\x02'
-      }
+      var send =  '\x02'
 
       if (this.otr.authstate !== AUTHSTATE_NONE) {
         // something something
       }
+      this.otr.authstate = AUTHSTATE_AWAITING_DHKEY
 
       var gxmpi = HLP.packMPI(this.our_dh.publicKey)
 
       this.r = HLP.randomValue()
       var key = CryptoJS.enc.Hex.parse(BigInt.bigInt2str(this.r, 16))
-      send.encrypted = HLP.packData(makeAes(gxmpi, key, 0))
+      send += HLP.packData(makeAes(gxmpi, key, 0))
 
       var hash = CryptoJS.SHA256(gxmpi)
-      send.hashed = HLP.packData(hash.toString(CryptoJS.enc.Latin1))
+      send += HLP.packData(hash.toString(CryptoJS.enc.Latin1))
 
-      this.otr.authstate = AUTHSTATE_AWAITING_DHKEY
       return this.sendMsg(send)
     }
 
