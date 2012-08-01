@@ -30,7 +30,7 @@ describe('Helpers', function () {
 
   describe('readMPI', function(){
     it('should read mpi data correctly', function(){
-      assert.equal('65280', BigInt.bigInt2str(HLP.readMPI('\0\0\0\2\xff\0'), 10), 'Read MPI.')d
+      assert.equal('65280', BigInt.bigInt2str(HLP.readMPI('\0\0\0\2\xff\0'), 10), 'Read MPI.')
       assert.equal(two55, BigInt.bigInt2str(HLP.readMPI(str), 10))
     });
   });
