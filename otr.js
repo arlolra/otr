@@ -316,9 +316,9 @@
       return send
     },
 
-    sendMsg: function(msg){
+    sendMsg: function (msg) {
       var bm = msg.version + msg.type
-      switch(msg.type){
+      switch (msg.type) {
         // d-h commit message
         case '\x02':
           bm += msg.encrypted
@@ -327,17 +327,23 @@
         // d-h key message
         case '\x0a':
           bm += msg.gy
+          break
         // reveal sig message
         case '\x11':
           bm += msg.r
           bm += msg.aesctr
           bm += msg.mac
+          break
         // sig message
         case '\x12':
           bm += msg.aesctr
           bm += msg.mac
+          break
+        default:
+          throw new Error('Not AKE message.')
       }
-      return WRAPPER_BEGIN + CryptoJS.enc.Base64.stringify(CryptoJS.enc.Latin1.parse(bm)) + WRAPPER_END
+      bm = CryptoJS.enc.Base64.stringify(CryptoJS.enc.Latin1.parse(bm))
+      return WRAPPER_BEGIN + bm + WRAPPER_END
     },
 
     initiateAKE: function () {

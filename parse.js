@@ -70,7 +70,9 @@
     // otr message
     if (com === ':') {
 
-      var info = msg.substring(ind + 1, ind + 5)
+      ind += 1
+
+      var info = msg.substring(ind, ind + 4)
       if (info.length < 4) return msg
       info = CryptoJS.enc.Base64.parse(info).toString(CryptoJS.enc.Latin1)
 
@@ -80,10 +82,12 @@
       // only supporting otr version 2
       if (version !== OTR_VERSION_2) return msg
 
-      var end = msg.substring(ind + 4).indexOf('.')
+      ind += 4
+
+      var end = msg.substring(ind).indexOf('.')
       if (!~end) return msg
 
-      return this.handle(otr, version, type, msg.substring(ind + 4, end))
+      return this.handle(otr, version, type, msg.substring(ind, ind + end))
     }
 
     // error message
@@ -95,7 +99,11 @@
   }
 
   ParseOTR.handle = function (otr, version, type, msg) {
-    return 'OTR'
+    return {
+        'version': version
+      , 'type': type
+      , 'msg': msg
+    }
   }
 
   ParseOTR.initFragment = function (otr) {

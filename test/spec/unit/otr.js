@@ -2,18 +2,23 @@
 
 var assert = require('assert')
   , OTR = require('../../../otr.js')
-  , DSA = require('../../../dsa.js')
+  , keys = require('./data/keys.js')
+  , ParseOTR = require('../../../parse.js')
 
 describe('OTR', function () {
 
-  var UAkey, UBkey
-  before(function(){
-    UAkey = new DSA.Key()
-    UBkey = new DSA.Key()
+  it('should initiate a new OTR object', function () {
+    var userA = new OTR(keys.userA)
   })
 
-  it('should initiate a new OTR object', function () {
-    var userA = new OTR(UAkey)
+  it('should initiate AKE', function () {
+    var userA = new OTR(keys.userA)
+    var userB = new OTR(keys.userB)
+
+    var msg = userA.ake.initiateAKE()
+    msg = ParseOTR.parseMsg(userB, msg)
+    assert.equal('\x02', msg.type, 'Message type.')
+    assert.equal('\x00\x02', msg.version, 'Message version.')
   })
 
 })
