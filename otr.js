@@ -361,7 +361,7 @@
       this.ALLOW_V1 = false
       this.ALLOW_V2 = true
 
-      this.initFragment()  // ParseOTR
+      ParseOTR.initFragment(this)
 
       this.versions = {}
       this.otrEnabled = false
@@ -382,7 +382,7 @@
 
       this.oldMacKeys = []
 
-      this.sm = new SM()
+      this.sm = null  // new SM()
 
       // when ake is complete
       // save their keys and the session
@@ -463,7 +463,9 @@
     },
 
     receiveMsg: function (msg, uicb, retcb) {
-      return this.handleAKE(msg)
+      if (!this.otrEnabled) return uicb(msg)
+
+      msg = ParseOTR.parseMsg(this, msg)
     },
 
     error: function (err) {

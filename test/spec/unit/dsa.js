@@ -1,9 +1,12 @@
+/*global describe before it */
+
 var assert = require('assert')
   , HLP = require('../../../helpers.js')
   , DSA = require('../../../dsa.js')
   , BigInt = require('../../../vendor/bigint.js')
 
-describe('DSA', function(){
+describe('DSA', function() {
+
   var key;
   before(function(){
     key = new DSA.Key()
@@ -39,4 +42,5 @@ describe('DSA', function(){
       assert.ok(BigInt.equals(key.g, par.g), 'Gs.')
       assert.ok(BigInt.equals(key.y, par.y), 'Ys.')
   });
-});
+
+})

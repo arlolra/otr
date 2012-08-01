@@ -1,10 +1,12 @@
+/*global describe before it beforeEach */
+
 var assert = require('assert')
   , OTR = function () { this.versions = {} }  // just a constructor
   , P = require('../../../parse.js')
 
 describe('Parse', function () {
-  var otr
 
+  var otr
   beforeEach(function () {
     otr = new OTR()
   })

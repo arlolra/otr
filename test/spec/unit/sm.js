@@ -1,3 +1,5 @@
+/*global describe before it */
+
 var assert = require('assert')
   , SM = require('../../../sm.js')
 
