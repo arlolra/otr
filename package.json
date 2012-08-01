@@ -23,7 +23,7 @@
   "devDependencies": {
     "mocha": "*"
   },
-  "author": "Arlo Breault",
+  "author": "Arlo Breault <arlolra@gmail.com>",
   "contributors": [
     "William Budington <bill.budington@gmail.com>"
   ],
