@@ -15,10 +15,12 @@ describe('OTR', function () {
     var userA = new OTR(keys.userA)
     var userB = new OTR(keys.userB)
 
-    var msg = userA.ake.initiateAKE()
-    msg = ParseOTR.parseMsg(userB, msg)
-    assert.equal('\x02', msg.type, 'Message type.')
-    assert.equal('\x00\x02', msg.version, 'Message version.')
+    // query otr
+    userA.receiveMsg('?OTR?v2?', null, function (msg) {
+      msg = ParseOTR.parseMsg(userB, msg)
+      assert.equal('\x02', msg.type, 'Message type.')
+      assert.equal('\x00\x02', msg.version, 'Message version.')
+    })
   })
 
 })

@@ -64,6 +64,13 @@
         })
       }
 
+      // start ake
+      if (otr.ALLOW_V2 && otr.versions['2']) {
+        otr.ake.initiateAKE()
+      } else if (otr.ALLOW_V1 && otr.versions['1']) {
+        // not yet
+      }
+
       return ''
     }
 

@@ -60,6 +60,11 @@
     return keys
   }
 
+  function wrapMsg(msg) {
+    msg = CryptoJS.enc.Base64.stringify(CryptoJS.enc.Latin1.parse(msg))
+    return WRAPPER_BEGIN + msg + WRAPPER_END
+  }
+
   function makeAes(msg, c, iv) {
     var opts = {
         mode: CryptoJS.mode.CTR
@@ -342,15 +347,18 @@
         default:
           throw new Error('Not AKE message.')
       }
-      bm = CryptoJS.enc.Base64.stringify(CryptoJS.enc.Latin1.parse(bm))
-      return WRAPPER_BEGIN + bm + WRAPPER_END
+      return this.otr.sendMsg(wrapMsg(bm))
     },
 
     initiateAKE: function () {
       // d-h commit message
       var send = {
-         type: '\x02'
-       , version: '\x00\x02'
+          type: '\x02'
+        , version: '\x00\x02'
+      }
+
+      if (this.otr.authstate !== AUTHSTATE_NONE) {
+        // something something
       }
 
       var gxmpi = HLP.packMPI(this.our_dh.publicKey)
@@ -362,6 +370,7 @@
       var hash = CryptoJS.SHA256(gxmpi)
       send.hashed = HLP.packData(hash.toString(CryptoJS.enc.Latin1))
 
+      this.otr.authstate = AUTHSTATE_AWAITING_DHKEY
       return this.sendMsg(send)
     }
 
@@ -400,7 +409,6 @@
       ParseOTR.initFragment(this)
 
       this.versions = {}
-      this.otrEnabled = false
 
       // their keys
       this.their_y = null
@@ -489,18 +497,19 @@
 
       var mta = makeMac(ta, sessKeys.sendmac)
 
-      return ta + mta + oldMacKeys
+      return wrapMsg(ta + mta + oldMacKeys)
 
     },
 
     sendMsg: function (msg, retcb) {
-      if (this.otrEnabled) msg = this.prepareMsg(msg)
-      retcb(msg)
+      if (retcb) this.retcb = retcb
+      if (this.msgstate === MSGSTATE_ENCRYPTED) msg = this.prepareMsg(msg)
+      this.retcb(msg)
     },
 
     receiveMsg: function (msg, uicb, retcb) {
-      if (!this.otrEnabled) return uicb(msg)
-
+      this.uicb = uicb
+      this.retcb = retcb
       msg = ParseOTR.parseMsg(this, msg)
     },
 
