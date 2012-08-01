@@ -2,6 +2,7 @@
   "name": "otr",
   "version": "0.0.0",
   "description": "Off-the-Record Messaging Protocol v2",
+  "homepage": "https://github.com/arlolra/otr",
   "main": "otr.js",
   "scripts": {
     "test": "./node_modules/.bin/mocha -R spec test/spec/unit/*.js"
@@ -23,5 +24,8 @@
     "mocha": "*"
   },
   "author": "Arlo Breault",
+  "contributors": [
+    "William Budington <bill.budington@gmail.com>"
+  ],
   "license": "LGPL"
 }
