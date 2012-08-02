@@ -279,7 +279,32 @@
     },
 
     receiveMsg: function (msg) {
+
+      // parse type
       msg = ParseOTR.parseMsg(this, msg)
+      if (!msg) return
+
+      switch (msg.class) {
+        case 'error':
+          this.error(msg.msg)
+          return
+          break
+        case 'otr':
+          if (~['\x02', '\x0a', '\x11', '\x12'].indexOf(msg.type)) {
+            this.ake.handleAKE(msg)
+            return
+          }
+          if (msg.type === '\x03') {
+            this.handleDataMsg(msg)
+            return
+          }
+          break
+        default:
+          break
+      }
+
+      this.uicb(msg.msg)
+
     },
 
     error: function (err, send) {
@@ -291,6 +316,8 @@
         return
       }
 
+      // should cb be a node style function (err, msg) {}
+      // or just instanceof Error ?
       this.uicb(err)
     },
 

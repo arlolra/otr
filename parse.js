@@ -40,7 +40,7 @@
     if (!~start) {
       // check for tags
       this.initFragment(otr)
-      return msg
+      return { msg: msg }
     }
 
     var ind = start + OTR_TAG.length
@@ -91,21 +91,26 @@
       ind += 1
 
       var info = msg.substring(ind, ind + 4)
-      if (info.length < 4) return msg
+      if (info.length < 4) return { msg: msg }
       info = CryptoJS.enc.Base64.parse(info).toString(CryptoJS.enc.Latin1)
 
       var version = info.substring(0, 2)
       var type = info.substring(2)
 
       // only supporting otr version 2
-      if (version !== OTR_VERSION_2) return msg
+      if (version !== OTR_VERSION_2) return { msg: msg }
 
       ind += 4
 
       var end = msg.substring(ind).indexOf('.')
-      if (!~end) return msg
+      if (!~end) return { msg: msg }
 
-      return this.handle(otr, version, type, msg.substring(ind, ind + end))
+      return {
+          version: version
+        , type: type
+        , msg: msg.substring(ind, ind + end)
+        , class: 'otr'
+      }
     }
 
     // error message
@@ -113,18 +118,10 @@
       if (otr.ERROR_START_AKE) {
         otr.sendQueryMsg()
       }
-      return otr.error(msg.substring(ind + 7))
+      return { msg: msg.substring(ind + 7), class: 'error' }
     }
 
-    return msg
-  }
-
-  ParseOTR.handle = function (otr, version, type, msg) {
-    return {
-        'version': version
-      , 'type': type
-      , 'msg': msg
-    }
+    return { msg: msg }
   }
 
   ParseOTR.initFragment = function (otr) {
@@ -137,7 +134,7 @@
     if (msg.length < 4 ||
       isNaN(parseInt(msg[0], 10)) ||
       isNaN(parseInt(msg[1], 10))
-    ) return ''
+    ) return
 
     var k = parseInt(msg[0], 10)
     var n = parseInt(msg[1], 10)
@@ -145,7 +142,7 @@
 
     if (n < k || n === 0 || k === 0) {
       this.initFragment(otr)
-      return ''
+      return
     }
 
     if (k === 1) {
@@ -164,7 +161,7 @@
       return this.parseMsg(otr, msg)
     }
 
-    return ''
+    return
   }
 
 }).call(this)
