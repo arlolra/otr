@@ -3,7 +3,15 @@ Off-the Record Messaging Protocol v2 in JavaScript
 
 [![Build Status](https://secure.travis-ci.org/arlolra/otr.png?branch=master)](http://travis-ci.org/arlolra/otr)
 
-This is obviously still a WIP.
+This is still a WIP.
+
+---
+
+###Warning
+
+Replace `Math.random()`
+
+See: [bigint.js](https://github.com/arlolra/otr/blob/9a1329b0d2d673bae714d4bc5b25109952ed0106/vendor/bigint.js#L62-63)
 
 ---
 
