@@ -37,7 +37,6 @@
     , AUTHSTATE_AWAITING_REVEALSIG = 2
     , AUTHSTATE_AWAITING_SIG = 3
     , AUTHSTATE_V1_SETUP = 4
-    , AUTHSTATE_V2_SETUP = 5
 
   // diffie-hellman modulus and generator
   // see group 5, RFC 3526
@@ -59,6 +58,12 @@
     var keys = { privateKey: BigInt.randBigInt(320) }
     keys.publicKey = BigInt.powMod(G, keys.privateKey, N)
     return keys
+  }
+
+  function L1toBI(l) {
+    l = CryptoJS.enc.Latin1.parse(l)
+    l = CryptoJS.enc.Hex.stringify(l)
+    return BigInt.str2bigInt(l, 16)
   }
 
   function wrapMsg(msg) {
@@ -214,6 +219,9 @@
       if (BigInt.equals(this.their_y, this.our_dh.publicKey))
         throw new Error('equal keys - we have a problem.')
 
+      // our keys
+      this.otr.our_dh = this.dh
+
       // their keys
       this.otr.their_y = this.their_y
       this.otr.their_keyid = this.their_keyid
@@ -238,9 +246,26 @@
 
         case '\x02':
           // d-h key message
-          if (this.otr.authstate !== AUTHSTATE_NONE) {
-            // something something
-          }
+          if (!this.ALLOW_V2) return  // ignore
+
+          if (this.otr.authstate === AUTHSTATE_AWAITING_DHKEY) {
+            var ourHash = L1toBI(this.myhashed)
+            var theirHash = L1toBI(msg.hashed)
+            if (BigInt.greater(ourHash, theirHash)) {
+              this.initiateAKE()
+              return  // ignore
+            } else {
+              // forget
+              this.our_dh = dh()
+              this.otr.AUTHSTATE_NONE
+              this.r = null
+              this.myhashed = null
+            }
+          } else if (
+            this.otr.authstate === AUTHSTATE_AWAITING_SIG ||
+            this.otr.authstate === AUTHSTATE_V1_SETUP
+          ) this.our_dh = dh()
+
           this.otr.authstate = AUTHSTATE_AWAITING_REVEALSIG
 
           send = '\x0a'
@@ -253,9 +278,16 @@
 
         case '\x0a':
           // reveal signature message
+          if (!this.ALLOW_V2) return  // ignore
+
           if (this.otr.authstate !== AUTHSTATE_AWAITING_DHKEY) {
-            // something something
+            if (this.otr.authstate === AUTHSTATE_AWAITING_SIG) {
+              if (!BigInt.equals(this.their_y, HLP.readMPI(msg.gy))) return
+            } else {
+              return  // ignore
+            }
           }
+
           this.otr.authstate = AUTHSTATE_AWAITING_SIG
 
           this.their_y = HLP.readMPI(msg.gy)
@@ -275,7 +307,7 @@
           if (this.otr.authstate !== AUTHSTATE_AWAITING_REVEALSIG) {
             // something something
           }
-          this.otr.authstate = AUTHSTATE_V2_SETUP
+          this.otr.authstate = AUTHSTATE_NONE
 
           this.r = HLP.readMPI(msg.r)
 
@@ -320,7 +352,7 @@
           if (this.otr.authstate !== AUTHSTATE_AWAITING_SIG) {
             // something something
           }
-          this.otr.authstate = AUTHSTATE_V2_SETUP
+          this.otr.authstate = AUTHSTATE_NONE
 
           err = this.verifySignMac(
               msg
@@ -353,9 +385,6 @@
       // d-h commit message
       var send = '\x02'
 
-      if (this.otr.authstate !== AUTHSTATE_NONE) {
-        // something something
-      }
       this.otr.authstate = AUTHSTATE_AWAITING_DHKEY
 
       var gxmpi = HLP.packMPI(this.our_dh.publicKey)
@@ -364,8 +393,9 @@
       var key = CryptoJS.enc.Hex.parse(BigInt.bigInt2str(this.r, 16))
       send += HLP.packData(makeAes(gxmpi, key, 0))
 
-      var hash = CryptoJS.SHA256(gxmpi)
-      send += HLP.packData(hash.toString(CryptoJS.enc.Latin1))
+      this.myhashed = CryptoJS.SHA256(gxmpi)
+      this.myhashed = HLP.packData(this.myhashed.toString(CryptoJS.enc.Latin1))
+      send += this.myhashed
 
       return this.sendMsg(send)
     }
@@ -418,8 +448,8 @@
       this.their_priv_pk = null
 
       // our keys
-      this.our_dh = new dh()
-      this.our_old_dh = new dh()
+      this.our_dh = dh()
+      this.our_old_dh = dh()
       this.our_keyid = 2
 
       // session keys
@@ -447,7 +477,7 @@
 
       // rotate our keys
       this.our_old_dh = this.our_dh
-      this.our_dh = new dh()
+      this.our_dh = dh()
       this.our_keyid += 1
 
       // session keys
