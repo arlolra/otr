@@ -236,7 +236,11 @@
       this.otr.rotateOurKeys()
 
       // go encrypted
+      this.otr.authstate = AUTHSTATE_NONE
       this.otr.msgstate = MSGSTATE_ENCRYPTED
+
+      // send stored msgs
+      this.otr.sendStored()
     },
 
     handleAKE: function (msg) {
@@ -246,7 +250,7 @@
 
         case '\x02':
           // d-h key message
-          if (!this.ALLOW_V2) return  // ignore
+          if (!this.otr.ALLOW_V2) return  // ignore
 
           if (this.otr.authstate === AUTHSTATE_AWAITING_DHKEY) {
             var ourHash = L1toBI(this.myhashed)
@@ -278,7 +282,7 @@
 
         case '\x0a':
           // reveal signature message
-          if (!this.ALLOW_V2) return  // ignore
+          if (!this.otr.ALLOW_V2) return  // ignore
 
           if (this.otr.authstate !== AUTHSTATE_AWAITING_DHKEY) {
             if (this.otr.authstate === AUTHSTATE_AWAITING_SIG) {
@@ -304,10 +308,9 @@
 
         case '\x11':
           // signature message
-          if (this.otr.authstate !== AUTHSTATE_AWAITING_REVEALSIG) {
-            // something something
-          }
-          this.otr.authstate = AUTHSTATE_NONE
+          if ( !this.otr.ALLOW_V2 ||
+               this.otr.authstate !== AUTHSTATE_AWAITING_REVEALSIG
+          ) return  // ignore
 
           this.r = HLP.readMPI(msg.r)
 
@@ -349,10 +352,9 @@
 
         case '\x12':
           // data message
-          if (this.otr.authstate !== AUTHSTATE_AWAITING_SIG) {
-            // something something
-          }
-          this.otr.authstate = AUTHSTATE_NONE
+          if ( !this.otr.ALLOW_V2 ||
+               this.otr.authstate !== AUTHSTATE_AWAITING_SIG
+          ) return  // ignore
 
           err = this.verifySignMac(
               msg
@@ -369,7 +371,7 @@
           break
 
         default:
-          return this.error('Invalid message type.')
+          return  // ignore
 
       }
 
@@ -455,6 +457,8 @@
       // session keys
       this.sessKeys = [ new Array(2), new Array(2) ]
 
+      // saved
+      this.storedMgs = []
       this.oldMacKeys = []
 
       this.sm = null  // new SM()
@@ -555,6 +559,9 @@
 
     sendMsg: function (msg, retcb) {
       if (retcb) this.retcb = retcb
+
+      if (this.msgstate === MSGSTATE_FINISHED) return  // maybe ui callback
+
       if (this.msgstate === MSGSTATE_ENCRYPTED) {
         msg = this.prepareMsg(msg)
       } else {
@@ -573,6 +580,12 @@
     error: function (err) {
       console.log(err)
       return ''
+    },
+
+    sendStored: function () {
+      (this.storedMgs.splice(0)).forEach(function (msg) {
+        this.sendMsg(msg)
+      })
     }
 
   }
