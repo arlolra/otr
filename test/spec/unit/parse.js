@@ -74,8 +74,11 @@ describe('Parse', function () {
     assert.equal(0, Object.keys(otr.versions).length, 'version bizarre')
   });
 
-  it('should parse otr error message', function(){
-    assert.equal('This is an error.', (P.parseMsg(otr, '?OTR Error:This is an error.')).message, 'Err.')
+  it('should parse otr error message', function () {
+    otr.uicb = function (msg) {
+      assert.equal('This is an error.', msg, 'Err.')
+    }
+    P.parseMsg(otr, '?OTR Error:This is an error.')
   })
 
 })
