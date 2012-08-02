@@ -26,8 +26,9 @@
   <script src="../parse.js"></script>
   <script src="../otr.js"></script>
   <script>
+    var cb = function () {};
     var start = (new Date()).getTime();
-    var user = new OTR();
+    var user = new OTR(null, cb, cb);
    document.write('generating OTR object took <strong>' + ((new Date()).getTime() - start) + 'ms</strong>');
   </script>
 </html>

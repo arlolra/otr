@@ -18,23 +18,29 @@ communicating with, instantiate an OTR object.
 
 	var myKey = new DSA.Key()
 
+	// provide some callbacks to otr
+	var uicb = function (msg) {
+		console.log("message to display to the user: " + msg)
+	}
+	var iocb = function (msg) {
+		console.log("message to send to buddy: " + msg)
+	} 
+
 	var buddyList = {
-		  'userA': new OTR(myKey)
-		, 'userB' new OTR(myKey)
+		  'userA': new OTR(myKey, uicb, iocb)
+		, 'userB' new OTR(myKey uicb, iocb)
 	}
 
 **New message from userA received**: Pass the received message to the `receiveMsg`
-method along with two callbacks, the first to display parsed messages to the ui,
-the second for OTR's automatic responses to AKE, SM, etc.
+method.
 
 	var rcvmsg = "Message from userA."
-	buddyList.userA.receiveMsg(rcvmsg, uicb, retcb)
+	buddyList.userA.receiveMsg(rcvmsg)
 
-**Send a message to userA**: Pass the message to the `sendMsg` method with a
-callback for OTR to ship the outgoing encoded message.
+**Send a message to userA**: Pass the message to the `sendMsg` method.
 
 	var newmsg = "Message to userA."
-	buddyList.userA.sendMsg(newmsg, retcb)
+	buddyList.userA.sendMsg(newmsg)
 
 ---
 

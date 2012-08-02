@@ -380,7 +380,7 @@
 
     sendMsg: function (msg) {
       msg = '\x00\x02' + msg
-      return this.otr.sendMsg(wrapMsg(msg))
+      return this.otr.sendMsg(wrapMsg(msg), true)
     },
 
     initiateAKE: function () {
@@ -405,14 +405,24 @@
   }
 
   // OTR contructor
-  function OTR(priv) {
-    if (!(this instanceof OTR)) return new OTR(priv)
+  function OTR(priv, uicb, iocb) {
+    if (!(this instanceof OTR)) return new OTR(priv, uicb, iocb)
 
+    // private keys
     if (priv && !(priv instanceof DSA.Key))
       throw new Error('Requires long-lived DSA key.')
 
     this.priv = priv ? priv : new DSA.Key()
 
+    // attach callbacks
+    if ( !iocb || typeof iocb !== 'function' ||
+         !uicb || typeof uicb !== 'function'
+    ) throw new Error('UI and IO callbacks are required.')
+
+    this.iocb = iocb
+    this.uicb = uicb
+
+    // init vals
     this.init()
 
     // bind methods
@@ -536,7 +546,7 @@
 
     },
 
-    sendQueryMsg: function (retcb) {
+    sendQueryMsg: function () {
       var versions = {}
         , msg = '?OTR'
 
@@ -554,26 +564,39 @@
         msg += '?'
       }
 
-      this.sendMsg(msg, retcb)
+      this.sendMsg(msg, true)
     },
 
-    sendMsg: function (msg, retcb) {
-      if (retcb) this.retcb = retcb
+    sendMsg: function (msg, internal) {
+      if (!internal) {  // a user msg
 
-      if (this.msgstate === MSGSTATE_FINISHED) return  // maybe ui callback
+        switch (this.msgstate) {
+          case MSGSTATE_PLAINTEXT:
+            if (this.REQUIRE_ENCRYPTION) {
+              this.storedMgs.push(msg)
+              this.sendQueryMsg()
+              return
+            }
+            if (this.SEND_WHITESPACE_TAG) {
+              // and haven't received a PT msg since entering PT
+              // msg += whitespace_tag
+            }
+            break
+          case MSGSTATE_FINISHED:
+            this.storedMgs.push(msg)
+            this.uicb('Message cannot be sent at this time.')
+            return
+            break
+          default:
+            this.storedMgs.push(msg)
+            msg = this.prepareMsg(msg)
+        }
 
-      if (this.msgstate === MSGSTATE_ENCRYPTED) {
-        msg = this.prepareMsg(msg)
-      } else {
-        if (this.REQUIRE_ENCRYPTION)
-          throw new Error('Cannot send unencrypted msg.')
       }
-      this.retcb(msg)
+      this.iocb(msg)
     },
 
-    receiveMsg: function (msg, uicb, retcb) {
-      this.uicb = uicb
-      this.retcb = retcb
+    receiveMsg: function (msg) {
       msg = ParseOTR.parseMsg(this, msg)
     },
 

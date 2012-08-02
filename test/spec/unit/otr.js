@@ -7,33 +7,33 @@ var assert = require('assert')
 
 describe('OTR', function () {
 
+  var cb = function () {}
+
   it('should initiate a new OTR object', function () {
-    var userA = new OTR(keys.userA)
+    var userA = new OTR(keys.userA, cb, cb)
   })
 
   it('should initiate AKE', function () {
-    var userA = new OTR(keys.userA)
-    var userB = new OTR(keys.userB)
-
-    // query otr
-    userA.receiveMsg('?OTR?v2?', null, function (msg) {
+    var userB = new OTR(keys.userB, cb, cb)
+    var userA = new OTR(keys.userA, cb, function (msg) {
       msg = ParseOTR.parseMsg(userB, msg)
       assert.equal('\x02', msg.type, 'Message type.')
       assert.equal('\x00\x02', msg.version, 'Message version.')
     })
+    // query otr
+    userA.receiveMsg('?OTR?v2?')
   })
 
   it('should query with versions one and two', function () {
-    var userA = new OTR(keys.userA)
-    var userB = new OTR(keys.userB)
-    userA.ALLOW_V1 = true
-    userA.sendQueryMsg(function (msg) {
+    var userB = new OTR(keys.userB, cb, cb)
+    var userA = new OTR(keys.userA, cb, function (msg) {
       assert.equal('?OTR?v2?', msg, 'Versions 1 and 2.')
-      userB.receiveMsg(msg, null, function (msg) {
-        assert.ok(userB.versions['1'], 'version 1 & 2')
-        assert.ok(userB.versions['2'], 'version 1 & 2')
-      })
+      userB.receiveMsg(msg)
+      assert.ok(userB.versions['1'], 'version 1 & 2')
+      assert.ok(userB.versions['2'], 'version 1 & 2')
     })
+    userA.ALLOW_V1 = true
+    userA.sendQueryMsg()
   })
 
 })
