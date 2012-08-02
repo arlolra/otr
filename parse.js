@@ -20,7 +20,18 @@
 
   // otr versions
   var OTR_VERSION_1 = '\x00\x01'
-  var OTR_VERSION_2 = '\x00\x02'
+    , OTR_VERSION_2 = '\x00\x02'
+
+  // data types (byte lengths)
+  var BYTE = 1
+    , SHORT = 2
+    , INT = 4
+    , MPI = INT  // + LEN
+    , DATA = INT  // + LEN
+    , CTR = 8
+    , MAC = 20
+    , PUBKEY = SHORT + (4 * MPI)
+    , SIG = 40  // 2 * priv.q.length
 
   ParseOTR.parseMsg = function (otr, msg) {
 
@@ -55,7 +66,7 @@
       var qs = msg.substring(ind + 1)
       var qi = qs.indexOf('?')
 
-      if (qi < 1) return ''
+      if (qi < 1) return
       qs = qs.substring(0, qi).split('')
 
       if (msg[ind] === 'v') {
@@ -71,7 +82,7 @@
         // not yet
       }
 
-      return ''
+      return
     }
 
     // otr message
@@ -102,7 +113,7 @@
       if (otr.ERROR_START_AKE) {
         otr.sendQueryMsg()
       }
-      return otr.uicb(msg.substring(ind + 7))
+      return otr.error(msg.substring(ind + 7))
     }
 
     return msg

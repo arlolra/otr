@@ -150,7 +150,7 @@
     },
 
     packPublic: function () {
-      var str = '\x00\x00'
+      var str = '\x00\x00'  // pubkey type
       str += HLP.packMPI(this.p)
       str += HLP.packMPI(this.q)
       str += HLP.packMPI(this.g)

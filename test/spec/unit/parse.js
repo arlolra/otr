@@ -75,7 +75,7 @@ describe('Parse', function () {
   });
 
   it('should parse otr error message', function () {
-    otr.uicb = function (msg) {
+    otr.error = function (msg) {
       assert.equal('This is an error.', msg, 'Err.')
     }
     P.parseMsg(otr, '?OTR Error:This is an error.')

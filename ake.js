@@ -151,7 +151,7 @@
 
     akeSuccess: function () {
       if (BigInt.equals(this.their_y, this.our_dh.publicKey))
-        throw new Error('equal keys - we have a problem.')
+        return this.otr.error('equal keys - we have a problem.', true)
 
       // our keys
       this.otr.our_dh = this.dh
@@ -234,7 +234,8 @@
           this.their_y = HLP.readMPI(msg.gy)
 
           // verify gy is legal 2 <= gy <= N-2
-          if (!checkGroup(this.their_y)) return this.error('Illegal g^y.')
+          if (!checkGroup(this.their_y))
+            return this.otr.error('Illegal g^y.', true)
 
           this.createKeys(this.their_y)
 
@@ -259,10 +260,11 @@
           // verify hash
           var hash = CryptoJS.SHA256(gxmpi)
           if (this.hashed !== hash.toString(CryptoJS.enc.Latin1))
-            return this.error('Hashed g^x does not match.')
+            return this.otr.error('Hashed g^x does not match.', true)
 
           // verify gx is legal 2 <= g^x <= N-2
-          if (!checkGroup(this.their_y)) return this.error('Illegal g^x.')
+          if (!checkGroup(this.their_y))
+            return this.otr.error('Illegal g^x.', true)
 
           this.createKeys(this.their_y)
 
@@ -274,7 +276,7 @@
             , this.our_dh.publicKey
             , this.m1
           )
-          if (err) return this.error(err)
+          if (err) return this.otr.error(err, true)
 
           this.akeSuccess()
 
@@ -301,7 +303,7 @@
             , this.our_dh.publicKey
             , this.m1_prime
           )
-          if (err) return this.error(err)
+          if (err) return this.otr.error(err, true)
 
           this.transmittedRS = true
           this.akeSuccess()
@@ -312,12 +314,12 @@
 
       }
 
-      return this.sendMsg(send)
+      this.sendMsg(send)
     },
 
     sendMsg: function (msg) {
       msg = '\x00\x02' + msg
-      return this.otr.sendMsg(HLP.wrapMsg(msg), true)
+      this.otr.sendMsg(HLP.wrapMsg(msg), true)
     },
 
     initiateAKE: function () {
@@ -336,7 +338,7 @@
       this.myhashed = HLP.packData(this.myhashed.toString(CryptoJS.enc.Latin1))
       send += this.myhashed
 
-      return this.sendMsg(send)
+      this.sendMsg(send)
     }
 
   }

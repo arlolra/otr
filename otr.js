@@ -266,7 +266,7 @@
             break
           case MSGSTATE_FINISHED:
             this.storedMgs.push(msg)
-            this.uicb('Message cannot be sent at this time.')
+            this.error('Message cannot be sent at this time.')
             return
             break
           default:
@@ -282,9 +282,16 @@
       msg = ParseOTR.parseMsg(this, msg)
     },
 
-    error: function (err) {
-      console.log(err)
-      return ''
+    error: function (err, send) {
+      if (this.debug) console.log(err)
+
+      if (send) {
+        err = '?OTR Error:' + err
+        this.sendMsg(err, true)
+        return
+      }
+
+      this.uicb(err)
     },
 
     sendStored: function () {
@@ -295,7 +302,7 @@
 
     endOtr: function () {
       if (this.msgstate === MSGSTATE_ENCRYPTED) {
-        this.sendMsg()  // TODO: tlv type 1
+        this.sendMsg('\x00\x01\x00\x00')
         this.sm = null
       }
       this.msgstate = MSGSTATE_PLAINTEXT
