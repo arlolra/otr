@@ -45,6 +45,28 @@
     return BigInt.str2bigInt(hash.toString(CryptoJS.enc.Hex), 16)
   }
 
+  HLP.makeMac = function makeMac(aesctr, m) {
+    var pass = CryptoJS.enc.Latin1.parse(m)
+    var mac = CryptoJS.HmacSHA256(aesctr, pass)
+    return HLP.mask(mac.toString(CryptoJS.enc.Latin1), 0, 160)
+  }
+
+  HLP.makeAes = function makeAes(msg, c, iv) {
+    var opts = {
+        mode: CryptoJS.mode.CTR
+      , iv: CryptoJS.enc.Latin1.parse(iv)
+      , padding: CryptoJS.pad.NoPadding
+    }
+    var aesctr = CryptoJS.AES.encrypt(
+        CryptoJS.enc.Latin1.parse(msg)
+      , CryptoJS.enc.Latin1.parse(c)
+      , opts
+    )
+
+    var aesctr_decoded = CryptoJS.enc.Base64.parse(aesctr.toString())
+    return CryptoJS.enc.Latin1.stringify(aesctr_decoded)
+  }
+
   HLP.multPowMod = function multPowMod(a, b, c, d, e) {
     return BigInt.multMod(BigInt.powMod(a, b, e), BigInt.powMod(c, d, e), e)
   }
@@ -191,6 +213,15 @@
       str = str.substring(n)
     }
     return s
+  }
+
+  // otr message wrapper begin and end
+  var WRAPPER_BEGIN = "?OTR:"
+  var WRAPPER_END = "."
+
+  HLP.wrapMsg = function wrapMsg(msg) {
+    msg = CryptoJS.enc.Base64.stringify(CryptoJS.enc.Latin1.parse(msg))
+    return WRAPPER_BEGIN + msg + WRAPPER_END
   }
 
   // https://github.com/msgpack/msgpack-javascript/blob/master/msgpack.js
