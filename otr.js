@@ -351,7 +351,7 @@
 
     initiateAKE: function () {
       // d-h commit message
-      var send =  '\x02'
+      var send = '\x02'
 
       if (this.otr.authstate !== AUTHSTATE_NONE) {
         // something something
@@ -401,6 +401,11 @@
 
       this.ALLOW_V1 = false
       this.ALLOW_V2 = true
+
+      this.REQUIRE_ENCRYPTION = false
+      this.SEND_WHITESPACE_TAG = false
+      this.WHITESPACE_START_AKE = false
+      this.ERROR_START_AKE = false
 
       ParseOTR.initFragment(this)
 
@@ -497,9 +502,35 @@
 
     },
 
+    sendQueryMsg: function (retcb) {
+      var versions = {}
+        , msg = '?OTR'
+
+      if (this.ALLOW_V2) versions['2'] = true
+      if (this.ALLOW_V1) versions['1'] = true
+
+      if (versions['1']) msg += '?'
+
+      var vs = Object.keys(versions)
+      if (vs.length) {
+        msg += 'v'
+        vs.forEach(function (v) {
+          if (v !== '1') msg += v
+        })
+        msg += '?'
+      }
+
+      this.sendMsg(msg, retcb)
+    },
+
     sendMsg: function (msg, retcb) {
       if (retcb) this.retcb = retcb
-      if (this.msgstate === MSGSTATE_ENCRYPTED) msg = this.prepareMsg(msg)
+      if (this.msgstate === MSGSTATE_ENCRYPTED) {
+        msg = this.prepareMsg(msg)
+      } else {
+        if (this.REQUIRE_ENCRYPTION)
+          throw new Error('Cannot send unencrypted msg.')
+      }
       this.retcb(msg)
     },
 

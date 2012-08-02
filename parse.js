@@ -99,7 +99,10 @@
 
     // error message
     if (msg.substring(ind, ind + 7) === ' Error:') {
-      return new Error(msg.substring(ind + 7))
+      if (otr.ERROR_START_AKE) {
+        otr.sendQueryMsg()
+      }
+      return otr.uicb(msg.substring(ind + 7))
     }
 
     return msg
