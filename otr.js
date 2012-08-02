@@ -609,6 +609,14 @@
       (this.storedMgs.splice(0)).forEach(function (msg) {
         this.sendMsg(msg)
       })
+    },
+
+    endOtr: function () {
+      if (this.msgstate === MSGSTATE_ENCRYPTED) {
+        this.sendMsg()  // TODO: tlv type 1
+        this.sm = null
+      }
+      this.msgstate = MSGSTATE_PLAINTEXT
     }
 
   }
