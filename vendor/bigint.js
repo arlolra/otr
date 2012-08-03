@@ -1,6 +1,7 @@
 ;(function () {
 
   var root = this
+  var Alea = require('./alea/Alea.js');
 
   ////////////////////////////////////////////////////////////////////////////////////////
   // Big Integer Library v. 5.4
@@ -59,8 +60,8 @@
   // that when a function is called repeatedly with same-sized parameters, it only allocates
   // memory on the first call.
   //
-  // Note that for cryptographic purposes, the calls to Math.random() must 
-  // be replaced with calls to a better pseudorandom number generator.
+  // Note that for cryptographic purposes, we are using Johannes Baagøe's 
+  // implementation of Marsaglia's Multiply-with-carry PRNG.
   //
   // In the following, "bigInt" means a bigInt with at least one leading zero element,
   // and "integer" means a nonnegative integer less than radix.  In some cases, integer 
@@ -216,6 +217,8 @@
     s_a=t; s_r2=t; s_n=t; s_b=t; s_d=t; s_x1=t; s_x2=t, s_aa=t; //used in randTruePrime_()
     
   rpprb=t; //used in randProbPrimeRounds() (which also uses "primes")
+
+  random = Alea(); // more cryptographically secure prng
 
   ////////////////////////////////////////////////////////////////////////////////////////
 
@@ -488,7 +491,7 @@
       copyInt_(ans,0);
       for (dd=1;dd;) {
         dd=0;
-        ans[0]= 1 | (1<<(k-1)) | Math.floor(Math.random()*(1<<k));  //random, k-bit, odd integer, with msb 1
+        ans[0]= 1 | (1<<(k-1)) | Math.floor(random()*(1<<k));  //random, k-bit, odd integer, with msb 1
         for (j=1;(j<primes.length) && ((primes[j]&pm)==primes[j]);j++) { //trial division by all primes 3...sqrt(2^k)
           if (0==(ans[0]%primes[j])) {
             dd=1;
@@ -503,7 +506,7 @@
     B=c*k*k;    //try small primes up to B (or all the primes[] array if the largest is less than B).
     if (k>2*m)  //generate this k-bit number by first recursively generating a number that has between k/2 and k-m bits
       for (r=1; k-k*r<=m; )
-        r=pows[Math.floor(Math.random()*512)];   //r=Math.pow(2,Math.random()-1);
+        r=pows[Math.floor(random()*512)];   //r=Math.pow(2,random()-1);
     else
       r=.5;
 
@@ -596,7 +599,7 @@
       b[i]=0;
     a=Math.floor((n-1)/bpe)+1; //# array elements to hold the BigInt
     for (i=0;i<a;i++) {
-      b[i]=Math.floor(Math.random()*(1<<(bpe-1)));
+      b[i]=Math.floor(random()*(1<<(bpe-1)));
     }
     b[a-1] &= (2<<((n-1)%bpe))-1;
     if (s==1)
