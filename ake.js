@@ -118,13 +118,13 @@
       this.m2_prime = HLP.h2('\x05', secbytes)
     },
 
-    verifySignMac: function (mac, aesctr, m2, c, their_y, our_dh_pk, m1) {
+    verifySignMac: function (mac, aesctr, m2, c, their_y, our_dh_pk, m1, ctr) {
       // verify mac
       var vmac = HLP.makeMac(aesctr, m2)
-      if (mac !== vmac) return 'MACs do not match.'
+      if (mac !== vmac) return ['MACs do not match.']
 
       // decrypt x
-      var x = decryptAes(aesctr.substring(4), c, 0)
+      var x = decryptAes(aesctr.substring(4), c, ctr)
       x = HLP.splitype(['PUBKEY', 'INT', 'SIG'], x)
 
       var m = hMac(their_y, our_dh_pk, x[0], x[1], m1)
@@ -134,11 +134,9 @@
       var s = HLP.bits2bigInt(x[2].substring(20))
 
       // verify sign m
-      if (!DSA.verify(pub, m, r, s)) return 'Cannot verify signature of m.'
+      if (!DSA.verify(pub, m, r, s)) return ['Cannot verify signature of m.']
 
-      // store their key
-      this.their_keyid = HLP.readLen(x[1])
-      this.their_priv_pk = pub
+      return [null, HLP.readLen(x[1]), pub]
     },
 
     makeM: function (their_y, m1, c, m2) {
@@ -185,7 +183,7 @@
 
     handleAKE: function (msg) {
 
-      var send, err
+      var send, vsm
       switch (msg.type) {
 
         case '\x02':
@@ -273,7 +271,7 @@
 
           this.createKeys(this.their_y)
 
-          err = this.verifySignMac(
+          vsm = this.verifySignMac(
               msg.msg[2]
             , msg.msg[1]
             , this.m2
@@ -281,8 +279,13 @@
             , this.their_y
             , this.our_dh.publicKey
             , this.m1
+            , 0
           )
-          if (err) return this.otr.error(err, true)
+          if (vsm[0]) return this.otr.error(vsm[0], true)
+
+          // store their key
+          this.their_keyid = vsm[1]
+          this.their_priv_pk = vsm[2]
 
           send = '\x12'
           send += this.makeM(
@@ -302,7 +305,7 @@
                this.otr.authstate !== AUTHSTATE_AWAITING_SIG
           ) return  // ignore
 
-          err = this.verifySignMac(
+          vsm = this.verifySignMac(
               msg.msg[1]
             , msg.msg[0]
             , this.m2_prime
@@ -310,8 +313,13 @@
             , this.their_y
             , this.our_dh.publicKey
             , this.m1_prime
+            , 0
           )
-          if (err) return this.otr.error(err, true)
+          if (vsm[0]) return this.otr.error(vsm[0], true)
+
+          // store their key
+          this.their_keyid = vsm[1]
+          this.their_priv_pk = vsm[2]
 
           this.transmittedRS = true
           this.akeSuccess()

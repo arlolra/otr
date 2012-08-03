@@ -103,7 +103,7 @@
       // our keys
       this.our_dh = this.dh()
       this.our_old_dh = this.dh()
-      this.our_keyid = 2
+      this.our_keyid = 1
 
       // session keys
       this.sessKeys = [ new Array(2), new Array(2) ]
@@ -215,17 +215,52 @@
       var ta = HLP.pack(this.our_keyid - 1)
       ta += HLP.pack(this.their_keyid)
       ta += HLP.packMPI(this.our_dh.publicKey)
-      ta += HLP.pack(sessKeys.counter)
-      ta += HLP.makeAes(msg, sessKeys.sendenc, sessKeys.counter)
+      ta += HLP.pack(sessKeys.counter)  // hmm
+      ta += HLP.packData(HLP.makeAes(msg, sessKeys.sendenc, sessKeys.counter))
 
       var mta = HLP.makeMac(ta, sessKeys.sendmac)
 
-      return HLP.wrapMsg(ta + mta + oldMacKeys)
+      var send = '\x00\x02' + '\x03'  // version and type
+      send += '\x00'  // flag
+      send += ta + mta + HLP.packData(oldMacKeys)
+
+      return HLP.wrapMsg(send)
 
     },
 
     handleDataMsg: function (msg) {
-      // TODO
+
+      var types = ['BYTE', 'INT', 'INT', 'MPI', 'INT', 'DATA', 'MAC', 'DATA']
+      msg = HLP.splitype(types, msg.msg)
+
+      var ign = (msg[0] === '\x01')  // ignore flag
+      if (msg.length !== 8 && ign) return
+
+      var our_keyid = this.our_keyid - HLP.readLen(msg[2])
+      var their_keyid = this.their_keyid - HLP.readLen(msg[1])
+
+      if (our_keyid < 0 || our_keyid > 1)
+        return this.error('Not of our latest keys.', true)
+      var our_dh =  our_keyid ? this.our_old_dh : this.our_dh
+
+      if (their_keyid < 0 || their_keyid > 1)
+        return this.error('Not of your latest keys.', true)
+      var their_y = their_keyid ? this.their_old_y : this.their_y
+
+      if (their_keyid === 1 && !their_y)
+        return this.error('Do not have that key.')
+
+      var sessKeys = this.sessKeys[our_keyid][their_keyid]
+
+      var ctr = HLP.readLen(msg[4])
+      if (ctr <= sessKeys.counter)
+        return this.error('Counter in message is not larger.')
+
+      // verify mac
+      var vmac = HLP.makeMac(msg.slice(1, 6).join(''), sessKeys.rcvmac)
+      if (msg[6] !== vmac) return this.error('MACs do not match.')
+
+
     },
 
     sendQueryMsg: function () {
