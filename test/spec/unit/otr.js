@@ -36,4 +36,20 @@ describe('OTR', function () {
     userA.sendQueryMsg()
   })
 
+  it('should go through the ake dance', function () {
+    var userA, userB
+    var ui = function (msg) {
+      assert.equal(userB.msgstate, 1, 'Encrypted')
+      assert.equal(userA.msgstate, 1, 'Encrypted')
+    }
+    var io = function (msg) { userB.receiveMsg(msg) }
+    userA = new OTR(keys.userA, ui, io)
+    userB = new OTR(keys.userB, ui, userA.receiveMsg)
+
+    assert.equal(userB.msgstate, 0, 'Plaintext')
+    assert.equal(userA.msgstate, 0, 'Plaintext')
+
+    userA.sendQueryMsg()
+  })
+
 })

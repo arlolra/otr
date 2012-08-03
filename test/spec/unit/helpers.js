@@ -41,10 +41,4 @@ describe('Helpers', function () {
     });
   });
 
-  describe('readInt', function () {
-    it('should short pack and read an int', function () {
-      assert.equal(1235, HLP.readInt(HLP.packInt(1235), 'Read Int.'))
-    })
-  })
-
 })

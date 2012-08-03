@@ -171,7 +171,6 @@
 
     sign: function (m) {
       var hm = CryptoJS.SHA1(m)
-      console.log(hm.toString())
       hm = BigInt.str2bigInt(hm.toString(CryptoJS.enc.Hex), 16)
       return this.hsign(hm)
     }

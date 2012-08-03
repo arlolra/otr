@@ -130,8 +130,8 @@
       var m = hMac(their_y, our_dh_pk, x[0], x[1], m1)
       var pub = DSA.parsePublic(x[0])
 
-      var r = HLP.readMPI(x[2].substring(0, 20))
-      var s = HLP.readMPI(x[2].substring(20))
+      var r = HLP.bits2bigInt(x[2].substring(0, 20))
+      var s = HLP.bits2bigInt(x[2].substring(20))
 
       // verify sign m
       if (!DSA.verify(pub, m, r, s)) return 'Cannot verify signature of m.'
@@ -157,7 +157,7 @@
         return this.otr.error('equal keys - we have a problem.', true)
 
       // our keys
-      this.otr.our_dh = this.dh
+      this.otr.our_dh = this.our_dh
 
       // their keys
       this.otr.their_y = this.their_y
@@ -284,8 +284,6 @@
           )
           if (err) return this.otr.error(err, true)
 
-          this.akeSuccess()
-
           send = '\x12'
           send += this.makeM(
               this.their_y
@@ -293,7 +291,10 @@
             , this.c_prime
             , this.m2_prime
           )
-          break
+          this.sendMsg(send)
+
+          this.akeSuccess()
+          return
 
         case '\x12':
           // data message
@@ -314,7 +315,7 @@
 
           this.transmittedRS = true
           this.akeSuccess()
-          break
+          return
 
         default:
           return  // ignore

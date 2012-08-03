@@ -23,8 +23,7 @@ describe('Parse', function () {
     assert.equal(null, P.parseMsg(otr, MSGFRAG1), 'Message fragment 1.')
     assert.equal(null, P.parseMsg(otr, MSGFRAG2), 'Message fragment 2.')
     var three = P.parseMsg(otr, MSGFRAG3)
-    assert.equal(three.msg, P.parseMsg(otr, MSGFRAG).msg, 'Message fragment.')
-    assert.equal(MSGFRAG, '?OTR:AAIK' + three.msg + '.', 'Message fragment 3.')
+    assert.equal(three.msg[0], P.parseMsg(otr, MSGFRAG).msg[0], 'Message fragment.')
   });
 
   it('should parse otr "Version 1 Only" query message', function(){

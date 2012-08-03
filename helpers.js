@@ -160,13 +160,13 @@
     return ba
   }
 
-  HLP.packMPI = function packMPI(mpi) {
-    return HLP.packData(HLP.bigInt2bits(BigInt.trim(mpi, 0)))
+  HLP.bits2bigInt = function (bits) {
+    bits = HLP.toByteArray(bits)
+    return HLP.retMPI(bits)
   }
 
-  HLP.readInt = function (int) {
-    var data = HLP.toByteArray(int)
-    return HLP.unpack(data.slice(4))
+  HLP.packMPI = function packMPI(mpi) {
+    return HLP.packData(HLP.bigInt2bits(BigInt.trim(mpi, 0)))
   }
 
   HLP.readLen = function (msg) {
