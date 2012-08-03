@@ -62,7 +62,6 @@
       , CryptoJS.enc.Latin1.parse(c)
       , opts
     )
-
     var aesctr_decoded = CryptoJS.enc.Base64.parse(aesctr.toString())
     return CryptoJS.enc.Latin1.stringify(aesctr_decoded)
   }
@@ -165,13 +164,14 @@
     return HLP.packData(HLP.bigInt2bits(BigInt.trim(mpi, 0)))
   }
 
-  HLP.packInt = function (int) {
-    return HLP.packData(HLP.pack(int))
-  }
-
   HLP.readInt = function (int) {
     var data = HLP.toByteArray(int)
     return HLP.unpack(data.slice(4))
+  }
+
+  HLP.readLen = function (msg) {
+    msg = HLP.toByteArray(msg)
+    return HLP.unpack(msg.slice(0, 4))
   }
 
   HLP.readData = function readData(data) {
@@ -222,6 +222,39 @@
   HLP.wrapMsg = function wrapMsg(msg) {
     msg = CryptoJS.enc.Base64.stringify(CryptoJS.enc.Latin1.parse(msg))
     return WRAPPER_BEGIN + msg + WRAPPER_END
+  }
+
+  HLP.splitype = function splitype(arr, msg) {
+    var data = []
+
+    // data types (byte lengths)
+    var dts =  {
+        BYTE: 1
+      , SHORT: 2
+      , INT: 4
+      , CTR: 8
+      , MAC: 20
+      , SIG: 40
+    }
+
+    arr.forEach(function (a) {
+      var len, str
+      switch (a) {
+        case 'PUBKEY':
+          str = splitype(['SHORT', 'MPI', 'MPI', 'MPI', 'MPI'], msg).join('')
+          break
+        case 'DATA':  // falls through
+        case 'MPI':
+          str = msg.substring(0, HLP.readLen(msg) + 4)
+          break
+        default:
+          str = msg.substring(0, dts[a])
+      }
+      data.push(str)
+      msg = msg.substring(str.length)
+    })
+
+    return data
   }
 
   // https://github.com/msgpack/msgpack-javascript/blob/master/msgpack.js

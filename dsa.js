@@ -155,7 +155,7 @@
       str += HLP.packMPI(this.q)
       str += HLP.packMPI(this.g)
       str += HLP.packMPI(this.y)
-      return HLP.packData(str)
+      return str
     },
 
     hsign: function (hm) {
@@ -171,6 +171,7 @@
 
     sign: function (m) {
       var hm = CryptoJS.SHA1(m)
+      console.log(hm.toString())
       hm = BigInt.str2bigInt(hm.toString(CryptoJS.enc.Hex), 16)
       return this.hsign(hm)
     }
@@ -178,14 +179,12 @@
   }
 
   DSA.parsePublic = function (str) {
-    str = HLP.unpackData(str)
-    str = str.substring(2)  // \x00\x00
-    str = HLP.parseStr(str)
+    str = HLP.splitype(['SHORT', 'MPI', 'MPI', 'MPI', 'MPI'], str)
     return {
-        p: HLP.retMPI(str[0])
-      , q: HLP.retMPI(str[1])
-      , g: HLP.retMPI(str[2])
-      , y: HLP.retMPI(str[3])
+        p: HLP.readMPI(str[1])
+      , q: HLP.readMPI(str[2])
+      , g: HLP.readMPI(str[3])
+      , y: HLP.readMPI(str[4])
     }
   }
 

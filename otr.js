@@ -212,10 +212,10 @@
       var oldMacKeys = this.oldMacKeys.join('')
       this.oldMacKeys = []
 
-      var ta = HLP.packInt(this.our_keyid - 1)
-      ta += HLP.packInt(this.their_keyid)
+      var ta = HLP.pack(this.our_keyid - 1)
+      ta += HLP.pack(this.their_keyid)
       ta += HLP.packMPI(this.our_dh.publicKey)
-      ta += HLP.packInt(sessKeys.counter)
+      ta += HLP.pack(sessKeys.counter)
       ta += HLP.makeAes(msg, sessKeys.sendenc, sessKeys.counter)
 
       var mta = HLP.makeMac(ta, sessKeys.sendmac)
@@ -282,29 +282,22 @@
 
       // parse type
       msg = ParseOTR.parseMsg(this, msg)
+
       if (!msg) return
 
-      switch (msg.class) {
+      switch (msg.cls) {
         case 'error':
           this.error(msg.msg)
           return
-          break
-        case 'otr':
-          if (~['\x02', '\x0a', '\x11', '\x12'].indexOf(msg.type)) {
-            this.ake.handleAKE(msg)
-            return
-          }
-          if (msg.type === '\x03') {
-            this.handleDataMsg(msg)
-            return
-          }
-          break
-        default:
-          break
+        case 'ake':
+          this.ake.handleAKE(msg)
+          return
+        case 'data':
+          this.handleDataMsg(msg)
+          return
       }
 
       this.uicb(msg.msg)
-
     },
 
     error: function (err, send) {

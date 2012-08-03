@@ -10,9 +10,11 @@
   }
 
   var CryptoJS = root.CryptoJS
+    , HLP = root.HLP
 
   if (typeof require !== 'undefined') {
     CryptoJS || (CryptoJS = require('./vendor/cryptojs/cryptojs.js'))
+    HLP || (HLP = require('./helpers.js'))
   }
 
   // tags
@@ -21,17 +23,6 @@
   // otr versions
   var OTR_VERSION_1 = '\x00\x01'
     , OTR_VERSION_2 = '\x00\x02'
-
-  // data types (byte lengths)
-  var BYTE = 1
-    , SHORT = 2
-    , INT = 4
-    , MPI = INT  // + LEN
-    , DATA = INT  // + LEN
-    , CTR = 8
-    , MAC = 20
-    , PUBKEY = SHORT + (4 * MPI)
-    , SIG = 40  // 2 * priv.q.length
 
   ParseOTR.parseMsg = function (otr, msg) {
 
@@ -105,11 +96,37 @@
       var end = msg.substring(ind).indexOf('.')
       if (!~end) return { msg: msg }
 
+      msg = CryptoJS.enc.Base64.parse(msg.substring(ind, ind + end))
+      msg = CryptoJS.enc.Latin1.stringify(msg)
+
+      var cls
+      switch (type) {
+        case '\x02':
+          cls = 'ake'
+          msg = HLP.splitype(['DATA', 'DATA'], msg)
+          break
+        case '\x0a':
+          cls = 'ake'
+          msg = HLP.splitype(['MPI'], msg)
+          break
+        case '\x11':
+          cls = 'ake'
+          msg = HLP.splitype(['DATA', 'DATA', 'MAC'], msg)
+          break
+        case '\x12':
+          cls = 'ake'
+          msg = HLP.splitype(['DATA', 'MAC'], msg)
+          break
+        case '\x03':
+          cls = 'data'
+          break
+      }
+
       return {
           version: version
         , type: type
-        , msg: msg.substring(ind, ind + end)
-        , class: 'otr'
+        , msg: msg
+        , cls: cls
       }
     }
 
@@ -118,7 +135,7 @@
       if (otr.ERROR_START_AKE) {
         otr.sendQueryMsg()
       }
-      return { msg: msg.substring(ind + 7), class: 'error' }
+      return { msg: msg.substring(ind + 7), cls: 'error' }
     }
 
     return { msg: msg }

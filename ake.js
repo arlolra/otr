@@ -47,13 +47,14 @@
   }
 
   function decryptAes(msg, c, iv) {
+    msg = CryptoJS.enc.Latin1.parse(msg)
     var opts = {
         mode: CryptoJS.mode.CTR
       , iv: CryptoJS.enc.Latin1.parse(iv)
       , padding: CryptoJS.pad.NoPadding
     }
     var aesctr = CryptoJS.AES.decrypt(
-        msg
+        CryptoJS.enc.Base64.stringify(msg)
       , CryptoJS.enc.Latin1.parse(c)
       , opts
     )
@@ -117,34 +118,36 @@
       this.m2_prime = HLP.h2('\x05', secbytes)
     },
 
-    verifySignMac: function (msg, m2, c, their_y, our_dh_pk, m1) {
+    verifySignMac: function (mac, aesctr, m2, c, their_y, our_dh_pk, m1) {
       // verify mac
-      var mac = this.makeMac(msg.aesctr, m2)
-      if (msg.mac !== mac) return 'MACs do not match.'
+      var vmac = HLP.makeMac(aesctr, m2)
+      if (mac !== vmac) return 'MACs do not match.'
 
       // decrypt x
-      var x = decryptAes(msg.aesctr, c, 0)
-      x = HLP.parseToStrs(x)
+      var x = decryptAes(aesctr.substring(4), c, 0)
+      x = HLP.splitype(['PUBKEY', 'INT', 'SIG'], x)
 
       var m = hMac(their_y, our_dh_pk, x[0], x[1], m1)
       var pub = DSA.parsePublic(x[0])
 
+      var r = HLP.readMPI(x[2].substring(0, 20))
+      var s = HLP.readMPI(x[2].substring(20))
+
       // verify sign m
-      if (!DSA.verify(pub, m, HLP.readMPI(x[2]), HLP.readMPI(x[3])))
-        return 'Cannot verify signature of m.'
+      if (!DSA.verify(pub, m, r, s)) return 'Cannot verify signature of m.'
 
       // store their key
-      this.their_keyid = HLP.readInt(x[1])
+      this.their_keyid = HLP.readLen(x[1])
       this.their_priv_pk = pub
     },
 
     makeM: function (their_y, m1, c, m2) {
       var pk = this.priv.packPublic()
-      var kid = HLP.packInt(this.our_keyid)
+      var kid = HLP.pack(this.our_keyid)
       var m = hMac(this.our_dh.publicKey, their_y, pk, kid, m1)
       m = this.priv.sign(m)
-      var msg = pk + kid + HLP.packMPI(m[0]) + HLP.packMPI(m[1])
-      var aesctr = HLP.makeAes(msg, c, 0)
+      var msg = pk + kid + HLP.bigInt2bits(m[0]) + HLP.bigInt2bits(m[1])
+      var aesctr = HLP.packData(HLP.makeAes(msg, c, 0))
       var mac = HLP.makeMac(aesctr, m2)
       return aesctr + mac
     },
@@ -191,7 +194,7 @@
 
           if (this.otr.authstate === AUTHSTATE_AWAITING_DHKEY) {
             var ourHash = L1toBI(this.myhashed)
-            var theirHash = L1toBI(msg.hashed)
+            var theirHash = L1toBI(msg.msg[1].substring(4))
             if (BigInt.greater(ourHash, theirHash)) {
               this.initiateAKE()
               return  // ignore
@@ -209,12 +212,11 @@
 
           this.otr.authstate = AUTHSTATE_AWAITING_REVEALSIG
 
+          this.encrypted = msg.msg[0].substring(4)
+          this.hashed = msg.msg[1].substring(4)
+
           send = '\x0a'
           send += HLP.packMPI(this.our_dh.publicKey)
-
-          // parse out these vals
-          this.encrypted = msg.encrypted
-          this.hashed = msg.hashed
           break
 
         case '\x0a':
@@ -223,7 +225,7 @@
 
           if (this.otr.authstate !== AUTHSTATE_AWAITING_DHKEY) {
             if (this.otr.authstate === AUTHSTATE_AWAITING_SIG) {
-              if (!BigInt.equals(this.their_y, HLP.readMPI(msg.gy))) return
+              if (!BigInt.equals(this.their_y, HLP.readMPI(msg.msg[0]))) return
             } else {
               return  // ignore
             }
@@ -231,7 +233,7 @@
 
           this.otr.authstate = AUTHSTATE_AWAITING_SIG
 
-          this.their_y = HLP.readMPI(msg.gy)
+          this.their_y = HLP.readMPI(msg.msg[0])
 
           // verify gy is legal 2 <= gy <= N-2
           if (!checkGroup(this.their_y))
@@ -239,7 +241,7 @@
 
           this.createKeys(this.their_y)
 
-          send.type = '\x11'
+          send = '\x11'
           send += HLP.packMPI(this.r)
           send += this.makeM(this.their_y, this.m1, this.c, this.m2)
           break
@@ -250,15 +252,18 @@
                this.otr.authstate !== AUTHSTATE_AWAITING_REVEALSIG
           ) return  // ignore
 
-          this.r = HLP.readMPI(msg.r)
+          this.r = HLP.readMPI(msg.msg[0])
 
           // decrypt their_y
           var key = CryptoJS.enc.Hex.parse(BigInt.bigInt2str(this.r, 16))
+          key = CryptoJS.enc.Latin1.stringify(key)
           var gxmpi = decryptAes(this.encrypted, key, 0)
+
           this.their_y = HLP.readMPI(gxmpi)
 
           // verify hash
           var hash = CryptoJS.SHA256(gxmpi)
+
           if (this.hashed !== hash.toString(CryptoJS.enc.Latin1))
             return this.otr.error('Hashed g^x does not match.', true)
 
@@ -269,7 +274,8 @@
           this.createKeys(this.their_y)
 
           err = this.verifySignMac(
-              msg
+              msg.msg[2]
+            , msg.msg[1]
             , this.m2
             , this.c
             , this.their_y
@@ -296,7 +302,8 @@
           ) return  // ignore
 
           err = this.verifySignMac(
-              msg
+              msg.msg[1]
+            , msg.msg[0]
             , this.m2_prime
             , this.c_prime
             , this.their_y
@@ -332,6 +339,7 @@
 
       this.r = HLP.randomValue()
       var key = CryptoJS.enc.Hex.parse(BigInt.bigInt2str(this.r, 16))
+      key = CryptoJS.enc.Latin1.stringify(key)
       send += HLP.packData(HLP.makeAes(gxmpi, key, 0))
 
       this.myhashed = CryptoJS.SHA256(gxmpi)
