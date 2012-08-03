@@ -260,6 +260,7 @@
       var vmac = HLP.makeMac(msg.slice(1, 6).join(''), sessKeys.rcvmac)
       if (msg[6] !== vmac) return this.error('MACs do not match.')
 
+      return HLP.decryptAes(msg[5].substring(4), sessKeys.rcvenc, ctr)
 
     },
 
@@ -328,8 +329,8 @@
           this.ake.handleAKE(msg)
           return
         case 'data':
-          this.handleDataMsg(msg)
-          return
+          msg.msg = this.handleDataMsg(msg)
+          break
       }
 
       this.uicb(msg.msg)

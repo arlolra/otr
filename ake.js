@@ -46,21 +46,6 @@
     return HLP.GTOE(g, TWO) && HLP.GTOE(N_MINUS_2, g)
   }
 
-  function decryptAes(msg, c, iv) {
-    msg = CryptoJS.enc.Latin1.parse(msg)
-    var opts = {
-        mode: CryptoJS.mode.CTR
-      , iv: CryptoJS.enc.Latin1.parse(iv)
-      , padding: CryptoJS.pad.NoPadding
-    }
-    var aesctr = CryptoJS.AES.decrypt(
-        CryptoJS.enc.Base64.stringify(msg)
-      , CryptoJS.enc.Latin1.parse(c)
-      , opts
-    )
-    return aesctr.toString(CryptoJS.enc.Latin1)
-  }
-
   function hMac(gx, gy, pk, kid, m) {
     var pass = CryptoJS.enc.Latin1.parse(m)
     var hmac = CryptoJS.algo.HMAC.create(CryptoJS.algo.SHA256, pass)
@@ -124,7 +109,7 @@
       if (mac !== vmac) return ['MACs do not match.']
 
       // decrypt x
-      var x = decryptAes(aesctr.substring(4), c, ctr)
+      var x = HLP.decryptAes(aesctr.substring(4), c, ctr)
       x = HLP.splitype(['PUBKEY', 'INT', 'SIG'], x)
 
       var m = hMac(their_y, our_dh_pk, x[0], x[1], m1)
@@ -255,7 +240,7 @@
           // decrypt their_y
           var key = CryptoJS.enc.Hex.parse(BigInt.bigInt2str(this.r, 16))
           key = CryptoJS.enc.Latin1.stringify(key)
-          var gxmpi = decryptAes(this.encrypted, key, 0)
+          var gxmpi = HLP.decryptAes(this.encrypted, key, 0)
 
           this.their_y = HLP.readMPI(gxmpi)
 

@@ -52,4 +52,21 @@ describe('OTR', function () {
     userA.sendQueryMsg()
   })
 
+  it('should receive an encrypted message', function () {
+    var msgs = ['Hope this works.', 'Second message.', 'Third!']
+    var counter = 0
+
+    var userA, userB
+    var ui = function (msg) {
+      assert.equal(msgs[counter++], msg, 'Encrypted message.')
+    }
+    var io = function (msg) { userB.receiveMsg(msg) }
+    userA = new OTR(keys.userA, ui, io)
+    userB = new OTR(keys.userB, ui, userA.receiveMsg)
+    userA.sendQueryMsg()
+    userB.sendMsg(msgs[counter])
+    userB.sendMsg(msgs[counter])
+    userB.sendMsg(msgs[counter])
+  })
+
 })

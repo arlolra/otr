@@ -66,6 +66,21 @@
     return CryptoJS.enc.Latin1.stringify(aesctr_decoded)
   }
 
+  HLP.decryptAes = function decryptAes(msg, c, iv) {
+    msg = CryptoJS.enc.Latin1.parse(msg)
+    var opts = {
+        mode: CryptoJS.mode.CTR
+      , iv: CryptoJS.enc.Latin1.parse(iv)
+      , padding: CryptoJS.pad.NoPadding
+    }
+    var aesctr = CryptoJS.AES.decrypt(
+        CryptoJS.enc.Base64.stringify(msg)
+      , CryptoJS.enc.Latin1.parse(c)
+      , opts
+    )
+    return aesctr.toString(CryptoJS.enc.Latin1)
+  }
+
   HLP.multPowMod = function multPowMod(a, b, c, d, e) {
     return BigInt.multMod(BigInt.powMod(a, b, e), BigInt.powMod(c, d, e), e)
   }
