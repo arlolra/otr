@@ -130,7 +130,7 @@
       var m = hMac(this.our_dh.publicKey, their_y, pk, kid, m1)
       m = this.priv.sign(m)
       var msg = pk + kid + HLP.bigInt2bits(m[0]) + HLP.bigInt2bits(m[1])
-      var aesctr = HLP.packData(HLP.makeAes(msg, c, 0))
+      var aesctr = HLP.packData(HLP.makeAes(msg, c, HLP.packCtr(0)))
       var mac = HLP.makeMac(aesctr, m2)
       return aesctr + mac
     },
@@ -246,7 +246,7 @@
           // decrypt their_y
           var key = CryptoJS.enc.Hex.parse(BigInt.bigInt2str(this.r, 16))
           key = CryptoJS.enc.Latin1.stringify(key)
-          var gxmpi = HLP.decryptAes(this.encrypted, key, 0)
+          var gxmpi = HLP.decryptAes(this.encrypted, key, HLP.packCtr(0))
 
           this.their_y = HLP.readMPI(gxmpi)
 
@@ -270,7 +270,7 @@
             , this.their_y
             , this.our_dh.publicKey
             , this.m1
-            , 0
+            , HLP.packCtr(0)
           )
           if (vsm[0]) return this.otr.error(vsm[0], true)
 
@@ -304,7 +304,7 @@
             , this.their_y
             , this.our_dh.publicKey
             , this.m1_prime
-            , 0
+            , HLP.packCtr(0)
           )
           if (vsm[0]) return this.otr.error(vsm[0], true)
 
@@ -340,7 +340,7 @@
       this.r = HLP.randomValue()
       var key = CryptoJS.enc.Hex.parse(BigInt.bigInt2str(this.r, 16))
       key = CryptoJS.enc.Latin1.stringify(key)
-      send += HLP.packData(HLP.makeAes(gxmpi, key, 0))
+      send += HLP.packData(HLP.makeAes(gxmpi, key, HLP.packCtr(0)))
 
       this.myhashed = CryptoJS.SHA256(gxmpi)
       this.myhashed = HLP.packData(this.myhashed.toString(CryptoJS.enc.Latin1))

@@ -151,6 +151,29 @@
     return res
   }
 
+
+  HLP.packCtr = function pack(d) {
+    var res = ''
+    res += _toString(d >> 56 & 0xFF)
+    res += _toString(d >> 48 & 0xFF)
+    res += _toString(d >> 40 & 0xFF)
+    res += _toString(d >> 32 & 0xFF)
+    res += _toString(d >> 24 & 0xFF)
+    res += _toString(d >> 16 & 0xFF)
+    res += _toString(d >> 8 & 0xFF)
+    res += _toString(d & 0xFF)
+    return HLP.padCtr(res)
+  }
+
+  HLP.padCtr = function (ctr) {
+    return ctr + '\x00\x00\x00\x00\x00\x00\x00\x00'
+  }
+
+  HLP.unpackCtr = function pack(d) {
+    d = HLP.toByteArray(d.substring(0, 8))
+    return HLP.unpack(d)
+  }
+
   HLP.unpack = function (arr) {
     return arr.reduce(function (p, n) {
       return (p << 8) | n

@@ -216,11 +216,13 @@
 
       var wtf = HLP.packMPI(this.our_dh.publicKey)
 
+      var ctr = HLP.packCtr(sessKeys.counter)
+
       var ta = HLP.pack(this.our_keyid - 1)
       ta += HLP.pack(this.their_keyid)
       ta += HLP.packMPI(this.our_dh.publicKey)
-      ta += HLP.pack(sessKeys.counter)  // hmm
-      ta += HLP.packData(HLP.makeAes(msg, sessKeys.sendenc, sessKeys.counter))
+      ta += ctr.substring(0, 8)
+      ta += HLP.packData(HLP.makeAes(msg, sessKeys.sendenc, ctr))
 
       var mta = HLP.makeMac(ta, sessKeys.sendmac)
 
@@ -234,7 +236,7 @@
 
     handleDataMsg: function (msg) {
 
-      var types = ['BYTE', 'INT', 'INT', 'MPI', 'INT', 'DATA', 'MAC', 'DATA']
+      var types = ['BYTE', 'INT', 'INT', 'MPI', 'CTR', 'DATA', 'MAC', 'DATA']
       msg = HLP.splitype(types, msg.msg)
 
       var ign = (msg[0] === '\x01')  // ignore flag
@@ -256,7 +258,7 @@
 
       var sessKeys = this.sessKeys[our_keyid][their_keyid]
 
-      var ctr = HLP.readLen(msg[4])
+      var ctr = HLP.unpackCtr(msg[4])
       if (ctr <= sessKeys.counter)
         return this.error('Counter in message is not larger.')
 
@@ -264,7 +266,7 @@
       var vmac = HLP.makeMac(msg.slice(1, 6).join(''), sessKeys.rcvmac)
       if (msg[6] !== vmac) return this.error('MACs do not match.')
 
-      var out = HLP.decryptAes(msg[5].substring(4), sessKeys.rcvenc, ctr)
+      var out = HLP.decryptAes(msg[5].substring(4), sessKeys.rcvenc, HLP.padCtr(msg[4]))
 
       if (!our_keyid) this.rotateOurKeys()
       if (!their_keyid) this.rotateTheirKeys(HLP.readMPI(msg[3]))

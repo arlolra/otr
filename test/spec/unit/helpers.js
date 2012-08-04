@@ -41,4 +41,10 @@ describe('Helpers', function () {
     });
   });
 
+  it('should pack a counter', function () {
+    var thou = HLP.packCtr(1000)
+    assert.equal(16, thou.length, '16 bytes.')
+    assert.equal(1000, HLP.unpackCtr(thou), 'Thousand.')
+  })
+
 })
