@@ -53,7 +53,7 @@ describe('OTR', function () {
   })
 
   it('should receive an encrypted message', function () {
-    var msgs = ['Hope this works.', 'Second message.', 'Third!']
+    var msgs = ['Hope this works.', 'Second message.', 'Third!', '4', '5', '6', '7', '8888888888888888888']
     var counter = 0
 
     var userA, userB
@@ -64,6 +64,11 @@ describe('OTR', function () {
     userA = new OTR(keys.userA, ui, io)
     userB = new OTR(keys.userB, ui, userA.receiveMsg)
     userA.sendQueryMsg()
+    userB.sendMsg(msgs[counter])
+    userB.sendMsg(msgs[counter])
+    userA.sendMsg(msgs[counter])
+    userA.sendMsg(msgs[counter])
+    userA.sendMsg(msgs[counter])
     userB.sendMsg(msgs[counter])
     userB.sendMsg(msgs[counter])
     userA.sendMsg(msgs[counter])
