@@ -70,7 +70,7 @@
     this.otr = otr
 
     // our keys
-    this.our_dh = otr.our_dh
+    this.our_dh = otr.our_old_dh
     this.our_keyid = 1
 
     // their keys
@@ -139,24 +139,30 @@
       if (BigInt.equals(this.their_y, this.our_dh.publicKey))
         return this.otr.error('equal keys - we have a problem.', true)
 
-      // our keys
-      this.otr.our_dh = this.our_dh
+      if ( this.their_keyid !== this.otr.their_keyid &&
+           this.their_keyid !== (this.otr.their_keyid - 1) ) {
 
-      // their keys
-      this.otr.their_y = this.their_y
-      this.otr.their_keyid = this.their_keyid
-      this.otr.their_priv_pk = this.their_priv_pk
+        // their keys
+        this.otr.their_y = this.their_y
+        this.otr.their_old_y = null
+        this.otr.their_keyid = this.their_keyid
+        this.otr.their_priv_pk = this.their_priv_pk
+
+        // rotate keys
+        this.otr.sessKeys[0] = [ new this.otr.dhSession(
+            this.otr.our_dh
+          , this.otr.their_y
+        ), null ]
+        this.otr.sessKeys[1] = [ new this.otr.dhSession(
+            this.otr.our_old_dh
+          , this.otr.their_y
+        ), null ]
+
+      }
 
       // ake info
       this.otr.ssid = this.ssid
       this.otr.transmittedRS = this.transmittedRS
-
-      // rotate keys
-      this.otr.sessKeys[0][0] = new this.otr.dhSession(
-          this.otr.our_dh
-        , this.otr.their_y
-      )
-      this.otr.rotateOurKeys()
 
       // go encrypted
       this.otr.authstate = AUTHSTATE_NONE

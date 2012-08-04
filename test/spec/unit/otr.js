@@ -66,7 +66,7 @@ describe('OTR', function () {
     userA.sendQueryMsg()
     userB.sendMsg(msgs[counter])
     userB.sendMsg(msgs[counter])
-    userB.sendMsg(msgs[counter])
+    userA.sendMsg(msgs[counter])
   })
 
 })

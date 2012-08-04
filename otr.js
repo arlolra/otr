@@ -103,7 +103,7 @@
       // our keys
       this.our_dh = this.dh()
       this.our_old_dh = this.dh()
-      this.our_keyid = 1
+      this.our_keyid = 2
 
       // session keys
       this.sessKeys = [ new Array(2), new Array(2) ]
@@ -161,8 +161,8 @@
 
       // reveal old mac keys
       this.sessKeys[1].forEach(function (sk) {
-        if (sk.sendmacused) this.oldMacKeys.push(sk.sendmac)
-        if (sk.rcvmacused) this.oldMacKeys.push(sk.rcvmac)
+        if (sk && sk.sendmacused) this.oldMacKeys.push(sk.sendmac)
+        if (sk && sk.rcvmacused) this.oldMacKeys.push(sk.rcvmac)
       })
 
       // rotate our keys
@@ -170,8 +170,8 @@
       this.our_dh = this.dh()
       this.our_keyid += 1
 
-      // session keys
-      this.sessKeys[1] = this.sessKeys[0]
+      this.sessKeys[1][0] = this.sessKeys[0][0]
+      this.sessKeys[1][1] = this.sessKeys[0][1]
       this.sessKeys[0] = [
           this.their_y ?
               new this.dhSession(this.our_dh, this.their_y) : null
@@ -183,19 +183,24 @@
 
     rotateTheirKeys: function (their_y) {
 
+      // increment their keyid
+      this.their_keyid += 1
+
       // reveal old mac keys
       this.sessKeys.forEach(function (sk) {
-        if (sk[1].sendmacused) this.oldMacKeys.push(sk[1].sendmac)
-        if (sk[1].rcvmacused) this.oldMacKeys.push(sk[1].rcvmac)
+        if (sk[1] && sk[1].sendmacused) this.oldMacKeys.push(sk[1].sendmac)
+        if (sk[1] && sk[1].rcvmacused) this.oldMacKeys.push(sk[1].rcvmac)
       })
 
       // rotate their keys / session
       this.their_old_y = this.their_y
+
       this.sessKeys[0][1] = this.sessKeys[0][0]
       this.sessKeys[1][1] = this.sessKeys[1][0]
 
       // new keys / sessions
       this.their_y = their_y
+
       this.sessKeys[0][0] = new this.dhSession(this.our_dh, this.their_y)
       this.sessKeys[1][0] = new this.dhSession(this.our_old_dh, this.their_y)
 
@@ -209,8 +214,9 @@
       var sessKeys = this.sessKeys[1][0]
       sessKeys.counter += 1
 
-      var oldMacKeys = this.oldMacKeys.join('')
-      this.oldMacKeys = []
+      var oldMacKeys = this.oldMacKeys.splice(0).join('')
+
+      var wtf = HLP.packMPI(this.our_dh.publicKey)
 
       var ta = HLP.pack(this.our_keyid - 1)
       ta += HLP.pack(this.their_keyid)
@@ -253,6 +259,7 @@
       var sessKeys = this.sessKeys[our_keyid][their_keyid]
 
       var ctr = HLP.readLen(msg[4])
+
       if (ctr <= sessKeys.counter)
         return this.error('Counter in message is not larger.')
 
@@ -260,8 +267,12 @@
       var vmac = HLP.makeMac(msg.slice(1, 6).join(''), sessKeys.rcvmac)
       if (msg[6] !== vmac) return this.error('MACs do not match.')
 
-      return HLP.decryptAes(msg[5].substring(4), sessKeys.rcvenc, ctr)
+      var out = HLP.decryptAes(msg[5].substring(4), sessKeys.rcvenc, ctr)
 
+      if (!our_keyid) this.rotateOurKeys()
+      if (!their_keyid) this.rotateTheirKeys(HLP.readMPI(msg[3]))
+
+      return out
     },
 
     sendQueryMsg: function () {
@@ -337,8 +348,6 @@
     },
 
     error: function (err, send) {
-      if (this.debug) console.log(err)
-
       if (send) {
         err = '?OTR Error:' + err
         this.sendMsg(err, true)
