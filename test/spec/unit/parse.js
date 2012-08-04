@@ -24,54 +24,54 @@ describe('Parse', function () {
     assert.equal(null, P.parseMsg(otr, MSGFRAG2), 'Message fragment 2.')
     var three = P.parseMsg(otr, MSGFRAG3)
     assert.equal(three.msg[0], P.parseMsg(otr, MSGFRAG).msg[0], 'Message fragment.')
-  });
+  })
 
-  it('should parse otr "Version 1 Only" query message', function(){
+  it('should parse otr "Version 1 Only" query message', function () {
     P.parseMsg(otr, '?OTR?')
     assert.equal(1, Object.keys(otr.versions).length, 'version 1')
     assert.ok(otr.versions['1'], 'version 1')
-  });
+  })
 
-  it('should parse otr "Version 2 Only" query message', function(){
+  it('should parse otr "Version 2 Only" query message', function () {
     P.parseMsg(otr, '?OTRv2?')
     assert.equal(1, Object.keys(otr.versions).length, 'version 2')
     assert.ok(otr.versions['2'], 'version 2')
-  });
+  })
 
-  it('should parse otr "Version 1 & 2" query message', function(){
+  it('should parse otr "Version 1 & 2" query message', function () {
     P.parseMsg(otr, '?OTR?v2?')
     assert.equal(2, Object.keys(otr.versions).length, 'version 1 & 2')
     assert.ok(otr.versions['1'], 'version 1 & 2')
     assert.ok(otr.versions['2'], 'version 1 & 2')
-  });
+  })
 
-  it('should parse otr "Version 2, 4, x only" query message', function(){
+  it('should parse otr "Version 2, 4, x only" query message', function () {
     P.parseMsg(otr, '?OTRv24x?')
     assert.equal(3, Object.keys(otr.versions).length, 'version 2, 4, x')
     assert.ok(otr.versions['2'], 'version 2, 4, x')
     assert.ok(otr.versions['4'], 'version 2, 4, x')
     assert.ok(otr.versions.x, 'version 2, 4, x')
-  });
+  })
 
-  it('should parse otr "Version 2, 4, x" query message', function(){
+  it('should parse otr "Version 2, 4, x" query message', function () {
     P.parseMsg(otr, '?OTR?v24x?')
     assert.equal(4, Object.keys(otr.versions).length, 'version 1, 2, 4, x')
     assert.ok(otr.versions['1'], 'version 1, 2, 4, x')
     assert.ok(otr.versions['2'], 'version 1, 2, 4, x')
     assert.ok(otr.versions['4'], 'version 1, 2, 4, x')
     assert.ok(otr.versions.x, 'version 1, 2, 4, x')
-  });
+  })
 
-  it('should parse otr "Version 1 Only" query message 2', function(){
+  it('should parse otr "Version 1 Only" query message 2', function () {
     P.parseMsg(otr, '?OTR?v?')
     assert.equal(1, Object.keys(otr.versions).length, 'version 1 ?')
     assert.ok(otr.versions['1'], 'version 1 ?')
-  });
+  })
 
-  it('should parse otr bizarre claim query message', function(){
+  it('should parse otr bizarre claim query message', function () {
     P.parseMsg(otr, '?OTRv?')
     assert.equal(0, Object.keys(otr.versions).length, 'version bizarre')
-  });
+  })
 
   it('should parse otr error message', function () {
     otr.error = function (msg) {
