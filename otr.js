@@ -194,13 +194,11 @@
 
       // rotate their keys / session
       this.their_old_y = this.their_y
-
       this.sessKeys[0][1] = this.sessKeys[0][0]
       this.sessKeys[1][1] = this.sessKeys[1][0]
 
       // new keys / sessions
       this.their_y = their_y
-
       this.sessKeys[0][0] = new this.dhSession(this.our_dh, this.their_y)
       this.sessKeys[1][0] = new this.dhSession(this.our_old_dh, this.their_y)
 
@@ -259,7 +257,6 @@
       var sessKeys = this.sessKeys[our_keyid][their_keyid]
 
       var ctr = HLP.readLen(msg[4])
-
       if (ctr <= sessKeys.counter)
         return this.error('Counter in message is not larger.')
 
