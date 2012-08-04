@@ -5,7 +5,7 @@
   "homepage": "https://github.com/arlolra/otr",
   "main": "otr.js",
   "scripts": {
-    "test": "./node_modules/.bin/mocha -R spec test/spec/unit/*.js"
+    "test": "make test"
   },
   "repository": {
     "type": "git",
