@@ -100,26 +100,10 @@
       msg = CryptoJS.enc.Latin1.stringify(msg)
 
       var cls
-      switch (type) {
-        case '\x02':
-          cls = 'ake'
-          msg = HLP.splitype(['DATA', 'DATA'], msg)
-          break
-        case '\x0a':
-          cls = 'ake'
-          msg = HLP.splitype(['MPI'], msg)
-          break
-        case '\x11':
-          cls = 'ake'
-          msg = HLP.splitype(['DATA', 'DATA', 'MAC'], msg)
-          break
-        case '\x12':
-          cls = 'ake'
-          msg = HLP.splitype(['DATA', 'MAC'], msg)
-          break
-        case '\x03':
-          cls = 'data'
-          break
+      if (~['\x02', '\x0a', '\x11', '\x12'].indexOf(type)) {
+        cls = 'ake'
+      } else if (type === '\x03') {
+        cls = 'data'
       }
 
       return {

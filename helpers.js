@@ -39,8 +39,8 @@
   HLP.smpHash = function (version, fmpi, smpi) {
     var sha256 = CryptoJS.algo.SHA256.create()
     sha256.update(version.toString())
-    sha256.update(BigInt.bigInt2str(fmpi, 10))
-    if (smpi) sha256.update(BigInt.bigInt2str(smpi, 10))
+    sha256.update(HLP.packMPI(fmpi))
+    if (smpi) sha256.update(HLP.packMPI(smpi))
     var hash = sha256.finalize()
     return BigInt.str2bigInt(hash.toString(CryptoJS.enc.Hex), 16)
   }

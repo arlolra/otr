@@ -338,6 +338,9 @@
         case 'ake':
           this.ake.handleAKE(msg)
           return
+        case 'sm':
+          this.sm.handleSM(msg)
+          return
         case 'data':
           msg.msg = this.handleDataMsg(msg)
           break

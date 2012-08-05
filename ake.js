@@ -181,9 +181,11 @@
           // d-h key message
           if (!this.otr.ALLOW_V2) return  // ignore
 
+          msg = HLP.splitype(['DATA', 'DATA'], msg.msg)
+
           if (this.otr.authstate === AUTHSTATE_AWAITING_DHKEY) {
             var ourHash = L1toBI(this.myhashed)
-            var theirHash = L1toBI(msg.msg[1].substring(4))
+            var theirHash = L1toBI(msg[1].substring(4))
             if (BigInt.greater(ourHash, theirHash)) {
               this.initiateAKE()
               return  // ignore
@@ -201,8 +203,8 @@
 
           this.otr.authstate = AUTHSTATE_AWAITING_REVEALSIG
 
-          this.encrypted = msg.msg[0].substring(4)
-          this.hashed = msg.msg[1].substring(4)
+          this.encrypted = msg[0].substring(4)
+          this.hashed = msg[1].substring(4)
 
           send = '\x0a'
           send += HLP.packMPI(this.our_dh.publicKey)
@@ -212,9 +214,11 @@
           // reveal signature message
           if (!this.otr.ALLOW_V2) return  // ignore
 
+          msg = HLP.splitype(['MPI'], msg.msg)
+
           if (this.otr.authstate !== AUTHSTATE_AWAITING_DHKEY) {
             if (this.otr.authstate === AUTHSTATE_AWAITING_SIG) {
-              if (!BigInt.equals(this.their_y, HLP.readMPI(msg.msg[0]))) return
+              if (!BigInt.equals(this.their_y, HLP.readMPI(msg[0]))) return
             } else {
               return  // ignore
             }
@@ -222,7 +226,7 @@
 
           this.otr.authstate = AUTHSTATE_AWAITING_SIG
 
-          this.their_y = HLP.readMPI(msg.msg[0])
+          this.their_y = HLP.readMPI(msg[0])
 
           // verify gy is legal 2 <= gy <= N-2
           if (!checkGroup(this.their_y))
@@ -241,7 +245,9 @@
                this.otr.authstate !== AUTHSTATE_AWAITING_REVEALSIG
           ) return  // ignore
 
-          this.r = HLP.readMPI(msg.msg[0])
+          msg = HLP.splitype(['DATA', 'DATA', 'MAC'], msg.msg)
+
+          this.r = HLP.readMPI(msg[0])
 
           // decrypt their_y
           var key = CryptoJS.enc.Hex.parse(BigInt.bigInt2str(this.r, 16))
@@ -263,8 +269,8 @@
           this.createKeys(this.their_y)
 
           vsm = this.verifySignMac(
-              msg.msg[2]
-            , msg.msg[1]
+              msg[2]
+            , msg[1]
             , this.m2
             , this.c
             , this.their_y
@@ -296,9 +302,11 @@
                this.otr.authstate !== AUTHSTATE_AWAITING_SIG
           ) return  // ignore
 
+          msg = HLP.splitype(['DATA', 'MAC'], msg.msg)
+
           vsm = this.verifySignMac(
-              msg.msg[1]
-            , msg.msg[0]
+              msg[1]
+            , msg[0]
             , this.m2_prime
             , this.c_prime
             , this.their_y

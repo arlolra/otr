@@ -72,7 +72,6 @@
     makeG2s: function () {
       this.g2a = BigInt.powMod(G, this.a2, N)
       this.g3a = BigInt.powMod(G, this.a3, N)
-      return { g2a: this.g2a, g3a: this.g3a }
     },
 
     computeGs: function (msg) {
@@ -307,38 +306,40 @@
       this.sendMsg({ type: 6 }, cb)
     },
 
-    initiate: function (cb) {
-      if (typeof cb !== 'function')
-        throw new Error('Nowhere to go?')
-
-      // start over
-      if (this.smpstate !== SMPSTATE_EXPECT1) this.error('Start over.', cb)
+    initiate: function () {
+      if (this.smpstate !== SMPSTATE_EXPECT1)
+        this.abort()  // abort + restart
 
       this.a2 = HLP.randomValue()
       this.a3 = HLP.randomValue()
-
-      var send = this.makeG2s()
+      this.makeG2s()
 
       // zero-knowledge proof that the exponents
       // associated with g2a & g3a are known
       var r2 = HLP.randomValue()
       var r3 = HLP.randomValue()
-      send.c2 = this.c2 = this.computeC(1, r2)
-      send.c3 = this.c3 = this.computeC(2, r3)
-      send.d2 = this.d2 = this.computeD(r2, this.a2, this.c2)
-      send.d3 = this.d3 = this.computeD(r3, this.a3, this.c3)
+      this.c2 = this.computeC(1, r2)
+      this.c3 = this.computeC(2, r3)
+      this.d2 = this.computeD(r2, this.a2, this.c2)
+      this.d3 = this.computeD(r3, this.a3, this.c3)
 
       // set the next expected state
       this.smpstate = SMPSTATE_EXPECT2
 
-      // set the message type
-      send.type = 2
+      var send = 2  // set the message type
+      send += HLP.packMPI(this.g2a)
+      send += HLP.packMPI(this.c2)
+      send += HLP.packMPI(this.d2)
+      send += HLP.packMPI(this.g2a)
+      send += HLP.packMPI(this.c3)
+      send += HLP.packMPI(this.d3)
 
-      this.sendMsg(send, cb)
+      this.sendMsg(send)
     },
 
-    abort: function (cb) {
-      this.error('Abort.', cb)
+    abort: function () {
+      this.init()
+      this.sendMsg('6')
     }
 
   }
