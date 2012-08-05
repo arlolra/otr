@@ -126,7 +126,7 @@
 
     makeM: function (their_y, m1, c, m2) {
       var pk = this.priv.packPublic()
-      var kid = HLP.pack(this.our_keyid)
+      var kid = HLP.packINT(this.our_keyid)
       var m = hMac(this.our_dh.publicKey, their_y, pk, kid, m1)
       m = this.priv.sign(m)
       var msg = pk + kid + HLP.bigInt2bits(m[0]) + HLP.bigInt2bits(m[1])

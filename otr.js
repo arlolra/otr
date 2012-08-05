@@ -218,8 +218,8 @@
 
       var ctr = HLP.packCtr(sessKeys.counter)
 
-      var ta = HLP.pack(this.our_keyid - 1)
-      ta += HLP.pack(this.their_keyid)
+      var ta = HLP.packINT(this.our_keyid - 1)
+      ta += HLP.packINT(this.their_keyid)
       ta += HLP.packMPI(this.our_dh.publicKey)
       ta += ctr.substring(0, 8)
       ta += HLP.packData(HLP.makeAes(msg, sessKeys.sendenc, ctr))

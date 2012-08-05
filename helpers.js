@@ -17,6 +17,16 @@
     CryptoJS || (CryptoJS = require('./vendor/cryptojs/cryptojs.js'))
   }
 
+  // data types (byte lengths)
+  var dts =  {
+      BYTE: 1
+    , SHORT: 2
+    , INT: 4
+    , CTR: 8
+    , MAC: 20
+    , SIG: 40
+  }
+
   HLP.divMod = function (num, den, n) {
     return BigInt.multMod(num, BigInt.inverseMod(den, n), n)
   }
@@ -141,27 +151,20 @@
     return BigInt.str2bigInt(str, 16)
   }
 
-  HLP.pack = function (d) {
-    // big-endian, unsigned long
-    var res = ''
-    res += _toString(d >> 24 & 0xFF)
-    res += _toString(d >> 16 & 0xFF)
-    res += _toString(d >> 8 & 0xFF)
-    res += _toString(d & 0xFF)
+  HLP.packBytes = function (val, bytes) {
+    var res = ''  // big-endian, unsigned long
+    for (bytes -= 1, bytes *= 8; bytes > -1; bytes -= 8) {
+      res += _toString(val >> bytes & 0xff)
+    }
     return res
   }
 
+  HLP.packINT = function (d) {
+    return HLP.packBytes(d, dts.INT)
+  }
+
   HLP.packCtr = function (d) {
-    var res = ''
-    res += _toString(d >> 56 & 0xFF)
-    res += _toString(d >> 48 & 0xFF)
-    res += _toString(d >> 40 & 0xFF)
-    res += _toString(d >> 32 & 0xFF)
-    res += _toString(d >> 24 & 0xFF)
-    res += _toString(d >> 16 & 0xFF)
-    res += _toString(d >> 8 & 0xFF)
-    res += _toString(d & 0xFF)
-    return HLP.padCtr(res)
+    return HLP.padCtr(HLP.packBytes(d, dts.CTR))
   }
 
   HLP.padCtr = function (ctr) {
@@ -180,7 +183,7 @@
   }
 
   HLP.packData = function (d) {
-    return HLP.pack(d.length) + d
+    return HLP.packINT(d.length) + d
   }
 
   HLP.bigInt2bits = function (bi) {
@@ -200,6 +203,14 @@
 
   HLP.packMPI = function (mpi) {
     return HLP.packData(HLP.bigInt2bits(BigInt.trim(mpi, 0)))
+  }
+
+  HLP.packSHORT = function (short) {
+    return HLP.packBytes(short, dts.SHORT)
+  }
+
+  HLP.packTLV = function (type, value) {
+    return HLP.packSHORT(type) + HLP.packSHORT(value.length) + value
   }
 
   HLP.readLen = function (msg) {
@@ -238,17 +249,6 @@
 
   HLP.splitype = function splitype(arr, msg) {
     var data = []
-
-    // data types (byte lengths)
-    var dts =  {
-        BYTE: 1
-      , SHORT: 2
-      , INT: 4
-      , CTR: 8
-      , MAC: 20
-      , SIG: 40
-    }
-
     arr.forEach(function (a) {
       var len, str
       switch (a) {
