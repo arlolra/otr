@@ -60,6 +60,8 @@
     this.N = 160
     this.L = 1024
 
+    this.type = '\x00\x00'
+
     this.makePQ()
     this.makeG()
 
@@ -150,7 +152,7 @@
     },
 
     packPublic: function () {
-      var str = '\x00\x00'  // pubkey type
+      var str = this.type
       str += HLP.packMPI(this.p)
       str += HLP.packMPI(this.q)
       str += HLP.packMPI(this.g)
@@ -180,7 +182,8 @@
   DSA.parsePublic = function (str) {
     str = HLP.splitype(['SHORT', 'MPI', 'MPI', 'MPI', 'MPI'], str)
     return {
-        p: HLP.readMPI(str[1])
+        type: str[0]
+      , p: HLP.readMPI(str[1])
       , q: HLP.readMPI(str[2])
       , g: HLP.readMPI(str[3])
       , y: HLP.readMPI(str[4])
@@ -204,6 +207,13 @@
     var v = BigInt.mod(BigInt.multMod(u1, u2, key.p), key.q)
 
     return BigInt.equals(v, r)
+  }
+
+  DSA.fingerprint = function (key) {
+    var pk = key.packPublic()
+    if (key.type === '\x00\x00')
+      pk = pk.substring(2)
+    return CryptoJS.SHA1(pk).toString(CryptoJS.enc.Hex)
   }
 
 }).call(this)

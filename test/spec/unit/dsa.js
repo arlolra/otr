@@ -31,11 +31,16 @@ describe('DSA', function() {
   })
 
   it('should parse a given public key into the correct parameters', function () {
-      var par = DSA.parsePublic(key.packPublic())
-      assert.ok(BigInt.equals(key.p, par.p), 'Pees are good.')
-      assert.ok(BigInt.equals(key.q, par.q), 'Qs.')
-      assert.ok(BigInt.equals(key.g, par.g), 'Gs.')
-      assert.ok(BigInt.equals(key.y, par.y), 'Ys.')
+    var par = DSA.parsePublic(key.packPublic())
+    assert.ok(BigInt.equals(key.p, par.p), 'Pees are good.')
+    assert.ok(BigInt.equals(key.q, par.q), 'Qs.')
+    assert.ok(BigInt.equals(key.g, par.g), 'Gs.')
+    assert.ok(BigInt.equals(key.y, par.y), 'Ys.')
+  })
+
+  it('should return a fingerprint for the public key', function () {
+    var finger = DSA.fingerprint(key)
+    assert.equal(40, finger.length, 'SHA1 Hex')
   })
 
 })
