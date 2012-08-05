@@ -12,12 +12,14 @@
     , CryptoJS = root.CryptoJS
     , DH = root.DH
     , HLP = root.HLP
+    , DSA = root.DSA
 
   if (typeof require !== 'undefined') {
     BigInt || (BigInt = require('./vendor/bigint.js'))
     CryptoJS || (CryptoJS = require('./vendor/cryptojs/cryptojs.js'))
     DH || (DH = require('./dh.json'))
     HLP || (HLP = require('./helpers.js'))
+    DSA || (DSA = require('./dsa.js'))
   }
 
   // smp machine states
@@ -35,26 +37,16 @@
   var Q = BigInt.sub(N, BigInt.str2bigInt('1', 10))
   BigInt.divInt_(Q, 2)  // meh
 
-  function SM(secret, ssid, ifp, rfp) {
-    if (!(this instanceof SM)) return new SM(secret, ssid, ifp, rfp)
+  function SM(otr) {
+    if (!(this instanceof SM)) return new SM(otr)
 
-    var sha256 = CryptoJS.algo.SHA256.create()
-    sha256.update('1')     // version of smp
-    sha256.update(ifp)     // initiator fingerprint
-    sha256.update(rfp)     // responder fingerprint
-    sha256.update(ssid)    // secure session id
-    sha256.update(secret)  // user input string
-    var hash = sha256.finalize()
-    this.secret = BigInt.str2bigInt(hash.toString(CryptoJS.enc.Hex), 16)
+    this.otr = otr
+    this.version = '1'
+    this.our_fp = DSA.fingerprint(otr.priv)
+    this.their_fp = DSA.fingerprint(otr.their_priv_pk)
 
-    // initialize vars
+    // initial state
     this.init()
-
-    // bind methods
-    var self = this
-    ;['sendMsg', 'receiveMsg'].forEach(function (meth) {
-      self[meth] = self[meth].bind(self)
-    })
   }
 
   SM.prototype = {
@@ -67,6 +59,18 @@
     // also used when aborting
     init: function () {
       this.smpstate = SMPSTATE_EXPECT1
+      this.secret = null
+    },
+
+    makeSecret: function (our) {
+      var sha256 = CryptoJS.algo.SHA256.create()
+      sha256.update(this.version)
+      sha256.update(our ? this.our_fp : this.their_fp)
+      sha256.update(our ? this.their_fp : this.our_fp)
+      sha256.update(this.otr.ssid)    // secure session id
+      sha256.update(this.otr.secret)  // user input string
+      var hash = sha256.finalize()
+      this.secret = BigInt.str2bigInt(hash.toString(CryptoJS.enc.Hex), 16)
     },
 
     makeG2s: function () {
@@ -121,6 +125,8 @@
         case SMPSTATE_EXPECT1:
           // 0:g2a, 1:c2, 2:d2, 3:g3a, 4:c3, 5:d3
           msg = HLP.unpackMPIs(6, msg.msg)
+
+          this.makeSecret()
 
           // verify znp's
           if (!HLP.ZKP(1, msg[1], HLP.multPowMod(G, msg[2], msg[0], msg[1], N)))
@@ -316,6 +322,9 @@
     },
 
     initiate: function () {
+
+      this.makeSecret(true)
+
       if (this.smpstate !== SMPSTATE_EXPECT1)
         this.abort()  // abort + restart
 

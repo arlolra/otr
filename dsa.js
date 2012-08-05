@@ -216,4 +216,10 @@
     return CryptoJS.SHA1(pk).toString(CryptoJS.enc.Hex)
   }
 
+  DSA.inherit = function (key) {
+    key.__proto__ = DSA.Key.prototype
+    key.constructor = DSA.Key
+    key.type = '\x00\x00'
+  }
+
 }).call(this)

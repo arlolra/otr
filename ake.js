@@ -11,6 +11,7 @@
   var CryptoJS = root.CryptoJS
     , BigInt = root.BigInt
     , DH = root.DH
+    , SM = root.SM
     , HLP = root.HLP
     , DSA = root.DSA
 
@@ -18,6 +19,7 @@
     CryptoJS || (CryptoJS = require('./vendor/cryptojs/cryptojs.js'))
     BigInt || (BigInt = require('./vendor/bigint.js'))
     DH || (DH = require('./dh.json'))
+    SM || (SM = require('./sm.js'))
     HLP || (HLP = require('./helpers.js'))
     DSA || (DSA = require('./dsa.js'))
   }
@@ -147,6 +149,7 @@
         this.otr.their_old_y = null
         this.otr.their_keyid = this.their_keyid
         this.otr.their_priv_pk = this.their_priv_pk
+        DSA.inherit(this.otr.their_priv_pk)
 
         // rotate keys
         this.otr.sessKeys[0] = [ new this.otr.dhSession(
@@ -163,6 +166,7 @@
       // ake info
       this.otr.ssid = this.ssid
       this.otr.transmittedRS = this.transmittedRS
+      this.otr.sm = new SM(this.otr)
 
       // go encrypted
       this.otr.authstate = AUTHSTATE_NONE

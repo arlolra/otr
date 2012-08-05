@@ -12,7 +12,6 @@
     , BigInt = root.BigInt
     , DH = root.DH
     , HLP = root.HLP
-    , SM = root.SM
     , AKE = root.AKE
     , DSA = root.DSA
     , ParseOTR = root.ParseOTR
@@ -22,7 +21,6 @@
     BigInt || (BigInt = require('./vendor/bigint.js'))
     DH || (DH = require('./dh.json'))
     HLP || (HLP = require('./helpers.js'))
-    SM || (SM = require('./sm.js'))
     DSA || (DSA = require('./dsa.js'))
     AKE || (AKE = require('./ake.js'))
     ParseOTR || (ParseOTR = require('./parse.js'))
@@ -112,13 +110,16 @@
       this.storedMgs = []
       this.oldMacKeys = []
 
-      this.sm = null  // new SM()
+      this.sm = null  // initialized after AKE
 
       // when ake is complete
       // save their keys and the session
       this.ake = new AKE(this)
       this.transmittedRS = false
       this.ssid = null
+
+      // user provided secret for SM
+      this.secret = 'cryptocat?'
 
     },
 
