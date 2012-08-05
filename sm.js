@@ -74,22 +74,22 @@
       this.g3a = BigInt.powMod(G, this.a3, N)
     },
 
-    computeGs: function (msg) {
-      this.g2 = BigInt.powMod(msg.g2a, this.a2, N)
-      this.g3 = BigInt.powMod(msg.g3a, this.a3, N)
+    computeGs: function (g2a, g3a) {
+      this.g2 = BigInt.powMod(g2a, this.a2, N)
+      this.g3 = BigInt.powMod(g3a, this.a3, N)
     },
 
-    computePQ: function (r, send) {
-      send.p = this.p = BigInt.powMod(this.g3, r, N)
-      send.q = this.q = HLP.multPowMod(G, r, this.g2, this.secret, N)
+    computePQ: function (r) {
+      this.p = BigInt.powMod(this.g3, r, N)
+      this.q = HLP.multPowMod(G, r, this.g2, this.secret, N)
     },
 
-    computeR: function (send) {
-      send.r = this.r = BigInt.powMod(this.QoQ, this.a3, N)
+    computeR: function () {
+      this.r = BigInt.powMod(this.QoQ, this.a3, N)
     },
 
-    computeRab: function (msg) {
-      return BigInt.powMod(msg.r, this.a3, N)
+    computeRab: function (r) {
+      return BigInt.powMod(r, this.a3, N)
     },
 
     computeC: function (v, r) {
@@ -101,174 +101,9 @@
     },
 
     // the bulk of the work
-    handleSM: function (msg, cb) {
-      var r2, r3, r4, r5, r6, r7, t1, t2, t3, t4, rab, tmp, tmp2
-
-      var send = {}
-        , reply = true
-
-      switch (this.smpstate) {
-
-        case SMPSTATE_EXPECT1:
-
-          // verify znp's
-          console.log('Check c2: ' +
-            HLP.ZKP(1, msg.c2, HLP.multPowMod(G, msg.d2, msg.g2a, msg.c2, N)))
-          console.log('Check c3: ' +
-            HLP.ZKP(2, msg.c3, HLP.multPowMod(G, msg.d3, msg.g3a, msg.c3, N)))
-
-          this.g3ao = msg.g3a  // save for later
-
-          this.a2 = HLP.randomExponent()
-          this.a3 = HLP.randomExponent()
-
-          send = this.makeG2s()
-
-          // zero-knowledge proof that the exponents
-          // associated with g2a & g3a are known
-          r2 = HLP.randomExponent()
-          r3 = HLP.randomExponent()
-          send.c2 = this.c2 = this.computeC(3, r2)
-          send.c3 = this.c3 = this.computeC(4, r3)
-          send.d2 = this.d2 = this.computeD(r2, this.a2, this.c2)
-          send.d3 = this.d3 = this.computeD(r3, this.a3, this.c3)
-
-          this.computeGs(msg)
-
-          r4 = HLP.randomExponent()
-          this.computePQ(r4, send)
-
-          // zero-knowledge proof that P & Q
-          // were generated according to the protocol
-          r5 = HLP.randomExponent()
-          r6 = HLP.randomExponent()
-          tmp = HLP.multPowMod(G, r5, this.g2, r6, N)
-          send.cP = HLP.smpHash(5, BigInt.powMod(this.g3, r5, N), tmp)
-          send.d5 = this.computeD(r5, r4, send.cP)
-          send.d6 = this.computeD(r6, this.secret, send.cP)
-
-          this.smpstate = SMPSTATE_EXPECT3
-          send.type = 3
-          break
-
-        case SMPSTATE_EXPECT2:
-
-          // verify znp of c3 / c3
-          console.log('Check c2: ' +
-            HLP.ZKP(3, msg.c2, HLP.multPowMod(G, msg.d2, msg.g2a, msg.c2, N)))
-          console.log('Check c3: ' +
-            HLP.ZKP(4, msg.c3, HLP.multPowMod(G, msg.d3, msg.g3a, msg.c3, N)))
-
-          this.g3ao = msg.g3a  // save for later
-
-          this.computeGs(msg)
-
-          // verify znp of cP
-          t1 = HLP.multPowMod(this.g3, msg.d5, msg.p, msg.cP, N)
-          t2 = HLP.multPowMod(G, msg.d5, this.g2, msg.d6, N)
-          t2 = BigInt.multMod(t2, BigInt.powMod(msg.q, msg.cP, N), N)
-          console.log('Check cP: ' + HLP.ZKP(5, msg.cP, t1, t2))
-
-          r4 = HLP.randomExponent()
-          this.computePQ(r4, send)
-
-          // zero-knowledge proof that P & Q
-          // were generated according to the protocol
-          r5 = HLP.randomExponent()
-          r6 = HLP.randomExponent()
-          tmp = HLP.multPowMod(G, r5, this.g2, r6, N)
-          send.cP = HLP.smpHash(6, BigInt.powMod(this.g3, r5, N), tmp)
-          send.d5 = this.computeD(r5, r4, send.cP)
-          send.d6 = this.computeD(r6, this.secret, send.cP)
-
-          // store these
-          this.QoQ = HLP.divMod(this.q, msg.q, N)
-          this.PoP = HLP.divMod(this.p, msg.p, N)
-
-          this.computeR(send)
-
-          // zero-knowledge proof that R
-          // was generated according to the protocol
-          r7 = HLP.randomExponent()
-          tmp2 = BigInt.powMod(this.QoQ, r7, N)
-          send.cR = HLP.smpHash(7, BigInt.powMod(G, r7, N), tmp2)
-          send.d7 = this.computeD(r7, this.a3, send.cR)
-
-          this.smpstate = SMPSTATE_EXPECT4
-          send.type = 4
-          break
-
-        case SMPSTATE_EXPECT3:
-
-          // verify znp of cP
-          t1 = HLP.multPowMod(this.g3, msg.d5, msg.p, msg.cP, N)
-          t2 = HLP.multPowMod(G, msg.d5, this.g2, msg.d6, N)
-          t2 = BigInt.multMod(t2, BigInt.powMod(msg.q, msg.cP, N), N)
-          console.log('Check cP: ' + HLP.ZKP(6, msg.cP, t1, t2))
-
-          // verify znp of cR
-          t3 = HLP.multPowMod(G, msg.d7, this.g3ao, msg.cR, N)
-          this.QoQ = HLP.divMod(msg.q, this.q, N)  // save Q over Q
-          t4 = HLP.multPowMod(this.QoQ, msg.d7, msg.r, msg.cR, N)
-          console.log('Check cR: ' + HLP.ZKP(7, msg.cR, t3, t4))
-
-          this.computeR(send)
-
-          // zero-knowledge proof that R
-          // was generated according to the protocol
-          r7 = HLP.randomExponent()
-          tmp2 = BigInt.powMod(this.QoQ, r7, N)
-          send.cR = HLP.smpHash(8, BigInt.powMod(G, r7, N), tmp2)
-          send.d7 = this.computeD(r7, this.a3, send.cR)
-
-          rab = this.computeRab(msg)
-          console.log('Compare Rab: ' +
-            BigInt.equals(rab, HLP.divMod(msg.p, this.p, N)))
-
-          send.type = 5
-          this.init()
-          break
-
-        case SMPSTATE_EXPECT4:
-
-          // verify znp of cR
-          t3 = HLP.multPowMod(G, msg.d7, this.g3ao, msg.cR, N)
-          t4 = HLP.multPowMod(this.QoQ, msg.d7, msg.r, msg.cR, N)
-          console.log('Check cR: ' + HLP.ZKP(8, msg.cR, t3, t4))
-
-          rab = this.computeRab(msg)
-          console.log('Compare Rab: ' + BigInt.equals(rab, this.PoP))
-
-          this.init()
-          reply = false
-          break
-
-        default:
-          this.error('Unrecognized state.', cb)
-
-      }
-
-      if (reply) this.sendMsg(send, cb)
-
-    },
-
-    // send a message
-    sendMsg: function (send, cb) {
-
-      // "?OTR:" + base64encode(msg) + "."
-      console.log('sending')
-
-      cb(send, this.receiveMsg)
-    },
-
-    // receive a message
-    receiveMsg: function (msg, cb) {
-
-      if (typeof cb !== 'function')
-        throw new Error('Nowhere to go?')
-
-      if (typeof msg !== 'object')
-        return this.error('No message type.', cb)
+    handleSM: function (msg) {
+      var send, r2, r3, r4, r5, r6, r7, t1, t2, t3, t4
+        , rab, tmp, tmp2, cP, cR, d5, d6, d7
 
       var expectStates = {
           2: SMPSTATE_EXPECT1
@@ -277,33 +112,207 @@
         , 5: SMPSTATE_EXPECT4
       }
 
-      switch (msg.type) {
+      // abort! there was an error
+      if (this.smpstate !== expectStates[msg.type])
+        return this.abort()
 
-        case 2:  // these fall through
-        case 3:
-        case 4:
-        case 5:
-          if (this.smpstate !== expectStates[msg.type])
-            return this.error('Unexpected state.', cb)
-          this.handleSM(msg, cb)
+      switch (this.smpstate) {
+
+        case SMPSTATE_EXPECT1:
+          // 0:g2a, 1:c2, 2:d2, 3:g3a, 4:c3, 5:d3
+          msg = HLP.unpackMPIs(6, msg.msg)
+
+          // verify znp's
+          if (!HLP.ZKP(1, msg[1], HLP.multPowMod(G, msg[2], msg[0], msg[1], N)))
+            return this.abort()
+
+          if (!HLP.ZKP(2, msg[4], HLP.multPowMod(G, msg[5], msg[3], msg[4], N)))
+            return this.abort()
+
+          this.g3ao = msg[3]  // save for later
+
+          this.a2 = HLP.randomExponent()
+          this.a3 = HLP.randomExponent()
+
+          this.makeG2s()
+
+          // zero-knowledge proof that the exponents
+          // associated with g2a & g3a are known
+          r2 = HLP.randomExponent()
+          r3 = HLP.randomExponent()
+          this.c2 = this.computeC(3, r2)
+          this.c3 = this.computeC(4, r3)
+          this.d2 = this.computeD(r2, this.a2, this.c2)
+          this.d3 = this.computeD(r3, this.a3, this.c3)
+
+          this.computeGs(msg[0], msg[3])
+
+          r4 = HLP.randomExponent()
+
+          this.computePQ(r4)
+
+          // zero-knowledge proof that P & Q
+          // were generated according to the protocol
+          r5 = HLP.randomExponent()
+          r6 = HLP.randomExponent()
+          tmp = HLP.multPowMod(G, r5, this.g2, r6, N)
+          cP = HLP.smpHash(5, BigInt.powMod(this.g3, r5, N), tmp)
+          d5 = this.computeD(r5, r4, cP)
+          d6 = this.computeD(r6, this.secret, cP)
+
+          this.smpstate = SMPSTATE_EXPECT3
+
+          send = HLP.packINT(11) + HLP.packMPIs([
+              this.g2a
+            , this.c2
+            , this.d2
+            , this.g3a
+            , this.c3
+            , this.d3
+            , this.p
+            , this.q
+            , cP
+            , d5
+            , d6
+          ])
+
+          // TLV
+          send = HLP.packTLV(3, send)
           break
 
-        // abort! there was an error
-        case 6:
+        case SMPSTATE_EXPECT2:
+          // 0:g2a, 1:c2, 2:d2, 3:g3a, 4:c3, 5:d3, 6:p, 7:q, 8:cP, 9:d5, 10:d6
+          msg = HLP.unpackMPIs(11, msg.msg)
+
+          // verify znp of c3 / c3
+          if (!HLP.ZKP(3, msg[1], HLP.multPowMod(G, msg[2], msg[0], msg[1], N)))
+            return this.abort()
+
+          if (!HLP.ZKP(4, msg[4], HLP.multPowMod(G, msg[5], msg[3], msg[4], N)))
+            return this.abort()
+
+          this.g3ao = msg[3]  // save for later
+
+          this.computeGs(msg[0], msg[3])
+
+          // verify znp of cP
+          t1 = HLP.multPowMod(this.g3, msg[9], msg[6], msg[8], N)
+          t2 = HLP.multPowMod(G, msg[9], this.g2, msg[10], N)
+          t2 = BigInt.multMod(t2, BigInt.powMod(msg[7], msg[8], N), N)
+
+          if (!HLP.ZKP(5, msg[8], t1, t2))
+            return this.abort()
+
+          r4 = HLP.randomExponent()
+
+          this.computePQ(r4)
+
+          // zero-knowledge proof that P & Q
+          // were generated according to the protocol
+          r5 = HLP.randomExponent()
+          r6 = HLP.randomExponent()
+          tmp = HLP.multPowMod(G, r5, this.g2, r6, N)
+          cP = HLP.smpHash(6, BigInt.powMod(this.g3, r5, N), tmp)
+          d5 = this.computeD(r5, r4, cP)
+          d6 = this.computeD(r6, this.secret, cP)
+
+          // store these
+          this.QoQ = HLP.divMod(this.q, msg[7], N)
+          this.PoP = HLP.divMod(this.p, msg[6], N)
+
+          this.computeR()
+
+          // zero-knowledge proof that R
+          // was generated according to the protocol
+          r7 = HLP.randomExponent()
+          tmp2 = BigInt.powMod(this.QoQ, r7, N)
+          cR = HLP.smpHash(7, BigInt.powMod(G, r7, N), tmp2)
+          d7 = this.computeD(r7, this.a3, cR)
+
+          this.smpstate = SMPSTATE_EXPECT4
+
+          send = HLP.packINT(8) + HLP.packMPIs([
+              this.p
+            , this.q
+            , cP
+            , d5
+            , d6
+            , this.r
+            , cR
+            , d7
+          ])
+
+          // TLV
+          send = HLP.packTLV(4, send)
+          break
+
+        case SMPSTATE_EXPECT3:
+          // 0:p, 1:q, 2:cP, 3:d5, 4:d6, 5:r, 6:cR, 7:d7
+          msg = HLP.unpackMPIs(8, msg.msg)
+
+          // verify znp of cP
+          t1 = HLP.multPowMod(this.g3, msg[3], msg[0], msg[2], N)
+          t2 = HLP.multPowMod(G, msg[3], this.g2, msg[4], N)
+          t2 = BigInt.multMod(t2, BigInt.powMod(msg[1], msg[2], N), N)
+
+          if (!HLP.ZKP(6, msg[2], t1, t2))
+            return this.abort()
+
+          // verify znp of cR
+          t3 = HLP.multPowMod(G, msg[7], this.g3ao, msg[6], N)
+          this.QoQ = HLP.divMod(msg[1], this.q, N)  // save Q over Q
+          t4 = HLP.multPowMod(this.QoQ, msg[7], msg[5], msg[6], N)
+
+          if (!HLP.ZKP(7, msg[6], t3, t4))
+
+          this.computeR()
+
+          // zero-knowledge proof that R
+          // was generated according to the protocol
+          r7 = HLP.randomExponent()
+          tmp2 = BigInt.powMod(this.QoQ, r7, N)
+          cR = HLP.smpHash(8, BigInt.powMod(G, r7, N), tmp2)
+          d7 = this.computeD(r7, this.a3, cR)
+
+          rab = this.computeRab(msg[5])
+
+          if (!BigInt.equals(rab, HLP.divMod(msg[0], this.p, N)))
+            return this.abort()
+
+          send = HLP.packINT(3) + HLP.packMPIs([ this.r, cR, d7 ])
+
+          // TLV
+          send = HLP.packTLV(5, send)
+
           this.init()
           break
 
-        default:
-          this.error('Invalid message type.', cb)
+        case SMPSTATE_EXPECT4:
+          // 0:r, 1:cR, 2:d7
+          msg = HLP.unpackMPIs(3, msg.msg)
+
+          // verify znp of cR
+          t3 = HLP.multPowMod(G, msg[2], this.g3ao, msg[1], N)
+          t4 = HLP.multPowMod(this.QoQ, msg[2], msg[0], msg[1], N)
+          if (!HLP.ZKP(8, msg[1], t3, t4))
+            return this.abort()
+
+          rab = this.computeRab(msg[0])
+
+          if (!BigInt.equals(rab, this.PoP))
+            return this.abort()
+
+          this.init()
+          return
 
       }
 
+      this.sendMsg(send)
     },
 
-    error: function (err, cb) {
-      console.log(err)
-      this.init()
-      this.sendMsg({ type: 6 }, cb)
+    // send a message
+    sendMsg: function (send) {
+      this.otr.sendMsg(send)
     },
 
     initiate: function () {
@@ -326,20 +335,24 @@
       // set the next expected state
       this.smpstate = SMPSTATE_EXPECT2
 
-      var send = 2  // set the message type
-      send += HLP.packMPI(this.g2a)
-      send += HLP.packMPI(this.c2)
-      send += HLP.packMPI(this.d2)
-      send += HLP.packMPI(this.g2a)
-      send += HLP.packMPI(this.c3)
-      send += HLP.packMPI(this.d3)
+      var send = HLP.packINT(6) + HLP.packMPIs([
+          this.g2a
+        , this.c2
+        , this.d2
+        , this.g3a
+        , this.c3
+        , this.d3
+      ])
+
+      // TLV
+      send = HLP.packTLV(2, send)
 
       this.sendMsg(send)
     },
 
     abort: function () {
       this.init()
-      this.sendMsg('6')
+      this.sendMsg(HLP.packTLV(6, ''))
     }
 
   }

@@ -18,7 +18,7 @@
   }
 
   // data types (byte lengths)
-  var dts =  {
+  var DTS = {
       BYTE: 1
     , SHORT: 2
     , INT: 4
@@ -26,6 +26,10 @@
     , MAC: 20
     , SIG: 40
   }
+
+  // otr message wrapper begin and end
+  var WRAPPER_BEGIN = "?OTR:"
+    , WRAPPER_END   = "."
 
   HLP.divMod = function (num, den, n) {
     return BigInt.multMod(num, BigInt.inverseMod(den, n), n)
@@ -160,11 +164,11 @@
   }
 
   HLP.packINT = function (d) {
-    return HLP.packBytes(d, dts.INT)
+    return HLP.packBytes(d, DTS.INT)
   }
 
   HLP.packCtr = function (d) {
-    return HLP.padCtr(HLP.packBytes(d, dts.CTR))
+    return HLP.padCtr(HLP.packBytes(d, DTS.CTR))
   }
 
   HLP.padCtr = function (ctr) {
@@ -206,7 +210,7 @@
   }
 
   HLP.packSHORT = function (short) {
-    return HLP.packBytes(short, dts.SHORT)
+    return HLP.packBytes(short, DTS.SHORT)
   }
 
   HLP.packTLV = function (type, value) {
@@ -238,9 +242,19 @@
     return HLP.retMPI(data[1])
   }
 
-  // otr message wrapper begin and end
-  var WRAPPER_BEGIN = "?OTR:"
-  var WRAPPER_END = "."
+  HLP.packMPIs = function (arr) {
+    return arr.reduce(function (prv, cur) {
+      return prv + HLP.packMPI(cur)
+    }, '')
+  }
+
+  HLP.unpackMPIs = function (num, mpis) {
+    var i = 0, arr = []
+    for (; i < num; i++) arr.push('MPI')
+    return (HLP.splitype(arr, mpis)).map(function (m) {
+      return HLP.readMPI(m)
+    })
+  }
 
   HLP.wrapMsg = function (msg) {
     msg = CryptoJS.enc.Base64.stringify(CryptoJS.enc.Latin1.parse(msg))
@@ -260,7 +274,7 @@
           str = msg.substring(0, HLP.readLen(msg) + 4)
           break
         default:
-          str = msg.substring(0, dts[a])
+          str = msg.substring(0, DTS[a])
       }
       data.push(str)
       msg = msg.substring(str.length)

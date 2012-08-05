@@ -160,9 +160,10 @@
     rotateOurKeys: function () {
 
       // reveal old mac keys
+      var self = this
       this.sessKeys[1].forEach(function (sk) {
-        if (sk && sk.sendmacused) this.oldMacKeys.push(sk.sendmac)
-        if (sk && sk.rcvmacused) this.oldMacKeys.push(sk.rcvmac)
+        if (sk && sk.sendmacused) self.oldMacKeys.push(sk.sendmac)
+        if (sk && sk.rcvmacused) self.oldMacKeys.push(sk.rcvmac)
       })
 
       // rotate our keys
@@ -187,9 +188,10 @@
       this.their_keyid += 1
 
       // reveal old mac keys
+      var self = this
       this.sessKeys.forEach(function (sk) {
-        if (sk[1] && sk[1].sendmacused) this.oldMacKeys.push(sk[1].sendmac)
-        if (sk[1] && sk[1].rcvmacused) this.oldMacKeys.push(sk[1].rcvmac)
+        if (sk[1] && sk[1].sendmacused) self.oldMacKeys.push(sk[1].sendmac)
+        if (sk[1] && sk[1].rcvmacused) self.oldMacKeys.push(sk[1].rcvmac)
       })
 
       // rotate their keys / session
@@ -212,10 +214,7 @@
       var sessKeys = this.sessKeys[1][0]
       sessKeys.counter += 1
 
-      var oldMacKeys = this.oldMacKeys.splice(0).join('')
-
       var wtf = HLP.packMPI(this.our_dh.publicKey)
-
       var ctr = HLP.packCtr(sessKeys.counter)
 
       var ta = HLP.packINT(this.our_keyid - 1)
@@ -225,10 +224,15 @@
       ta += HLP.packData(HLP.makeAes(msg, sessKeys.sendenc, ctr))
 
       var mta = HLP.makeMac(ta, sessKeys.sendmac)
+      sessKeys.sendmacused = true
 
       var send = '\x00\x02' + '\x03'  // version and type
       send += '\x00'  // flag
-      send += ta + mta + HLP.packData(oldMacKeys)
+      send += ta + mta
+
+      // pack old macs as TLVs
+      var oldMacKeys = this.oldMacKeys.splice(0).join('')
+      if (oldMacKeys.length) send += HLP.packData(oldMacKeys)
 
       return HLP.wrapMsg(send)
 
@@ -265,6 +269,7 @@
       // verify mac
       var vmac = HLP.makeMac(msg.slice(1, 6).join(''), sessKeys.rcvmac)
       if (msg[6] !== vmac) return this.error('MACs do not match.')
+      sessKeys.rcvmacused = true
 
       var out = HLP.decryptAes(msg[5].substring(4), sessKeys.rcvenc, HLP.padCtr(msg[4]))
 
