@@ -17,26 +17,26 @@
     CryptoJS || (CryptoJS = require('./vendor/cryptojs/cryptojs.js'))
   }
 
-  HLP.divMod = function divMod(num, den, n) {
+  HLP.divMod = function (num, den, n) {
     return BigInt.multMod(num, BigInt.inverseMod(den, n), n)
   }
 
-  HLP.subMod = function subMod(one, two, n) {
+  HLP.subMod = function (one, two, n) {
     one = BigInt.mod(one, n)
     two = BigInt.mod(two, n)
     if (BigInt.greater(two, one)) one = BigInt.add(one, n)
     return BigInt.sub(one, two)
   }
 
-  HLP.randomExponent = function randomExponent() {
+  HLP.randomExponent = function () {
     return BigInt.randBigInt(1536)
   }
 
-  HLP.randomValue = function randomValue() {
+  HLP.randomValue = function () {
     return BigInt.randBigInt(128)
   }
 
-  HLP.smpHash = function smpHash(version, fmpi, smpi) {
+  HLP.smpHash = function (version, fmpi, smpi) {
     var sha256 = CryptoJS.algo.SHA256.create()
     sha256.update(version.toString())
     sha256.update(BigInt.bigInt2str(fmpi, 10))
@@ -45,13 +45,13 @@
     return BigInt.str2bigInt(hash.toString(CryptoJS.enc.Hex), 16)
   }
 
-  HLP.makeMac = function makeMac(aesctr, m) {
+  HLP.makeMac = function (aesctr, m) {
     var pass = CryptoJS.enc.Latin1.parse(m)
     var mac = CryptoJS.HmacSHA256(aesctr, pass)
     return HLP.mask(mac.toString(CryptoJS.enc.Latin1), 0, 160)
   }
 
-  HLP.makeAes = function makeAes(msg, c, iv) {
+  HLP.makeAes = function (msg, c, iv) {
     var opts = {
         mode: CryptoJS.mode.CTR
       , iv: CryptoJS.enc.Latin1.parse(iv)
@@ -66,7 +66,7 @@
     return CryptoJS.enc.Latin1.stringify(aesctr_decoded)
   }
 
-  HLP.decryptAes = function decryptAes(msg, c, iv) {
+  HLP.decryptAes = function (msg, c, iv) {
     msg = CryptoJS.enc.Latin1.parse(msg)
     var opts = {
         mode: CryptoJS.mode.CTR
@@ -81,20 +81,20 @@
     return aesctr.toString(CryptoJS.enc.Latin1)
   }
 
-  HLP.multPowMod = function multPowMod(a, b, c, d, e) {
+  HLP.multPowMod = function (a, b, c, d, e) {
     return BigInt.multMod(BigInt.powMod(a, b, e), BigInt.powMod(c, d, e), e)
   }
 
-  HLP.ZKP = function ZKP(v, c, d, e) {
+  HLP.ZKP = function (v, c, d, e) {
     return BigInt.equals(c, HLP.smpHash(v, d, e))
   }
 
   // greater than, or equal
-  HLP.GTOE = function GTOE(a, b) {
+  HLP.GTOE = function (a, b) {
     return (BigInt.equals(a, b) || BigInt.greater(a, b))
   }
 
-  HLP.between = function between(x, a, b) {
+  HLP.between = function (x, a, b) {
     return (BigInt.greater(x, a) && BigInt.greater(b, x))
   }
 
@@ -103,7 +103,7 @@
     , 'OR': function (c, s) { return c | s }
     , 'AND': function (c, s) { return c & s }
   }
-  HLP.bigBitWise = function bigBitWise(op, a, b) {
+  HLP.bigBitWise = function (op, a, b) {
     var tf = (a.length > b.length)
       , short = tf ? b : a
       , long  = tf ? a : b
@@ -116,11 +116,11 @@
     return c
   }
 
-  HLP.h1 = function h1(b, secbytes) {
+  HLP.h1 = function (b, secbytes) {
     return (CryptoJS.SHA1(b + secbytes)).toString(CryptoJS.enc.Latin1)
   }
 
-  HLP.h2 = function h2(b, secbytes) {
+  HLP.h2 = function (b, secbytes) {
     var sha256 = CryptoJS.algo.SHA256.create()
     sha256.update(b)
     sha256.update(secbytes)
@@ -128,12 +128,12 @@
     return hash.toString(CryptoJS.enc.Latin1)
   }
 
-  HLP.mask = function mask(bytes, start, n) {
+  HLP.mask = function (bytes, start, n) {
     start = start / 8
     return bytes.substring(start + 0, start + (n / 8))
   }
 
-  HLP.twotothe = function twotothe(g) {
+  HLP.twotothe = function (g) {
     var ex = g % 4
     g = Math.floor(g / 4)
     var str = (Math.pow(2, ex)).toString()
@@ -141,7 +141,7 @@
     return BigInt.str2bigInt(str, 16)
   }
 
-  HLP.pack = function pack(d) {
+  HLP.pack = function (d) {
     // big-endian, unsigned long
     var res = ''
     res += _toString(d >> 24 & 0xFF)
@@ -151,8 +151,7 @@
     return res
   }
 
-
-  HLP.packCtr = function pack(d) {
+  HLP.packCtr = function (d) {
     var res = ''
     res += _toString(d >> 56 & 0xFF)
     res += _toString(d >> 48 & 0xFF)
@@ -169,7 +168,7 @@
     return ctr + '\x00\x00\x00\x00\x00\x00\x00\x00'
   }
 
-  HLP.unpackCtr = function pack(d) {
+  HLP.unpackCtr = function (d) {
     d = HLP.toByteArray(d.substring(0, 8))
     return HLP.unpack(d)
   }
@@ -180,15 +179,11 @@
     }, 0)
   }
 
-  HLP.packData = function packData(d) {
+  HLP.packData = function (d) {
     return HLP.pack(d.length) + d
   }
 
-  HLP.unpackData = function unpackData(d) {
-    return d.substring(4)
-  }
-
-  HLP.bigInt2bits = function bitInt2bits(bi) {
+  HLP.bigInt2bits = function (bi) {
     bi = BigInt.dup(bi)
     var ba = ''
     while (!BigInt.isZero(bi)) {
@@ -203,7 +198,7 @@
     return HLP.retMPI(bits)
   }
 
-  HLP.packMPI = function packMPI(mpi) {
+  HLP.packMPI = function (mpi) {
     return HLP.packData(HLP.bigInt2bits(BigInt.trim(mpi, 0)))
   }
 
@@ -212,12 +207,12 @@
     return HLP.unpack(msg.slice(0, 4))
   }
 
-  HLP.readData = function readData(data) {
+  HLP.readData = function (data) {
     var n = HLP.unpack(data.splice(0, 4))
     return [n, data]
   }
 
-  HLP.retMPI = function retMPI(data) {
+  HLP.retMPI = function (data) {
     var mpi = BigInt.str2bigInt('0', 10, data.length)
     data.forEach(function (d, i) {
       if (i) BigInt.leftShift_(mpi, 8)
@@ -226,38 +221,17 @@
     return mpi
   }
 
-  HLP.readMPI = function readMPI(data) {
+  HLP.readMPI = function (data) {
     data = HLP.toByteArray(data)
     data = HLP.readData(data)
     return HLP.retMPI(data[1])
-  }
-
-  HLP.parseStr = function parseStr(str) {
-    var s = []
-    str = HLP.toByteArray(str)
-    while (str.length) {
-      str = HLP.readData(str)
-      s.push(str[1].splice(0, str[0]))
-      str = str[1]
-    }
-    return s
-  }
-
-  HLP.parseToStrs = function parseToStrs(str) {
-    var n, s = []
-    while (str.length) {
-      n = (HLP.readData(HLP.toByteArray(str.substring(0, 4))))[0] + 4
-      s.push(str.substring(0, n))
-      str = str.substring(n)
-    }
-    return s
   }
 
   // otr message wrapper begin and end
   var WRAPPER_BEGIN = "?OTR:"
   var WRAPPER_END = "."
 
-  HLP.wrapMsg = function wrapMsg(msg) {
+  HLP.wrapMsg = function (msg) {
     msg = CryptoJS.enc.Base64.stringify(CryptoJS.enc.Latin1.parse(msg))
     return WRAPPER_BEGIN + msg + WRAPPER_END
   }
@@ -314,7 +288,7 @@
     _bin2num[_toString(0xf700 + i)] = i  // "\f780" -> 0x80
   }
 
-  HLP.toByteArray = function toByteArray(data) {
+  HLP.toByteArray = function (data) {
     var rv = [], bin2num = _bin2num, remain
       , ary = data.split("")
       , i = -1
