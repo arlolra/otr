@@ -244,40 +244,75 @@
       var types = ['BYTE', 'INT', 'INT', 'MPI', 'CTR', 'DATA', 'MAC', 'DATA']
       msg = HLP.splitype(types, msg.msg)
 
-      var ign = (msg[0] === '\x01')  // ignore flag
-      if (msg.length !== 8 && ign) return
+      // ignore flag
+      var ign = (msg[0] === '\x01')
+
+      if (this.msgstate !== MSGSTATE_ENCRYPTED || msg.length !== 8) {
+        if (!ign) this.error('Received an unreadable encrypted message.', true)
+        return
+      }
 
       var our_keyid = this.our_keyid - HLP.readLen(msg[2])
       var their_keyid = this.their_keyid - HLP.readLen(msg[1])
 
-      if (our_keyid < 0 || our_keyid > 1)
-        return this.error('Not of our latest keys.', true)
+      if (our_keyid < 0 || our_keyid > 1) {
+        if (!ign) this.error('Not of our latest keys.', true)
+        return
+      }
+
       var our_dh =  our_keyid ? this.our_old_dh : this.our_dh
 
-      if (their_keyid < 0 || their_keyid > 1)
-        return this.error('Not of your latest keys.', true)
+      if (their_keyid < 0 || their_keyid > 1) {
+        if (!ign) this.error('Not of your latest keys.', true)
+        return
+      }
+
       var their_y = their_keyid ? this.their_old_y : this.their_y
 
-      if (their_keyid === 1 && !their_y)
-        return this.error('Do not have that key.')
+      if (their_keyid === 1 && !their_y) {
+        if (!ign) this.error('Do not have that key.')
+        return
+      }
 
       var sessKeys = this.sessKeys[our_keyid][their_keyid]
 
       var ctr = HLP.unpackCtr(msg[4])
-      if (ctr <= sessKeys.counter)
-        return this.error('Counter in message is not larger.')
+      if (ctr <= sessKeys.counter) {
+        if (!ign) this.error('Counter in message is not larger.')
+        return
+      }
 
       // verify mac
       var vmac = HLP.makeMac(msg.slice(1, 6).join(''), sessKeys.rcvmac)
-      if (msg[6] !== vmac) return this.error('MACs do not match.')
       sessKeys.rcvmacused = true
+      if (msg[6] !== vmac) {
+        if (!ign) this.error('MACs do not match.')
+        return
+      }
 
-      var out = HLP.decryptAes(msg[5].substring(4), sessKeys.rcvenc, HLP.padCtr(msg[4]))
+      var out = HLP.decryptAes(
+          msg[5].substring(4)
+        , sessKeys.rcvenc
+        , HLP.padCtr(msg[4])
+      )
 
       if (!our_keyid) this.rotateOurKeys()
       if (!their_keyid) this.rotateTheirKeys(HLP.readMPI(msg[3]))
 
+      // parse TLVs
+      var ind = out.indexOf('\x00')
+      if (~ind) {
+        this.handleTLVs(out.substring(ind + 1))
+        out = out.substring(0, ind)
+      }
+
       return out
+    },
+
+    handleTLVs: function (tlvs) {
+
+
+
     },
 
     sendQueryMsg: function () {
@@ -343,9 +378,6 @@
           return
         case 'ake':
           this.ake.handleAKE(msg)
-          return
-        case 'sm':
-          this.sm.handleSM(msg)
           return
         case 'data':
           msg.msg = this.handleDataMsg(msg)

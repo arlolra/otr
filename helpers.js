@@ -218,8 +218,8 @@
   }
 
   HLP.readLen = function (msg) {
-    msg = HLP.toByteArray(msg)
-    return HLP.unpack(msg.slice(0, 4))
+    msg = HLP.toByteArray(msg.substring(0, 4))
+    return HLP.unpack(msg)
   }
 
   HLP.readData = function (data) {

@@ -122,8 +122,9 @@
       }
 
       // abort! there was an error
-      if (this.smpstate !== expectStates[msg.type])
-        return this.abort()
+      if ( this.smpstate !== expectStates[msg.type] ||
+           this.otr.msgstate !== MSGSTATE_ENCRYPTED
+      ) return this.abort()
 
       switch (this.smpstate) {
 

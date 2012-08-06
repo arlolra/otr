@@ -106,11 +106,6 @@
         cls = 'data'
       }
 
-      // var tlv
-      // if (~['1', '2', '3', '4'].indexOf(tlv)) {
-      //   cls = 'sm'
-      // }
-
       return {
           version: version
         , type: type
