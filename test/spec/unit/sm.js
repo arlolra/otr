@@ -38,7 +38,13 @@ describe('SM', function () {
     userA.secret = 'applesAndOranges'
     userB.secret = 'applesAndOranges'
 
+    assert.ok(!userA.trust, 'Trust B? false')
+    assert.ok(!userB.trust, 'Trust A? false')
+
     userA.sm.initiate()
+
+    assert.ok(userA.trust, 'Trust B? true')
+    assert.ok(userB.trust, 'Trust A? true')
   })
 
 })

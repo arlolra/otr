@@ -111,6 +111,7 @@
       this.oldMacKeys = []
 
       this.sm = null  // initialized after AKE
+      this.trust = false  // will be true after successful smp
 
       // when ake is complete
       // save their keys and the session
@@ -310,9 +311,22 @@
     },
 
     handleTLVs: function (tlvs) {
+      var type, len, msg
+      for (; tlvs.length; ) {
+        type = HLP.unpackSHORT(tlvs.substr(0, 2))
+        len = HLP.unpackSHORT(tlvs.substr(2, 2))
 
+        // TODO: handle pathological cases better
+        if (!len || (len + 4) > tlvs.length) break
 
+        msg = tlvs.substr(4, len)
 
+        // SMP
+        if (type > 1 && type < 7)
+          this.sm.handleSM({ msg: msg, type: type })
+
+        tlvs = tlvs.substring(4 + len)
+      }
     },
 
     sendQueryMsg: function () {
@@ -337,7 +351,7 @@
     },
 
     sendMsg: function (msg, internal) {
-      if (!internal) {  // a user msg
+      if (!internal) {  // a user or sm msg
 
         switch (this.msgstate) {
           case MSGSTATE_PLAINTEXT:

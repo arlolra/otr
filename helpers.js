@@ -213,6 +213,11 @@
     return HLP.packBytes(short, DTS.SHORT)
   }
 
+  HLP.unpackSHORT = function (short) {
+    short = HLP.toByteArray(short)
+    return HLP.unpack(short)
+  }
+
   HLP.packTLV = function (type, value) {
     return HLP.packSHORT(type) + HLP.packSHORT(value.length) + value
   }

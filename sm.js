@@ -112,13 +112,18 @@
     // the bulk of the work
     handleSM: function (msg) {
       var send, r2, r3, r4, r5, r6, r7, t1, t2, t3, t4
-        , rab, tmp, tmp2, cP, cR, d5, d6, d7
+        , rab, tmp, tmp2, cP, cR, d5, d6, d7, ms
 
       var expectStates = {
           2: SMPSTATE_EXPECT1
         , 3: SMPSTATE_EXPECT2
         , 4: SMPSTATE_EXPECT3
         , 5: SMPSTATE_EXPECT4
+      }
+
+      if (msg.type === 6) {
+        this.init()
+        return
       }
 
       // abort! there was an error
@@ -130,7 +135,9 @@
 
         case SMPSTATE_EXPECT1:
           // 0:g2a, 1:c2, 2:d2, 3:g3a, 4:c3, 5:d3
-          msg = HLP.unpackMPIs(6, msg.msg)
+          ms = HLP.readLen(msg.msg.substr(0, 4))
+          if (ms !== 6) return this.abort()
+          msg = HLP.unpackMPIs(6, msg.msg.substring(4))
 
           this.makeSecret()
 
@@ -194,7 +201,9 @@
 
         case SMPSTATE_EXPECT2:
           // 0:g2a, 1:c2, 2:d2, 3:g3a, 4:c3, 5:d3, 6:p, 7:q, 8:cP, 9:d5, 10:d6
-          msg = HLP.unpackMPIs(11, msg.msg)
+          ms = HLP.readLen(msg.msg.substr(0, 4))
+          if (ms !== 11) return this.abort()
+          msg = HLP.unpackMPIs(11, msg.msg.substring(4))
 
           // verify znp of c3 / c3
           if (!HLP.ZKP(3, msg[1], HLP.multPowMod(G, msg[2], msg[0], msg[1], N)))
@@ -260,7 +269,9 @@
 
         case SMPSTATE_EXPECT3:
           // 0:p, 1:q, 2:cP, 3:d5, 4:d6, 5:r, 6:cR, 7:d7
-          msg = HLP.unpackMPIs(8, msg.msg)
+          ms = HLP.readLen(msg.msg.substr(0, 4))
+          if (ms !== 8) return this.abort()
+          msg = HLP.unpackMPIs(8, msg.msg.substring(4))
 
           // verify znp of cP
           t1 = HLP.multPowMod(this.g3, msg[3], msg[0], msg[2], N)
@@ -276,6 +287,7 @@
           t4 = HLP.multPowMod(this.QoQ, msg[7], msg[5], msg[6], N)
 
           if (!HLP.ZKP(7, msg[6], t3, t4))
+            return this.abort()
 
           this.computeR()
 
@@ -296,12 +308,15 @@
           // TLV
           send = HLP.packTLV(5, send)
 
+          this.otr.trust = true
           this.init()
           break
 
         case SMPSTATE_EXPECT4:
           // 0:r, 1:cR, 2:d7
-          msg = HLP.unpackMPIs(3, msg.msg)
+          ms = HLP.readLen(msg.msg.substr(0, 4))
+          if (ms !== 3) return this.abort()
+          msg = HLP.unpackMPIs(3, msg.msg.substring(4))
 
           // verify znp of cR
           t3 = HLP.multPowMod(G, msg[2], this.g3ao, msg[1], N)
@@ -314,6 +329,7 @@
           if (!BigInt.equals(rab, this.PoP))
             return this.abort()
 
+          this.otr.trust = true
           this.init()
           return
 
@@ -324,13 +340,13 @@
 
     // send a message
     sendMsg: function (send) {
-      this.otr.sendMsg(send)
+      this.otr.sendMsg('\x00' + send)
     },
 
     initiate: function () {
 
       if (this.otr.msgstate !== MSGSTATE_ENCRYPTED)
-        return this.otr.error('Message state is not encrypted.')
+        return this.otr.error('Not ready to send encrypted messages.')
 
       this.makeSecret(true)
 
