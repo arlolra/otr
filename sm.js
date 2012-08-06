@@ -28,6 +28,11 @@
     , SMPSTATE_EXPECT3 = 3
     , SMPSTATE_EXPECT4 = 4
 
+  // otr message states
+  var MSGSTATE_PLAINTEXT = 0
+    , MSGSTATE_ENCRYPTED = 1
+    , MSGSTATE_FINISHED = 2
+
   // diffie-hellman modulus and generator
   // see group 5, RFC 3526
   var G = BigInt.str2bigInt(DH.G, 10)
@@ -322,6 +327,9 @@
     },
 
     initiate: function () {
+
+      if (this.otr.msgstate !== MSGSTATE_ENCRYPTED)
+        return this.otr.error('Message state is not encrypted.')
 
       this.makeSecret(true)
 

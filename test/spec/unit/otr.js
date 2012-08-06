@@ -38,10 +38,7 @@ describe('OTR', function () {
 
   it('should go through the ake dance', function () {
     var userA, userB
-    var ui = function (msg) {
-      assert.equal(userB.msgstate, 1, 'Encrypted')
-      assert.equal(userA.msgstate, 1, 'Encrypted')
-    }
+    var ui = function (msg) { console.log(msg) }
     var io = function (msg) { userB.receiveMsg(msg) }
     userA = new OTR(keys.userA, ui, io)
     userB = new OTR(keys.userB, ui, userA.receiveMsg)
@@ -49,7 +46,10 @@ describe('OTR', function () {
     assert.equal(userB.msgstate, 0, 'Plaintext')
     assert.equal(userA.msgstate, 0, 'Plaintext')
 
-    userA.sendQueryMsg()
+    userA.sendQueryMsg()  // ask to initiate ake
+
+    assert.equal(userB.msgstate, 1, 'Encrypted')
+    assert.equal(userA.msgstate, 1, 'Encrypted')
   })
 
   it('should receive an encrypted message', function () {
