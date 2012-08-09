@@ -22,14 +22,21 @@
   </script>
   <script src="../helpers.js"></script>
   <script src="../dsa.js"></script>
-  <script src="../ake.js"></script>
   <script src="../sm.js"></script>
+  <script src="../ake.js"></script>
   <script src="../parse.js"></script>
   <script src="../otr.js"></script>
   <script>
-    var cb = function () {};
+    var ui = function (msg) { console.log(msg); };
     var start = (new Date()).getTime();
-    var user = new OTR(null, cb, cb);
+    var userA = new OTR(null, ui, function (msg) {
+      userB.receiveMsg(msg);
+    });
    document.write('generating OTR object took <strong>' + ((new Date()).getTime() - start) + 'ms</strong>');
+   var userB = new OTR(null, ui, userA.receiveMsg);
+   start = (new Date()).getTime();
+   userA.sendQueryMsg()
+   document.write('<br />ake took <strong>' + ((new Date()).getTime() - start) + 'ms</strong>');
+   console.log(userA.msgstate)
   </script>
 </html>
