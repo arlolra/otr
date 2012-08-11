@@ -225,10 +225,7 @@
       send += ctr.substring(0, 8)
       send += HLP.packData(HLP.makeAes(msg, sessKeys.sendenc, ctr))
       send += HLP.make1Mac(send, sessKeys.sendmac)
-
-      // pack old macs as TLVs
-      var oldMacKeys = this.oldMacKeys.splice(0).join('')
-      send += HLP.packData(oldMacKeys)
+      send += HLP.packData(this.oldMacKeys.splice(0).join(''))
 
       sessKeys.sendmacused = true
 
