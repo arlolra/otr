@@ -163,8 +163,9 @@
 
   HLP.packBytes = function (val, bytes) {
     var res = ''  // big-endian, unsigned long
-    for (bytes -= 1, bytes *= 8; bytes > -1; bytes -= 8) {
-      res += _toString(val >> bytes & 0xff)
+    for (bytes -= 1; bytes > -1; bytes--) {
+      res = _toString(val & 0xff) + res
+      val >>= 8
     }
     return res
   }

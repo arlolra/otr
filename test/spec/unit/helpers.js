@@ -38,6 +38,7 @@ describe('Helpers', function () {
     var thou = HLP.packCtr(1000)
     assert.equal(16, thou.length, '16 bytes.')
     assert.equal(1000, HLP.unpackCtr(thou), 'Thousand.')
+    assert.equal('\x00\x00\x00\x00\x00\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00\x00', HLP.packCtr(1))
   })
 
 })
