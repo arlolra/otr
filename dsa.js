@@ -172,7 +172,7 @@
     },
 
     sign: function (m) {
-      var hm = CryptoJS.SHA1(m)
+      var hm = CryptoJS.enc.Latin1.parse(m)  // CryptoJS.SHA1(m)
       hm = BigInt.str2bigInt(hm.toString(CryptoJS.enc.Hex), 16)
       return this.hsign(hm)
     }
@@ -194,7 +194,7 @@
     if (!HLP.between(r, ZERO, key.q) || !HLP.between(s, ZERO, key.q))
       return false
 
-    var hm = CryptoJS.SHA1(m)
+    var hm = CryptoJS.enc.Latin1.parse(m)  // CryptoJS.SHA1(m)
     hm = BigInt.str2bigInt(hm.toString(CryptoJS.enc.Hex), 16)
 
     var w = BigInt.inverseMod(s, key.q)

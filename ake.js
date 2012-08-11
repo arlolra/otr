@@ -51,10 +51,10 @@
   function hMac(gx, gy, pk, kid, m) {
     var pass = CryptoJS.enc.Latin1.parse(m)
     var hmac = CryptoJS.algo.HMAC.create(CryptoJS.algo.SHA256, pass)
-    hmac.update(HLP.packMPI(gx))
-    hmac.update(HLP.packMPI(gy))
-    hmac.update(pk)
-    hmac.update(kid)
+    hmac.update(CryptoJS.enc.Latin1.parse(HLP.packMPI(gx)))
+    hmac.update(CryptoJS.enc.Latin1.parse(HLP.packMPI(gy)))
+    hmac.update(CryptoJS.enc.Latin1.parse(pk))
+    hmac.update(CryptoJS.enc.Latin1.parse(kid))
     return (hmac.finalize()).toString(CryptoJS.enc.Latin1)
   }
 

@@ -52,16 +52,16 @@
 
   HLP.smpHash = function (version, fmpi, smpi) {
     var sha256 = CryptoJS.algo.SHA256.create()
-    sha256.update(version.toString())
-    sha256.update(HLP.packMPI(fmpi))
-    if (smpi) sha256.update(HLP.packMPI(smpi))
+    sha256.update(CryptoJS.enc.Latin1.parse(version.toString()))
+    sha256.update(CryptoJS.enc.Latin1.parse(HLP.packMPI(fmpi)))
+    if (smpi) sha256.update(CryptoJS.enc.Latin1.parse(HLP.packMPI(smpi)))
     var hash = sha256.finalize()
     return BigInt.str2bigInt(hash.toString(CryptoJS.enc.Hex), 16)
   }
 
   HLP.makeMac = function (aesctr, m) {
     var pass = CryptoJS.enc.Latin1.parse(m)
-    var mac = CryptoJS.HmacSHA256(aesctr, pass)
+    var mac = CryptoJS.HmacSHA256(CryptoJS.enc.Latin1.parse(aesctr), pass)
     return HLP.mask(mac.toString(CryptoJS.enc.Latin1), 0, 160)
   }
 
@@ -136,8 +136,8 @@
 
   HLP.h2 = function (b, secbytes) {
     var sha256 = CryptoJS.algo.SHA256.create()
-    sha256.update(b)
-    sha256.update(secbytes)
+    sha256.update(CryptoJS.enc.Latin1.parse(b))
+    sha256.update(CryptoJS.enc.Latin1.parse(secbytes))
     var hash = sha256.finalize()
     return hash.toString(CryptoJS.enc.Latin1)
   }
