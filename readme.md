@@ -3,8 +3,6 @@ Off-the Record Messaging Protocol v2 in JavaScript
 
 [![Build Status](https://secure.travis-ci.org/arlolra/otr.png?branch=master)](http://travis-ci.org/arlolra/otr)
 
-This is still a WIP.
-
 ---
 
 ###Warning
@@ -15,7 +13,7 @@ See: [bigint.js](https://github.com/arlolra/otr/blob/9a1329b0d2d673bae714d4bc5b2
 
 ---
 
-###Proposed Usage
+###Usage
 
 **Initial setup**: Compute your long-lived key beforehand. Currently this is
 expensive and can take upwards of half a second. For each user you're
