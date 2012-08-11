@@ -144,7 +144,7 @@
       // are we the high or low end of the connection?
       var sq = BigInt.greater(our_dh.publicKey, their_y)
       var sendbyte = sq ? '\x01' : '\x02'
-      var rcvbyte = sq ? '\x02' : '\x01'
+      var rcvbyte  = sq ? '\x02' : '\x01'
 
       // sending and receiving keys
       this.sendenc = HLP.mask(HLP.h1(sendbyte, secbytes), 0, 128)  // f16 bytes
@@ -154,8 +154,9 @@
       this.rcvmac = (CryptoJS.SHA1(this.rcvenc)).toString(CryptoJS.enc.Latin1)
       this.rcvmacused = false
 
-      // counter
-      this.counter = 0
+      // counters
+      this.send_counter = 0
+      this.rcv_counter = 0
     },
 
     rotateOurKeys: function () {
@@ -212,9 +213,9 @@
         return this.error('Not ready to encrypt.')
 
       var sessKeys = this.sessKeys[1][0]
-      sessKeys.counter += 1
+      sessKeys.send_counter += 1
 
-      var ctr = HLP.packCtr(sessKeys.counter)
+      var ctr = HLP.packCtr(sessKeys.send_counter)
 
       var send = '\x00\x02' + '\x03'  // version and type
       send += '\x00'  // flag
@@ -273,10 +274,11 @@
       var sessKeys = this.sessKeys[our_keyid][their_keyid]
 
       var ctr = HLP.unpackCtr(msg[4])
-      if (ctr <= sessKeys.counter) {
+      if (ctr <= sessKeys.rcv_counter) {
         if (!ign) this.error('Counter in message is not larger.')
         return
       }
+      sessKeys.rcv_counter = ctr
 
       // verify mac
       vt += msg.slice(0, 6).join('')
