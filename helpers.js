@@ -149,8 +149,7 @@
   }
 
   HLP.mask = function (bytes, start, n) {
-    start = start / 8
-    return bytes.substring(start + 0, start + (n / 8))
+    return bytes.substr(start / 8, n / 8)
   }
 
   HLP.twotothe = function (g) {

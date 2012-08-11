@@ -228,7 +228,7 @@
 
       // pack old macs as TLVs
       var oldMacKeys = this.oldMacKeys.splice(0).join('')
-      if (oldMacKeys.length) send += HLP.packData(oldMacKeys)
+      send += HLP.packData(oldMacKeys)
 
       sessKeys.sendmacused = true
 
