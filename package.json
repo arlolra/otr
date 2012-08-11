@@ -21,7 +21,8 @@
     "dsa"
   ],
   "devDependencies": {
-    "mocha": "*"
+    "mocha": "*",
+    "simple-xmpp": "0.1.x"
   },
   "author": "Arlo Breault <arlolra@gmail.com>",
   "contributors": [
