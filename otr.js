@@ -148,10 +148,12 @@
 
       // sending and receiving keys
       this.sendenc = HLP.mask(HLP.h1(sendbyte, secbytes), 0, 128)  // f16 bytes
-      this.sendmac = (CryptoJS.SHA1(this.sendenc)).toString(CryptoJS.enc.Latin1)
+      this.sendmac = CryptoJS.SHA1(CryptoJS.enc.Latin1.parse(this.sendenc))
+      this.sendmac = this.sendmac.toString(CryptoJS.enc.Latin1)
       this.sendmacused = false
       this.rcvenc = HLP.mask(HLP.h1(rcvbyte, secbytes), 0, 128)
-      this.rcvmac = (CryptoJS.SHA1(this.rcvenc)).toString(CryptoJS.enc.Latin1)
+      this.rcvmac = CryptoJS.SHA1(CryptoJS.enc.Latin1.parse(this.rcvenc))
+      this.rcvmac = this.rcvmac.toString(CryptoJS.enc.Latin1)
       this.rcvmacused = false
 
       // counters

@@ -137,15 +137,17 @@
   }
 
   HLP.h1 = function (b, secbytes) {
-    return (CryptoJS.SHA1(b + secbytes)).toString(CryptoJS.enc.Latin1)
+    var sha1 = CryptoJS.algo.SHA1.create()
+    sha1.update(CryptoJS.enc.Latin1.parse(b))
+    sha1.update(CryptoJS.enc.Latin1.parse(secbytes))
+    return (sha1.finalize()).toString(CryptoJS.enc.Latin1)
   }
 
   HLP.h2 = function (b, secbytes) {
     var sha256 = CryptoJS.algo.SHA256.create()
     sha256.update(CryptoJS.enc.Latin1.parse(b))
     sha256.update(CryptoJS.enc.Latin1.parse(secbytes))
-    var hash = sha256.finalize()
-    return hash.toString(CryptoJS.enc.Latin1)
+    return (sha256.finalize()).toString(CryptoJS.enc.Latin1)
   }
 
   HLP.mask = function (bytes, start, n) {
