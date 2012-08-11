@@ -261,7 +261,7 @@
           this.their_y = HLP.readMPI(gxmpi)
 
           // verify hash
-          var hash = CryptoJS.SHA256(gxmpi)
+          var hash = CryptoJS.SHA256(CryptoJS.enc.Latin1.parse(gxmpi))
 
           if (this.hashed !== hash.toString(CryptoJS.enc.Latin1))
             return this.otr.error('Hashed g^x does not match.', true)
@@ -354,7 +354,7 @@
       key = CryptoJS.enc.Latin1.stringify(key)
       send += HLP.packData(HLP.makeAes(gxmpi, key, HLP.packCtr(0)))
 
-      this.myhashed = CryptoJS.SHA256(gxmpi)
+      this.myhashed = CryptoJS.SHA256(CryptoJS.enc.Latin1.parse(gxmpi))
       this.myhashed = HLP.packData(this.myhashed.toString(CryptoJS.enc.Latin1))
       send += this.myhashed
 
