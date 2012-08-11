@@ -3,6 +3,8 @@
 var assert = require('assert')
   , OTR = function () { this.versions = {} }  // just a constructor
   , P = require('../../../parse.js')
+  , HLP = require('../../../helpers.js')
+  , CryptoJS = require('../../../vendor/cryptojs/cryptojs.js')
 
 describe('Parse', function () {
 
@@ -78,6 +80,33 @@ describe('Parse', function () {
       assert.equal('This is an error.', msg, 'Err.')
     }
     P.parseMsg(otr, '?OTR Error:This is an error.')
+  })
+
+  it('should encode properly', function () {
+    var enc = 'QgEDAwEIBgQCAAAAA2ZvbwAAAADerb7vAAAADWVuY29kZWRfZHVtbXl0aGlzIGlzIGEgZHVtbXkgbWFjAAAAAAA='
+    var dec = '\x42' + '\x01\x03\x03\x01' + '\x08\x06\x04\x02' + HLP.packData('foo') +
+              '\x00\x00\x00\x00\xde\xad\xbe\xef' + HLP.packData('encoded_dummy') + 
+              'this is a dummy mac\x00' + '\x00\x00\x00\x00'
+    dec = CryptoJS.enc.Latin1.parse(dec)
+    assert.equal(enc, dec.toString(CryptoJS.enc.Base64), 'Base64')
+  })
+
+  it('should parse msgs', function () {
+    otr.ALLOW_V2 = true
+    var msg = P.parseMsg(otr, '?OTR:AAIKAAAAA2Zvbw==.')
+    assert.equal('foo', msg.msg.substring(4), 'Foo')
+
+    msg = P.parseMsg(otr, '?OTR:AAIDQgEDAwEIBgQCAAAAA2ZvbwAAAADerb7vAAAADWVuY29kZWRfZHVtbXl0aGlzIGlzIGEgZHVtbXkgbWFjAAAAAAA=.')
+    var types = ['BYTE', 'INT', 'INT', 'MPI', 'CTR', 'DATA', 'MAC', 'DATA']
+    msg = HLP.splitype(types, msg.msg)
+    assert.equal('\x42', msg[0], 'flag')
+    assert.equal('\x01\x03\x03\x01', msg[1], 's key id')
+    assert.equal('\x08\x06\x04\x02', msg[2], 'r key id')
+    assert.equal('foo', msg[3].substring(4), 'dhy')
+    assert.equal('\x00\x00\x00\x00\xde\xad\xbe\xef', msg[4], 'ctr')
+    assert.equal('encoded_dummy', msg[5].substring(4), 'encmsg')
+    assert.equal('this is a dummy mac\x00', msg[6], 'mac')
+    assert.equal('\x00\x00\x00\x00', msg[7], 'oldmacs')
   })
 
 })

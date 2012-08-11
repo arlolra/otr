@@ -89,7 +89,7 @@
       var type = info.substring(2)
 
       // only supporting otr version 2
-      if (version !== OTR_VERSION_2) return { msg: msg }
+      if (!otr['ALLOW_V' + HLP.unpackSHORT(version)]) return { msg: msg }
 
       ind += 4
 
