@@ -140,19 +140,18 @@
 
       // session id
       this.id = HLP.mask(HLP.h2('\x00', secbytes), 0, 64)  // first 64-bits
-      var tmp = HLP.h2('\x01', secbytes)
 
       // are we the high or low end of the connection?
       var sq = BigInt.greater(our_dh.publicKey, their_y)
       var sendbyte = sq ? '\x01' : '\x02'
-      var rcvbyte =  sq ? '\x02' : '\x01'
+      var rcvbyte = sq ? '\x02' : '\x01'
 
       // sending and receiving keys
       this.sendenc = HLP.mask(HLP.h1(sendbyte, secbytes), 0, 128)  // f16 bytes
-      this.sendmac = CryptoJS.SHA1(this.sendenc)
+      this.sendmac = (CryptoJS.SHA1(this.sendenc)).toString(CryptoJS.enc.Latin1)
       this.sendmacused = false
       this.rcvenc = HLP.mask(HLP.h1(rcvbyte, secbytes), 0, 128)
-      this.rcvmac = CryptoJS.SHA1(this.rcvenc)
+      this.rcvmac = (CryptoJS.SHA1(this.rcvenc)).toString(CryptoJS.enc.Latin1)
       this.rcvmacused = false
 
       // counter
@@ -209,38 +208,34 @@
     },
 
     prepareMsg: function (msg) {
-
       if (this.msgstate !== MSGSTATE_ENCRYPTED || this.their_keyid === 0)
         return this.error('Not ready to encrypt.')
 
       var sessKeys = this.sessKeys[1][0]
       sessKeys.counter += 1
 
-      var wtf = HLP.packMPI(this.our_dh.publicKey)
       var ctr = HLP.packCtr(sessKeys.counter)
-
-      var ta = HLP.packINT(this.our_keyid - 1)
-      ta += HLP.packINT(this.their_keyid)
-      ta += HLP.packMPI(this.our_dh.publicKey)
-      ta += ctr.substring(0, 8)
-      ta += HLP.packData(HLP.makeAes(msg, sessKeys.sendenc, ctr))
-
-      var mta = HLP.makeMac(ta, sessKeys.sendmac)
-      sessKeys.sendmacused = true
 
       var send = '\x00\x02' + '\x03'  // version and type
       send += '\x00'  // flag
-      send += ta + mta
+      send += HLP.packINT(this.our_keyid - 1)
+      send += HLP.packINT(this.their_keyid)
+      send += HLP.packMPI(this.our_dh.publicKey)
+      send += ctr.substring(0, 8)
+      send += HLP.packData(HLP.makeAes(msg, sessKeys.sendenc, ctr))
+      send += HLP.make1Mac(send, sessKeys.sendmac)
 
       // pack old macs as TLVs
       var oldMacKeys = this.oldMacKeys.splice(0).join('')
       if (oldMacKeys.length) send += HLP.packData(oldMacKeys)
 
-      return HLP.wrapMsg(send)
+      sessKeys.sendmacused = true
 
+      return HLP.wrapMsg(send)
     },
 
     handleDataMsg: function (msg) {
+      var vt = msg.version + msg.type
 
       var types = ['BYTE', 'INT', 'INT', 'MPI', 'CTR', 'DATA', 'MAC', 'DATA']
       msg = HLP.splitype(types, msg.msg)
@@ -284,12 +279,14 @@
       }
 
       // verify mac
-      var vmac = HLP.makeMac(msg.slice(1, 6).join(''), sessKeys.rcvmac)
-      sessKeys.rcvmacused = true
+      vt += msg.slice(0, 6).join('')
+      var vmac = HLP.make1Mac(vt, sessKeys.rcvmac)
+
       if (msg[6] !== vmac) {
         if (!ign) this.error('MACs do not match.')
         return
       }
+      sessKeys.rcvmacused = true
 
       var out = HLP.decryptAes(
           msg[5].substring(4)
@@ -398,7 +395,7 @@
           break
       }
 
-      this.uicb(msg.msg)
+      if (msg.msg) this.uicb(msg.msg)
     },
 
     error: function (err, send) {
@@ -414,8 +411,9 @@
     },
 
     sendStored: function () {
-      (this.storedMgs.splice(0)).forEach(function (msg) {
-        this.sendMsg(msg)
+      var self = this
+      ;(this.storedMgs.splice(0)).forEach(function (msg) {
+        self.sendMsg(msg)
       })
     },
 

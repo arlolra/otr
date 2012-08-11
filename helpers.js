@@ -65,6 +65,12 @@
     return HLP.mask(mac.toString(CryptoJS.enc.Latin1), 0, 160)
   }
 
+  HLP.make1Mac = function (aesctr, m) {
+    var pass = CryptoJS.enc.Latin1.parse(m)
+    var mac = CryptoJS.HmacSHA1(CryptoJS.enc.Latin1.parse(aesctr), pass)
+    return mac.toString(CryptoJS.enc.Latin1)
+  }
+
   HLP.makeAes = function (msg, c, iv) {
     var opts = {
         mode: CryptoJS.mode.CTR
