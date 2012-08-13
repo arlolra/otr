@@ -17,7 +17,7 @@ See: [bigint.js](https://github.com/arlolra/otr/blob/9a1329b0d2d673bae714d4bc5b2
 
 For now, see [this example](https://github.com/arlolra/otr/blob/master/test/browser.html) for use in the browser.
 
-Although this is a client library, it can be used [on the server](https://github.com/arlolra/otr/blob/master/test/xmpp.js). Just:
+Although this is a client library, it can be used [on the server](https://github.com/arlolra/otr/blob/master/test/xmpp.js).
 
     npm install otr
 

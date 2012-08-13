@@ -25,7 +25,6 @@
     "simple-xmpp": "0.1.x"
   },
   "author": "Arlo Breault <arlolra@gmail.com>",
-  "maintainers": "arlolra <arlolra@gmail.com>",
   "contributors": [
     "William Budington <bill.budington@gmail.com>",
     "Nadim Kobeissi <nadim@nadim.cc>"
