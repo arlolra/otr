@@ -19,7 +19,7 @@ For now, see [this example](https://github.com/arlolra/otr/blob/master/test/brow
 
 Although this is a client library, it can be used [on the server](https://github.com/arlolra/otr/blob/master/test/xmpp.js). Just:
 
-  npm install otr
+    npm install otr
 
 ---
 
