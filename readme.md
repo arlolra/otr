@@ -21,6 +21,7 @@ Although this is a client library, it can be used [on the server](https://github
 
   npm install otr
 
+---
 
 ###Usage
 
