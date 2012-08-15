@@ -14,6 +14,7 @@
     , SM = root.SM
     , HLP = root.HLP
     , DSA = root.DSA
+    , STATES = root.STATES
 
   if (typeof require !== 'undefined') {
     CryptoJS || (CryptoJS = require('./vendor/cryptojs/cryptojs.js'))
@@ -22,6 +23,7 @@
     SM || (SM = require('./sm.js'))
     HLP || (HLP = require('./helpers.js'))
     DSA || (DSA = require('./dsa.js'))
+    STATES || (STATES = require('./states.js'))
   }
 
   // diffie-hellman modulus and generator
@@ -30,18 +32,6 @@
   var N = BigInt.str2bigInt(DH.N, 16)
   var TWO = BigInt.str2bigInt('2', 10)
   var N_MINUS_2 = BigInt.sub(N, TWO)
-
-  // otr message states
-  var MSGSTATE_PLAINTEXT = 0
-    , MSGSTATE_ENCRYPTED = 1
-    , MSGSTATE_FINISHED = 2
-
-  // otr authentication states
-  var AUTHSTATE_NONE = 0
-    , AUTHSTATE_AWAITING_DHKEY = 1
-    , AUTHSTATE_AWAITING_REVEALSIG = 2
-    , AUTHSTATE_AWAITING_SIG = 3
-    , AUTHSTATE_V1_SETUP = 4
 
   // helpers
   function checkGroup(g) {
@@ -169,8 +159,8 @@
       this.otr.sm = new SM(this.otr)
 
       // go encrypted
-      this.otr.authstate = AUTHSTATE_NONE
-      this.otr.msgstate = MSGSTATE_ENCRYPTED
+      this.otr.authstate = STATES.AUTHSTATE_NONE
+      this.otr.msgstate = STATES.MSGSTATE_ENCRYPTED
 
       // send stored msgs
       this.otr.sendStored()
@@ -187,7 +177,7 @@
 
           msg = HLP.splitype(['DATA', 'DATA'], msg.msg)
 
-          if (this.otr.authstate === AUTHSTATE_AWAITING_DHKEY) {
+          if (this.otr.authstate === STATES.AUTHSTATE_AWAITING_DHKEY) {
             var ourHash = L1toBI(this.myhashed)
             var theirHash = L1toBI(msg[1].substring(4))
             if (BigInt.greater(ourHash, theirHash)) {
@@ -196,16 +186,16 @@
             } else {
               // forget
               this.our_dh = this.otr.dh()
-              this.otr.AUTHSTATE_NONE
+              this.otr.authstate = STATES.AUTHSTATE_NONE
               this.r = null
               this.myhashed = null
             }
           } else if (
-            this.otr.authstate === AUTHSTATE_AWAITING_SIG ||
-            this.otr.authstate === AUTHSTATE_V1_SETUP
+            this.otr.authstate === STATES.AUTHSTATE_AWAITING_SIG ||
+            this.otr.authstate === STATES.AUTHSTATE_V1_SETUP
           ) this.our_dh = this.otr.dh()
 
-          this.otr.authstate = AUTHSTATE_AWAITING_REVEALSIG
+          this.otr.authstate = STATES.AUTHSTATE_AWAITING_REVEALSIG
 
           this.encrypted = msg[0].substring(4)
           this.hashed = msg[1].substring(4)
@@ -220,15 +210,15 @@
 
           msg = HLP.splitype(['MPI'], msg.msg)
 
-          if (this.otr.authstate !== AUTHSTATE_AWAITING_DHKEY) {
-            if (this.otr.authstate === AUTHSTATE_AWAITING_SIG) {
+          if (this.otr.authstate !== STATES.AUTHSTATE_AWAITING_DHKEY) {
+            if (this.otr.authstate === STATES.AUTHSTATE_AWAITING_SIG) {
               if (!BigInt.equals(this.their_y, HLP.readMPI(msg[0]))) return
             } else {
               return  // ignore
             }
           }
 
-          this.otr.authstate = AUTHSTATE_AWAITING_SIG
+          this.otr.authstate = STATES.AUTHSTATE_AWAITING_SIG
 
           this.their_y = HLP.readMPI(msg[0])
 
@@ -246,7 +236,7 @@
         case '\x11':
           // signature message
           if ( !this.otr.ALLOW_V2 ||
-               this.otr.authstate !== AUTHSTATE_AWAITING_REVEALSIG
+               this.otr.authstate !== STATES.AUTHSTATE_AWAITING_REVEALSIG
           ) return  // ignore
 
           msg = HLP.splitype(['DATA', 'DATA', 'MAC'], msg.msg)
@@ -303,7 +293,7 @@
         case '\x12':
           // data message
           if ( !this.otr.ALLOW_V2 ||
-               this.otr.authstate !== AUTHSTATE_AWAITING_SIG
+               this.otr.authstate !== STATES.AUTHSTATE_AWAITING_SIG
           ) return  // ignore
 
           msg = HLP.splitype(['DATA', 'MAC'], msg.msg)
@@ -345,7 +335,7 @@
       // d-h commit message
       var send = '\x02'
 
-      this.otr.authstate = AUTHSTATE_AWAITING_DHKEY
+      this.otr.authstate = STATES.AUTHSTATE_AWAITING_DHKEY
 
       var gxmpi = HLP.packMPI(this.our_dh.publicKey)
 
