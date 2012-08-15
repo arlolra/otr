@@ -14,6 +14,7 @@
     , HLP = root.HLP
     , AKE = root.AKE
     , DSA = root.DSA
+    , STATES = root.STATES
     , ParseOTR = root.ParseOTR
 
   if (typeof require !== 'undefined') {
@@ -23,20 +24,9 @@
     HLP || (HLP = require('./helpers.js'))
     DSA || (DSA = require('./dsa.js'))
     AKE || (AKE = require('./ake.js'))
+    STATES || (STATES = require('./states.js'))
     ParseOTR || (ParseOTR = require('./parse.js'))
   }
-
-  // otr message states
-  var MSGSTATE_PLAINTEXT = 0
-    , MSGSTATE_ENCRYPTED = 1
-    , MSGSTATE_FINISHED = 2
-
-  // otr authentication states
-  var AUTHSTATE_NONE = 0
-    , AUTHSTATE_AWAITING_DHKEY = 1
-    , AUTHSTATE_AWAITING_REVEALSIG = 2
-    , AUTHSTATE_AWAITING_SIG = 3
-    , AUTHSTATE_V1_SETUP = 4
 
   // diffie-hellman modulus and generator
   // see group 5, RFC 3526
@@ -77,8 +67,8 @@
 
     init: function () {
 
-      this.msgstate = MSGSTATE_PLAINTEXT
-      this.authstate = AUTHSTATE_NONE
+      this.msgstate = STATES.MSGSTATE_PLAINTEXT
+      this.authstate = STATES.AUTHSTATE_NONE
 
       this.ALLOW_V1 = false
       this.ALLOW_V2 = true
@@ -243,7 +233,7 @@
       // ignore flag
       var ign = (msg[0] === '\x01')
 
-      if (this.msgstate !== MSGSTATE_ENCRYPTED || msg.length !== 8) {
+      if (this.msgstate !== STATES.MSGSTATE_ENCRYPTED || msg.length !== 8) {
         if (!ign) this.error('Received an unreadable encrypted message.', true)
         return
       }
@@ -352,7 +342,7 @@
       if (!internal) {  // a user or sm msg
 
         switch (this.msgstate) {
-          case MSGSTATE_PLAINTEXT:
+          case STATES.MSGSTATE_PLAINTEXT:
             if (this.REQUIRE_ENCRYPTION) {
               this.storedMgs.push(msg)
               this.sendQueryMsg()
@@ -363,7 +353,7 @@
               // msg += whitespace_tag
             }
             break
-          case MSGSTATE_FINISHED:
+          case STATES.MSGSTATE_FINISHED:
             this.storedMgs.push(msg)
             this.error('Message cannot be sent at this time.')
             return
@@ -419,11 +409,11 @@
     },
 
     endOtr: function () {
-      if (this.msgstate === MSGSTATE_ENCRYPTED) {
+      if (this.msgstate === STATES.MSGSTATE_ENCRYPTED) {
         this.sendMsg('\x00\x01\x00\x00')
         this.sm = null
       }
-      this.msgstate = MSGSTATE_PLAINTEXT
+      this.msgstate = STATES.MSGSTATE_PLAINTEXT
     }
 
   }
