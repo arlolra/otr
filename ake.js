@@ -166,8 +166,8 @@
       this.otr.sendStored()
     },
 
-    handleAKE: function (msg) {
-
+    parseAKE: function(msg, cb){
+      cb = cb || function(){}
       var send, vsm
       switch (msg.type) {
 
@@ -285,7 +285,7 @@
             , this.c_prime
             , this.m2_prime
           )
-          this.sendMsg(send)
+          cb(send)
 
           this.akeSuccess()
           return
@@ -322,8 +322,15 @@
           return  // ignore
 
       }
+      cb(send)
 
-      this.sendMsg(send)
+    },
+
+    handleAKE: function (msg) {
+      var ake = this
+      this.parseAKE(msg, function(send){
+        ake.sendMsg(send)
+      })
     },
 
     sendMsg: function (msg) {
