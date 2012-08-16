@@ -335,7 +335,11 @@
 
     sendMsg: function (msg) {
       msg = '\x00\x02' + msg
-      this.otr.sendMsg(HLP.wrapMsg(msg), true)
+      var ake = this
+      HLP.wrapMsg(msg, this.otr.fragment_size, function(err, msg){
+        if(err) return this.otr.error(err)
+        ake.otr.sendMsg(msg, true)
+      })
     },
 
     initiateAKE: function () {

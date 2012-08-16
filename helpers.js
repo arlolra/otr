@@ -28,7 +28,7 @@
   }
 
   // otr message wrapper begin and end
-  var WRAPPER_BEGIN = "?OTR:"
+  var WRAPPER_BEGIN = "?OTR"
     , WRAPPER_END   = "."
 
   HLP.divMod = function (num, den, n) {
@@ -269,9 +269,29 @@
     })
   }
 
-  HLP.wrapMsg = function (msg) {
+  HLP.wrapMsg = function (msg, fragment_size, cb) {
+    fragment_size = fragment_size || 0
     msg = CryptoJS.enc.Base64.stringify(CryptoJS.enc.Latin1.parse(msg))
-    return WRAPPER_BEGIN + msg + WRAPPER_END
+    msg = WRAPPER_BEGIN + ":" + msg + WRAPPER_END
+    if(fragment_size == 0){
+      cb(null, msg)
+    } else {
+      var n = Math.ceil(msg.length / fragment_size);
+      if(n > 65535) return cb("Too many fragments")
+      if(n == 1) return cb(msg)
+      var mfs = []
+      for(var k = 1; k <= n; k++){
+        var bi = (k-1) * fragment_size
+        var ei = k * fragment_size
+        var frag = msg.slice(bi, ei)
+        var mf =  WRAPPER_BEGIN + ","
+        mf += k + ","
+        mf += n + ","
+        mf += frag + ","
+        mfs.push(mf)
+      }
+      cb(null, mfs)
+    }
   }
 
   HLP.splitype = function splitype(arr, msg) {
