@@ -201,7 +201,7 @@
     },
 
     prepareMsg: function (msg) {
-      if (this.msgstate !== MSGSTATE_ENCRYPTED || this.their_keyid === 0)
+      if (this.msgstate !== STATES.MSGSTATE_ENCRYPTED || this.their_keyid === 0)
         return this.error('Not ready to encrypt.')
 
       var sessKeys = this.sessKeys[1][0]
