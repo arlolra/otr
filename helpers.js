@@ -279,7 +279,6 @@
       var n = Math.ceil(msg.length / fragment_size);
       if(n > 65535) return cb("Too many fragments")
       if(n == 1) return cb(msg)
-      var mfs = []
       for(var k = 1; k <= n; k++){
         var bi = (k-1) * fragment_size
         var ei = k * fragment_size
@@ -288,9 +287,8 @@
         mf += k + ","
         mf += n + ","
         mf += frag + ","
-        mfs.push(mf)
+        cb(null, mf)
       }
-      cb(null, mfs)
     }
   }
 
