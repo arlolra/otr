@@ -79,6 +79,7 @@
       this.ERROR_START_AKE = false
 
       ParseOTR.initFragment(this)
+      this.fragment_size = 0
 
       this.versions = {}
 
@@ -200,9 +201,9 @@
 
     },
 
-    prepareMsg: function (msg) {
+    prepareMsg: function (msg, cb) {
       if (this.msgstate !== STATES.MSGSTATE_ENCRYPTED || this.their_keyid === 0)
-        return this.error('Not ready to encrypt.')
+        return cb(this.error('Not ready to encrypt.'))
 
       var sessKeys = this.sessKeys[1][0]
       sessKeys.send_counter += 1
@@ -221,7 +222,10 @@
 
       sessKeys.sendmacused = true
 
-      return HLP.wrapMsg(send)
+      HLP.wrapMsg(send, this.fragment_size, function(err, msg){
+        if(err) return cb(this.error(err))
+        cb(msg)
+      })
     },
 
     handleDataMsg: function (msg) {
@@ -338,6 +342,16 @@
       this.sendMsg(msg, true)
     },
 
+    setFragmentSize: function (s){
+      if(s >= 0){
+        this.fragment_size = s
+      } else {
+        this.error("Fragment size must be a positive integer, or 0 for no limit.")
+        return
+      }
+      return true
+    },
+
     sendMsg: function (msg, internal) {
       if (!internal) {  // a user or sm msg
 
@@ -360,7 +374,11 @@
             break
           default:
             this.storedMgs.push(msg)
-            msg = this.prepareMsg(msg)
+            var otr = this
+            this.prepareMsg(msg, function(msg){
+              otr.iocb(msg)
+            })
+            return
         }
 
       }
