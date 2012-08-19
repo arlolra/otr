@@ -29,34 +29,40 @@ Although this is a client library, it can be used [on the server](https://github
 expensive and can take upwards of half a second. For each user you're
 communicating with, instantiate an OTR object.
 
-	var OTR = require('otr')
-	  , DSA = require('dsa')
+    var OTR = require('otr')
+      , DSA = require('dsa')
 
-	var myKey = new DSA.Key()
+    var myKey = new DSA.Key()
 
-	// provide some callbacks to otr
-	var uicb = function (msg) {
-		console.log("message to display to the user: " + msg)
-	}
-	var iocb = function (msg) {
-		console.log("message to send to buddy: " + msg)
-	} 
+    // provide some callbacks to otr
+    var uicb = function (msg) {
+      console.log("message to display to the user: " + msg)
+    }
+    var iocb = function (msg) {
+      console.log("message to send to buddy: " + msg)
+    }
 
-	var buddyList = {
-		  'userA': new OTR(myKey, uicb, iocb)
-		, 'userB' new OTR(myKey uicb, iocb)
-	}
+    // provide options
+    var options = {
+        fragment_size: 140  // fragment the message in case of char limits
+      , send_interval: 200  // ms delay between sending fragmented msgs, avoid rate limits
+    }
+
+    var buddyList = {
+        'userA': new OTR(myKey, uicb, iocb, options)
+      , 'userB' new OTR(myKey uicb, iocb, options)
+    }
 
 **New message from userA received**: Pass the received message to the `receiveMsg`
 method.
 
-	var rcvmsg = "Message from userA."
-	buddyList.userA.receiveMsg(rcvmsg)
+    var rcvmsg = "Message from userA."
+    buddyList.userA.receiveMsg(rcvmsg)
 
 **Send a message to userA**: Pass the message to the `sendMsg` method.
 
-	var newmsg = "Message to userA."
-	buddyList.userA.sendMsg(newmsg)
+    var newmsg = "Message to userA."
+    buddyList.userA.sendMsg(newmsg)
 
 ---
 
