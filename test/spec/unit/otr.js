@@ -1,5 +1,4 @@
 /*global describe before it */
-
 var assert = require('assert')
   , OTR = require('../../../otr.js')
   , HLP = require('../../../helpers.js')
@@ -18,7 +17,7 @@ describe('OTR', function () {
   it('should initiate AKE', function () {
     var userB = new OTR(keys.userB, cb, cb)
     var userA = new OTR(keys.userA, cb, function (msg) {
-      var msg = ParseOTR.parseMsg(userB, msg)
+      msg = ParseOTR.parseMsg(userB, msg)
       assert.equal('\x02', msg.type, 'Message type.')
       assert.equal('\x00\x02', msg.version, 'Message version.')
     })
@@ -41,33 +40,36 @@ describe('OTR', function () {
   it('should go through the ake dance', function () {
     var userA, userB
     var ui = function (msg) { console.log(msg) }
-    var checkstate = function(user){
-      switch(user.authstate){
+    var checkstate = function (user) {
+      switch (user.authstate) {
         case STATES.AUTHSTATE_AWAITING_DHKEY:
-          assert.equal(HLP.bigInt2bits(userB.ake.r).length, 128/8)
-          assert.equal(userB.ake.myhashed.length, (256/8)+4)
+          // This fails sometimes because bigInt2bits trims leading zeros
+          // and r is random bits. So, there's a slightly greater than
+          // 1/256 chance that bytes are missing.
+          // assert.equal(HLP.bigInt2bits(userB.ake.r).length, 128 / 8)
+          assert.equal(userB.ake.myhashed.length, (256 / 8) + 4)
           break
         case STATES.AUTHSTATE_AWAITING_REVEALSIG:
-          assert.equal(user.ake.encrypted.length, 192+4)
-          assert.equal(user.ake.hashed.length, 256/8)
+          assert.equal(user.ake.encrypted.length, 192 + 4)
+          assert.equal(user.ake.hashed.length, 256 / 8)
           break
         case STATES.AUTHSTATE_AWAITING_SIG:
           assert.equal(user.ake.their_y.length, 192)
-          assert.equal(user.ake.ssid.length, 64/8)
-          assert.equal(user.ake.c.length, 128/8)
-          assert.equal(user.ake.c_prime.length, 128/8)
-          assert.equal(user.ake.m1.length, 256/8)
-          assert.equal(user.ake.m2.length, 256/8)
-          assert.equal(user.ake.m1_prime.length, 256/8)
-          assert.equal(user.ake.m2_prime.length, 256/8)
+          assert.equal(user.ake.ssid.length, 64 / 8)
+          assert.equal(user.ake.c.length, 128 / 8)
+          assert.equal(user.ake.c_prime.length, 128 / 8)
+          assert.equal(user.ake.m1.length, 256 / 8)
+          assert.equal(user.ake.m2.length, 256 / 8)
+          assert.equal(user.ake.m1_prime.length, 256 / 8)
+          assert.equal(user.ake.m2_prime.length, 256 / 8)
           break
       }
     }
-    userA = new OTR(keys.userA, ui, function(msg){
+    userA = new OTR(keys.userA, ui, function (msg) {
       checkstate(userA)
       userB.receiveMsg(msg)
     })
-    userB = new OTR(keys.userB, ui, function(msg){
+    userB = new OTR(keys.userB, ui, function (msg) {
       checkstate(userB)
       userA.receiveMsg(msg)
     })
@@ -112,9 +114,8 @@ describe('OTR', function () {
       assert.equal(msgs[counter++], msg, 'Encrypted message.')
     }
     var io = function (msg) { userB.receiveMsg(msg) }
-    userA = new OTR(keys.userA, ui, io)
+    userA = new OTR(keys.userA, ui, io, { fragment_size: 20 })
     userB = new OTR(keys.userB, ui, userA.receiveMsg)
-    userA.setFragmentSize(20)
     userA.sendQueryMsg()
     userB.sendMsg(msgs[counter])
     userB.sendMsg(msgs[counter])

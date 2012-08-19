@@ -5,14 +5,17 @@ var xmpp = require('simple-xmpp')
 var from = ''
 
 function ui(msg) {
-	console.log('ui: ' + msg)
+  console.log('ui: ' + msg)
 }
 
 function cb(msg) {
-	xmpp.send(from, msg)
+  xmpp.send(from, msg)
 }
 
-var otr = new OTR(keys.userA, ui, cb)
+var otr = new OTR(keys.userA, ui, cb, {
+    fragment_size: 10
+  , send_interval: 200
+})
 
 xmpp.on('online', function() {
   console.log('Yes, I\'m connected!')

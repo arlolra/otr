@@ -1,5 +1,4 @@
 /*global describe before it */
-
 var assert = require('assert')
   , BigInt = require('../../../vendor/bigint.js')
   , HLP = require('../../../helpers.js')
@@ -39,6 +38,14 @@ describe('Helpers', function () {
     assert.equal(16, thou.length, '16 bytes.')
     assert.equal(1000, HLP.unpackCtr(thou), 'Thousand.')
     assert.equal('\x00\x00\x00\x00\x00\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00\x00', HLP.packCtr(1))
+  })
+
+  it('should return a bit string of the proper length', function () {
+    // 2^(8*3) < 2^(15*2) < 2^(8*4) === 4 bytes
+    // chosen because each array element in bigint.js holds 15 bits
+    // (on my machine) so it looks like [0, 0, 1]
+    var test = BigInt.str2bigInt((Math.pow(2, 30)).toString(), 10)
+    assert.equal(4, HLP.bigInt2bits(test).length)
   })
 
 })

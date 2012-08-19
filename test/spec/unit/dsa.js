@@ -1,5 +1,4 @@
 /*global describe before it */
-
 var assert = require('assert')
   , HLP = require('../../../helpers.js')
   , DSA = require('../../../dsa.js')

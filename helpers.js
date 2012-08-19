@@ -19,12 +19,12 @@
 
   // data types (byte lengths)
   var DTS = {
-      BYTE: 1
-    , SHORT: 2
-    , INT: 4
-    , CTR: 8
-    , MAC: 20
-    , SIG: 40
+      BYTE  : 1
+    , SHORT : 2
+    , INT   : 4
+    , CTR   : 8
+    , MAC   : 20
+    , SIG   : 40
   }
 
   // otr message wrapper begin and end
@@ -269,27 +269,38 @@
     })
   }
 
-  HLP.wrapMsg = function (msg, fragment_size, cb) {
-    fragment_size = fragment_size || 0
+  HLP.wrapMsg = function (msg, opts, cb) {
+    opts = opts || {}
+
     msg = CryptoJS.enc.Base64.stringify(CryptoJS.enc.Latin1.parse(msg))
     msg = WRAPPER_BEGIN + ":" + msg + WRAPPER_END
-    if(fragment_size == 0){
-      cb(null, msg)
-    } else {
-      var n = Math.ceil(msg.length / fragment_size);
-      if(n > 65535) return cb("Too many fragments")
-      if(n == 1) return cb(msg)
-      for(var k = 1; k <= n; k++){
-        var bi = (k-1) * fragment_size
-        var ei = k * fragment_size
-        var frag = msg.slice(bi, ei)
-        var mf =  WRAPPER_BEGIN + ","
-        mf += k + ","
-        mf += n + ","
-        mf += frag + ","
-        cb(null, mf)
-      }
+
+    if (!opts.fragment_size) return cb(null, msg)
+
+    var n = Math.ceil(msg.length / opts.fragment_size)
+    if (n > 65535) return cb('Too many fragments')
+    if (n == 1) return cb(null, msg)
+
+    var k, bi, ei, frag, mf, mfs = []
+    for (k = 1; k <= n; k++) {
+      bi = (k - 1) * opts.fragment_size
+      ei = k * opts.fragment_size
+      frag = msg.slice(bi, ei)
+      mf = WRAPPER_BEGIN + ','
+      mf += k + ','
+      mf += n + ','
+      mf += frag + ','
+      mfs.push(mf)
     }
+
+    // send interval
+    ;(function send() {
+      var msg = mfs.shift()
+      cb(null, msg)
+      if (!mfs.length) return
+      if (!opts.send_interval) return send()
+      setTimeout(send, opts.send_interval)
+    }())
   }
 
   HLP.splitype = function splitype(arr, msg) {

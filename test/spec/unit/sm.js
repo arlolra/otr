@@ -1,5 +1,4 @@
 /*global describe beforeEach it */
-
 var assert = require('assert')
   , OTR = require('../../../otr.js')
   , keys = require('./data/keys.js')

@@ -34,8 +34,8 @@
   var N = BigInt.str2bigInt(DH.N, 16)
 
   // OTR contructor
-  function OTR(priv, uicb, iocb) {
-    if (!(this instanceof OTR)) return new OTR(priv, uicb, iocb)
+  function OTR(priv, uicb, iocb, options) {
+    if (!(this instanceof OTR)) return new OTR(priv, uicb, iocb, options)
 
     // private keys
     if (priv && !(priv instanceof DSA.Key))
@@ -50,6 +50,17 @@
 
     this.iocb = iocb
     this.uicb = uicb
+
+    // options
+    options = options || {}
+
+    this.fragment_size = options.fragment_size || 0
+    if (!(this.fragment_size >= 0))
+      throw new Error('Fragment size must be a positive integer.')
+
+    this.send_interval = options.send_interval || 50
+    if (!(this.send_interval >= 0))
+      throw new Error('Send interval must be a positive integer.')
 
     // init vals
     this.init()
@@ -79,7 +90,6 @@
       this.ERROR_START_AKE = false
 
       ParseOTR.initFragment(this)
-      this.fragment_size = 0
 
       this.versions = {}
 
@@ -203,7 +213,7 @@
 
     prepareMsg: function (msg, cb) {
       if (this.msgstate !== STATES.MSGSTATE_ENCRYPTED || this.their_keyid === 0)
-        return cb(this.error('Not ready to encrypt.'))
+        return cb('Not ready to encrypt.')
 
       var sessKeys = this.sessKeys[1][0]
       sessKeys.send_counter += 1
@@ -222,10 +232,10 @@
 
       sessKeys.sendmacused = true
 
-      HLP.wrapMsg(send, this.fragment_size, function(err, msg){
-        if(err) return cb(this.error(err))
-        cb(msg)
-      })
+      HLP.wrapMsg(send, {
+          fragment_size: this.fragment_size
+        , send_interval: this.send_interval
+      }, cb)
     },
 
     handleDataMsg: function (msg) {
@@ -342,47 +352,34 @@
       this.sendMsg(msg, true)
     },
 
-    setFragmentSize: function (s){
-      if(s >= 0){
-        this.fragment_size = s
-      } else {
-        this.error("Fragment size must be a positive integer, or 0 for no limit.")
-        return
-      }
-      return true
-    },
-
     sendMsg: function (msg, internal) {
-      if (!internal) {  // a user or sm msg
+      if (internal) return this.iocb(msg)  // a user or sm msg
 
-        switch (this.msgstate) {
-          case STATES.MSGSTATE_PLAINTEXT:
-            if (this.REQUIRE_ENCRYPTION) {
-              this.storedMgs.push(msg)
-              this.sendQueryMsg()
-              return
-            }
-            if (this.SEND_WHITESPACE_TAG) {
-              // and haven't received a PT msg since entering PT
-              // msg += whitespace_tag
-            }
-            break
-          case STATES.MSGSTATE_FINISHED:
+      switch (this.msgstate) {
+        case STATES.MSGSTATE_PLAINTEXT:
+          if (this.REQUIRE_ENCRYPTION) {
             this.storedMgs.push(msg)
-            this.error('Message cannot be sent at this time.')
+            this.sendQueryMsg()
             return
-            break
-          default:
-            this.storedMgs.push(msg)
-            var otr = this
-            this.prepareMsg(msg, function(msg){
-              otr.iocb(msg)
-            })
-            return
-        }
-
+          }
+          if (this.SEND_WHITESPACE_TAG) {
+            // and haven't received a PT msg since entering PT
+            // msg += whitespace_tag
+          }
+          break
+        case STATES.MSGSTATE_FINISHED:
+          this.storedMgs.push(msg)
+          this.error('Message cannot be sent at this time.')
+          return
+        default:
+          this.storedMgs.push(msg)
+          var otr = this
+          this.prepareMsg(msg, function (err, msg) {
+            if (err) return otr.error(err)
+            otr.iocb(msg)
+          })
+          return
       }
-      this.iocb(msg)
     },
 
     receiveMsg: function (msg) {
@@ -413,7 +410,6 @@
         this.sendMsg(err, true)
         return
       }
-
       // should cb be a node style function (err, msg) {}
       // or just instanceof Error ?
       this.uicb(err)

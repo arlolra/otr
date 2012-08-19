@@ -76,6 +76,11 @@
     this.r = null
     this.priv = otr.priv
 
+    // bind methods
+    var self = this
+    ;['sendMsg'].forEach(function (meth) {
+      self[meth] = self[meth].bind(self)
+    })
   }
 
   AKE.prototype = {
@@ -166,9 +171,9 @@
       this.otr.sendStored()
     },
 
-    parseAKE: function(msg, cb){
-      cb = cb || function(){}
+    handleAKE: function (msg) {
       var send, vsm
+
       switch (msg.type) {
 
         case '\x02':
@@ -285,7 +290,7 @@
             , this.c_prime
             , this.m2_prime
           )
-          cb(send)
+          this.sendMsg(send)
 
           this.akeSuccess()
           return
@@ -322,22 +327,19 @@
           return  // ignore
 
       }
-      cb(send)
 
-    },
-
-    handleAKE: function (msg) {
-      var ake = this
-      this.parseAKE(msg, function(send){
-        ake.sendMsg(send)
-      })
+      this.sendMsg(send)
     },
 
     sendMsg: function (msg) {
       msg = '\x00\x02' + msg
-      var ake = this
-      HLP.wrapMsg(msg, this.otr.fragment_size, function(err, msg){
-        if(err) return this.otr.error(err)
+      var ake  = this
+        , opts = {
+            fragment_size: this.otr.fragment_size
+          , send_interval: this.otr.send_interval
+        }
+      HLP.wrapMsg(msg, opts, function (err, msg) {
+        if (err) return ake.otr.error(err)
         ake.otr.sendMsg(msg, true)
       })
     },

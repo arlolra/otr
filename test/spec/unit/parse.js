@@ -1,5 +1,4 @@
 /*global describe before it beforeEach */
-
 var assert = require('assert')
   , OTR = function () { this.versions = {} }  // just a constructor
   , P = require('../../../parse.js')
