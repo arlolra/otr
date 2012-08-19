@@ -1,8 +1,8 @@
 /*global describe beforeEach it */
 var assert = require('assert')
-  , OTR = require('../../../otr.js')
+  , OTR = require('../../../lib/otr.js')
   , keys = require('./data/keys.js')
-  , SM = require('../../../sm.js')
+  , SM = require('../../../lib/sm.js')
 
 describe('SM', function () {
 

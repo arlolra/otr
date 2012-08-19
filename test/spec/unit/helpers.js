@@ -1,7 +1,7 @@
 /*global describe before it */
 var assert = require('assert')
   , BigInt = require('../../../vendor/bigint.js')
-  , HLP = require('../../../helpers.js')
+  , HLP = require('../../../lib/helpers.js')
 
 describe('Helpers', function () {
 

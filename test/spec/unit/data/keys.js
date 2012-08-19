@@ -1,4 +1,4 @@
-var DSA = require('../../../../dsa.js')
+var DSA = require('../../../../lib/dsa.js')
   , BigInt = require('../../../../vendor/bigint.js')
   , util = require('util')
 

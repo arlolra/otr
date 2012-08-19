@@ -1,10 +1,10 @@
 /*global describe before it */
 var assert = require('assert')
-  , OTR = require('../../../otr.js')
-  , HLP = require('../../../helpers.js')
+  , OTR = require('../../../lib/otr.js')
+  , HLP = require('../../../lib/helpers.js')
   , keys = require('./data/keys.js')
-  , ParseOTR = require('../../../parse.js')
-  , STATES = require('../../../states.js')
+  , ParseOTR = require('../../../lib/parse.js')
+  , STATES = require('../../../lib/states.js')
 
 describe('OTR', function () {
 

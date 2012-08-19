@@ -1,8 +1,8 @@
 /*global describe before it beforeEach */
 var assert = require('assert')
   , OTR = function () { this.versions = {} }  // just a constructor
-  , P = require('../../../parse.js')
-  , HLP = require('../../../helpers.js')
+  , P = require('../../../lib/parse.js')
+  , HLP = require('../../../lib/helpers.js')
   , CryptoJS = require('../../../vendor/cryptojs/cryptojs.js')
 
 describe('Parse', function () {

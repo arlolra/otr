@@ -3,7 +3,7 @@
   "version": "0.0.2",
   "description": "Off-the-Record Messaging Protocol v2",
   "homepage": "https://github.com/arlolra/otr",
-  "main": "otr.js",
+  "main": "lib/otr.js",
   "scripts": {
     "test": "make test"
   },
@@ -22,6 +22,7 @@
   ],
   "devDependencies": {
     "mocha": "*",
+    "grunt": "0.3.x",
     "simple-xmpp": "0.1.x"
   },
   "author": "Arlo Breault <arlolra@gmail.com>",
