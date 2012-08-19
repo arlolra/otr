@@ -32,6 +32,7 @@ communicating with, instantiate an OTR object.
     var OTR = require('otr')
       , DSA = require('dsa')
 
+    // precompute your DSA key
     var myKey = new DSA.Key()
 
     // provide some callbacks to otr
