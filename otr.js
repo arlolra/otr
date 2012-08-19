@@ -1,6 +1,6 @@
 /*!
 
-  otr.js v0.0.2 - 2012-08-19
+  otr.js v0.0.3 - 2012-08-19
   (c) 2012 - Arlo Breault <arlolra@gmail.com>
   Freely distributed under the LGPL license.
 
