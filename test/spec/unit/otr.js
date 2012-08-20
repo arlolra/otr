@@ -105,22 +105,27 @@ describe('OTR', function () {
     userA.sendMsg(msgs[counter])
   })
 
-  it('should send fragments', function(){
+  it('should send fragments', function(done){
+    this.timeout(10000)
     var msgs = ['Hope this works.', 'Second message.', 'This is a bit of a longer message.', 'Some messages can be quite long and must be fragmented over several pieces.']
     var counter = 0
 
     var userA, userB
     var ui = function (msg) {
       assert.equal(msgs[counter++], msg, 'Encrypted message.')
+      if(counter == 4) done()
     }
     var io = function (msg) { userB.receiveMsg(msg) }
     userA = new OTR(keys.userA, ui, io, { fragment_size: 20 })
     userB = new OTR(keys.userB, ui, userA.receiveMsg)
     userA.sendQueryMsg()
-    userB.sendMsg(msgs[counter])
-    userB.sendMsg(msgs[counter])
-    userA.sendMsg(msgs[counter])
-    userA.sendMsg(msgs[counter])
+    userB.on('encrypted', function(){
+      userB.sendMsg(msgs[counter])
+      userB.sendMsg(msgs[counter])
+      userA.sendMsg(msgs[counter], function(){
+        userA.sendMsg(msgs[counter])
+      })
+    })
   })
 
 })
