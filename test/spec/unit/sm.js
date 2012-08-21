@@ -3,6 +3,7 @@ var assert = require('assert')
   , OTR = require('../../../lib/otr.js')
   , keys = require('./data/keys.js')
   , SM = require('../../../lib/sm.js')
+  , STATES = require('../../../lib/states.js')
 
 describe('SM', function () {
 
@@ -19,7 +20,7 @@ describe('SM', function () {
       assert.equal(true, !!msg, 'Plaintext should not SM.')
     }
     userA.sendQueryMsg()
-    userA.msgstate = 0
+    userA.msgstate = STATES.MSGSTATE_PLAINTEXT
     userA.sm.initiate()
   })
 
@@ -30,8 +31,8 @@ describe('SM', function () {
 
     userA.sendQueryMsg()  // must have AKEd for SM
 
-    assert.equal(userB.msgstate, 1, 'Encrypted')
-    assert.equal(userA.msgstate, 1, 'Encrypted')
+    assert.equal(userB.msgstate, STATES.MSGSTATE_ENCRYPTED, 'Encrypted')
+    assert.equal(userA.msgstate, STATES.MSGSTATE_ENCRYPTED, 'Encrypted')
 
     // figure out API for this
     userA.secret = 'applesAndOranges'

@@ -89,6 +89,8 @@ describe('OTR', function () {
 
     var userA, userB
     var ui = function (msg) {
+      assert.equal(userA.msgstate, STATES.MSGSTATE_ENCRYPTED)
+      assert.equal(userB.msgstate, STATES.MSGSTATE_ENCRYPTED)
       assert.equal(msgs[counter++], msg, 'Encrypted message.')
     }
     var io = function (msg) { userB.receiveMsg(msg) }
@@ -105,22 +107,44 @@ describe('OTR', function () {
     userA.sendMsg(msgs[counter])
   })
 
-  it('should send fragments', function(){
-    var msgs = ['Hope this works.', 'Second message.', 'This is a bit of a longer message.', 'Some messages can be quite long and must be fragmented over several pieces.']
+  it('should send fragments', function (done) {
+    this.timeout(5000)
+
+    var msgs = [
+        'Hope this works.'
+      , 'Second message.'
+      , 'This is a bit of a longer message.'
+      , 'Some messages can be quite long and must be fragmented over several pieces.'
+      , 'Lalalala alal allaallal alal al alalal alalaaall  lal lal la lal ala  al ala l al a al al al alalalalal alalal  a lal la aal ala lalala l lala lal lala lal la l  alal lalaall la lal la'
+    ]
     var counter = 0
 
     var userA, userB
-    var ui = function (msg) {
-      assert.equal(msgs[counter++], msg, 'Encrypted message.')
+    var ui = function (ind) {
+      return function (msg) {
+        var u = users[ind]
+        assert.equal(u.u.msgstate, STATES.MSGSTATE_ENCRYPTED)
+        assert.equal(u.m[u.c++], msg, 'Encrypted message.')
+        if (++counter === msgs.length) done()
+      }
     }
     var io = function (msg) { userB.receiveMsg(msg) }
-    userA = new OTR(keys.userA, ui, io, { fragment_size: 20 })
-    userB = new OTR(keys.userB, ui, userA.receiveMsg)
-    userA.sendQueryMsg()
-    userB.sendMsg(msgs[counter])
-    userB.sendMsg(msgs[counter])
-    userA.sendMsg(msgs[counter])
-    userA.sendMsg(msgs[counter])
+
+    userA = new OTR(keys.userA, ui(0), io, { fragment_size: 200, send_interval: 40 })
+    userB = new OTR(keys.userB, ui(1), userA.receiveMsg)
+
+    userA.REQUIRE_ENCRYPTION = true
+    userB.REQUIRE_ENCRYPTION = true
+
+    var ind, users = [
+        { u: userA, m: [], c: 0 }
+      , { u: userB, m: [], c: 0 }
+    ]
+    msgs.forEach(function (m, i) {
+      ind = Math.floor(Math.random() * 2)  // assign the messages randomly
+      users[ind ? 0 : 1].m.push(m)  // expect the other user to receive it
+      users[ind].u.sendMsg(m)
+    })
   })
 
 })
