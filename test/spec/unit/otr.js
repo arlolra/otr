@@ -123,8 +123,8 @@ describe('OTR', function () {
     var ui = function (ind) {
       return function (msg) {
         var u = users[ind]
-        assert.equal(u.u.msgstate, STATES.MSGSTATE_ENCRYPTED)
-        assert.equal(u.m[u.c++], msg, 'Encrypted message.')
+        assert.equal(u.u.msgstate, STATES.MSGSTATE_ENCRYPTED, 'Message state unencrypted. Msg: ' + msg)
+        assert.equal(u.m[u.c++], msg, 'Encrypted message: ' + msg)
         if (++counter === msgs.length) done()
       }
     }
