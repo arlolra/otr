@@ -1,6 +1,6 @@
 /*!
 
-  otr.js v0.0.3 - 2012-08-19
+  otr.js v0.0.4 - 2012-08-21
   (c) 2012 - Arlo Breault <arlolra@gmail.com>
   Freely distributed under the LGPL license.
 
@@ -323,22 +323,20 @@
     })
   }
 
-  HLP.wrapMsg = function (msg, opts, cb) {
-    opts = opts || {}
-
+  HLP.wrapMsg = function (msg, fs) {
     msg = CryptoJS.enc.Base64.stringify(CryptoJS.enc.Latin1.parse(msg))
     msg = WRAPPER_BEGIN + ":" + msg + WRAPPER_END
 
-    if (!opts.fragment_size) return cb(null, msg)
+    if (!fs) return [null, msg]
 
-    var n = Math.ceil(msg.length / opts.fragment_size)
-    if (n > 65535) return cb('Too many fragments')
-    if (n == 1) return cb(null, msg)
+    var n = Math.ceil(msg.length / fs)
+    if (n > 65535) return ['Too many fragments']
+    if (n == 1) return [null, msg]
 
     var k, bi, ei, frag, mf, mfs = []
     for (k = 1; k <= n; k++) {
-      bi = (k - 1) * opts.fragment_size
-      ei = k * opts.fragment_size
+      bi = (k - 1) * fs
+      ei = k * fs
       frag = msg.slice(bi, ei)
       mf = WRAPPER_BEGIN + ','
       mf += k + ','
@@ -347,14 +345,7 @@
       mfs.push(mf)
     }
 
-    // send interval
-    ;(function send() {
-      var msg = mfs.shift()
-      cb(null, msg)
-      if (!mfs.length) return
-      if (!opts.send_interval) return send()
-      setTimeout(send, opts.send_interval)
-    }())
+    return [null, mfs]
   }
 
   HLP.splitype = function splitype(arr, msg) {
@@ -1054,7 +1045,6 @@
   var CryptoJS = root.CryptoJS
     , BigInt = root.BigInt
     , DH = root.DH
-    , SM = root.SM
     , HLP = root.HLP
     , DSA = root.DSA
     , STATES = root.STATES
@@ -1063,7 +1053,6 @@
     CryptoJS || (CryptoJS = require('../vendor/cryptojs/cryptojs.js'))
     BigInt || (BigInt = require('../vendor/bigint.js'))
     DH || (DH = require('./dh.js'))
-    SM || (SM = require('./sm.js'))
     HLP || (HLP = require('./helpers.js'))
     DSA || (DSA = require('./dsa.js'))
     STATES || (STATES = require('./states.js'))
@@ -1091,10 +1080,9 @@
     return (hmac.finalize()).toString(CryptoJS.enc.Latin1)
   }
 
-  function L1toBI(l) {
-    l = CryptoJS.enc.Latin1.parse(l)
-    l = CryptoJS.enc.Hex.stringify(l)
-    return BigInt.str2bigInt(l, 16)
+  var DEBUG = false
+  function debug(msg) {
+    if (DEBUG && console) console.log(msg)
   }
 
   // AKE constructor
@@ -1106,7 +1094,7 @@
 
     // our keys
     this.our_dh = otr.our_old_dh
-    this.our_keyid = 1
+    this.our_keyid = otr.our_keyid - 1
 
     // their keys
     this.their_y = null
@@ -1176,11 +1164,16 @@
     },
 
     akeSuccess: function () {
+      debug('success')
+
       if (BigInt.equals(this.their_y, this.our_dh.publicKey))
         return this.otr.error('equal keys - we have a problem.', true)
 
       if ( this.their_keyid !== this.otr.their_keyid &&
            this.their_keyid !== (this.otr.their_keyid - 1) ) {
+
+        // our keys
+        this.otr.our_old_dh = this.our_dh
 
         // their keys
         this.otr.their_y = this.their_y
@@ -1204,7 +1197,7 @@
       // ake info
       this.otr.ssid = this.ssid
       this.otr.transmittedRS = this.transmittedRS
-      this.otr.sm = new SM(this.otr)
+      this.otr.smInit()
 
       // go encrypted
       this.otr.authstate = STATES.AUTHSTATE_NONE
@@ -1220,17 +1213,18 @@
       switch (msg.type) {
 
         case '\x02':
-          // d-h key message
+          debug('d-h key message')
+
           if (!this.otr.ALLOW_V2) return  // ignore
 
           msg = HLP.splitype(['DATA', 'DATA'], msg.msg)
 
           if (this.otr.authstate === STATES.AUTHSTATE_AWAITING_DHKEY) {
-            var ourHash = L1toBI(this.myhashed)
-            var theirHash = L1toBI(msg[1].substring(4))
+            var ourHash = HLP.readMPI(this.myhashed)
+            var theirHash = HLP.readMPI(msg[1])
             if (BigInt.greater(ourHash, theirHash)) {
-              this.initiateAKE()
-              return  // ignore
+              send = this.dhcommit
+              break  // ignore
             } else {
               // forget
               this.our_dh = this.otr.dh()
@@ -1253,7 +1247,8 @@
           break
 
         case '\x0a':
-          // reveal signature message
+          debug('reveal signature message')
+
           if (!this.otr.ALLOW_V2) return  // ignore
 
           msg = HLP.splitype(['MPI'], msg.msg)
@@ -1282,7 +1277,8 @@
           break
 
         case '\x11':
-          // signature message
+          debug('signature message')
+
           if ( !this.otr.ALLOW_V2 ||
                this.otr.authstate !== STATES.AUTHSTATE_AWAITING_REVEALSIG
           ) return  // ignore
@@ -1339,7 +1335,8 @@
           return
 
         case '\x12':
-          // data message
+          debug('data message')
+
           if ( !this.otr.ALLOW_V2 ||
                this.otr.authstate !== STATES.AUTHSTATE_AWAITING_SIG
           ) return  // ignore
@@ -1376,20 +1373,16 @@
 
     sendMsg: function (msg) {
       msg = '\x00\x02' + msg
-      var ake  = this
-        , opts = {
-            fragment_size: this.otr.fragment_size
-          , send_interval: this.otr.send_interval
-        }
-      HLP.wrapMsg(msg, opts, function (err, msg) {
-        if (err) return ake.otr.error(err)
-        ake.otr.sendMsg(msg, true)
-      })
+      msg = HLP.wrapMsg(msg, this.otr.fragment_size)
+      if (msg[0]) return this.otr.error(msg[0])
+      this.otr.sendMsg(msg[1], true)
     },
 
     initiateAKE: function () {
-      // d-h commit message
-      var send = '\x02'
+      debug('d-h commit message')
+
+      // save in case we have to resend
+      this.dhcommit = '\x02'
 
       this.otr.authstate = STATES.AUTHSTATE_AWAITING_DHKEY
 
@@ -1398,13 +1391,13 @@
       this.r = HLP.randomValue()
       var key = CryptoJS.enc.Hex.parse(BigInt.bigInt2str(this.r, 16))
       key = CryptoJS.enc.Latin1.stringify(key)
-      send += HLP.packData(HLP.makeAes(gxmpi, key, HLP.packCtr(0)))
+      this.dhcommit += HLP.packData(HLP.makeAes(gxmpi, key, HLP.packCtr(0)))
 
       this.myhashed = CryptoJS.SHA256(CryptoJS.enc.Latin1.parse(gxmpi))
       this.myhashed = HLP.packData(this.myhashed.toString(CryptoJS.enc.Latin1))
-      send += this.myhashed
+      this.dhcommit += this.myhashed
 
-      this.sendMsg(send)
+      this.sendMsg(this.dhcommit)
     }
 
   }
@@ -1480,7 +1473,7 @@
 
       // start ake
       if (otr.ALLOW_V2 && otr.versions['2']) {
-        otr.ake.initiateAKE()
+        return { cls: 'query', version: '2' }
       } else if (otr.ALLOW_V1 && otr.versions['1']) {
         // not yet
       }
@@ -1592,8 +1585,9 @@
     , BigInt = root.BigInt
     , DH = root.DH
     , HLP = root.HLP
-    , AKE = root.AKE
     , DSA = root.DSA
+    , AKE = root.AKE
+    , SM = root.SM
     , STATES = root.STATES
     , ParseOTR = root.ParseOTR
 
@@ -1604,6 +1598,7 @@
     HLP || (HLP = require('./helpers.js'))
     DSA || (DSA = require('./dsa.js'))
     AKE || (AKE = require('./ake.js'))
+    SM || (SM = require('./sm.js'))
     STATES || (STATES = require('./states.js'))
     ParseOTR || (ParseOTR = require('./parse.js'))
   }
@@ -1623,14 +1618,6 @@
 
     this.priv = priv ? priv : new DSA.Key()
 
-    // attach callbacks
-    if ( !iocb || typeof iocb !== 'function' ||
-         !uicb || typeof uicb !== 'function'
-    ) throw new Error('UI and IO callbacks are required.')
-
-    this.iocb = iocb
-    this.uicb = uicb
-
     // options
     options = options || {}
 
@@ -1638,9 +1625,18 @@
     if (!(this.fragment_size >= 0))
       throw new Error('Fragment size must be a positive integer.')
 
-    this.send_interval = options.send_interval || 50
+    this.send_interval = options.send_interval || 0
     if (!(this.send_interval >= 0))
       throw new Error('Send interval must be a positive integer.')
+
+    // attach callbacks
+    if ( !iocb || typeof iocb !== 'function' ||
+         !uicb || typeof uicb !== 'function'
+    ) throw new Error('UI and IO callbacks are required.')
+
+    this.uicb = uicb
+    this._iocb = iocb
+    this.outgoing = []
 
     // init vals
     this.init()
@@ -1696,12 +1692,47 @@
 
       // when ake is complete
       // save their keys and the session
-      this.ake = new AKE(this)
-      this.transmittedRS = false
-      this.ssid = null
+      this.akeInit()
 
       // user provided secret for SM
       this.secret = 'cryptocat?'
+
+    },
+
+    akeInit: function () {
+      this.ake = new AKE(this)
+      this.transmittedRS = false
+      this.ssid = null
+    },
+
+    smInit: function () {
+      this.sm = new SM(this)
+    },
+
+    iocb: function iocb(msg) {
+
+      // buffer
+      this.outgoing = this.outgoing.concat(msg)
+
+      // send sync
+      if (!this.send_interval) {
+        while (this.outgoing.length) {
+          msg = this.outgoing.shift()
+          this._iocb(msg)
+        }
+        return
+      }
+
+      // an async option
+      // maybe this is outside the scope?
+      var self = this
+      function send() {
+        if (!self.outgoing.length) return
+        var msg = self.outgoing.shift()
+        self._iocb(msg)
+        setTimeout(send, self.send_interval)
+      }
+      setTimeout(send, this.send_interval)
 
     },
 
@@ -1791,9 +1822,9 @@
 
     },
 
-    prepareMsg: function (msg, cb) {
+    prepareMsg: function (msg) {
       if (this.msgstate !== STATES.MSGSTATE_ENCRYPTED || this.their_keyid === 0)
-        return cb('Not ready to encrypt.')
+        return this.error('Not ready to encrypt.')
 
       var sessKeys = this.sessKeys[1][0]
       sessKeys.send_counter += 1
@@ -1812,10 +1843,9 @@
 
       sessKeys.sendmacused = true
 
-      HLP.wrapMsg(send, {
-          fragment_size: this.fragment_size
-        , send_interval: this.send_interval
-      }, cb)
+      send = HLP.wrapMsg(send, this.fragment_size)
+      if (send[0]) return this.error(send[0])
+      return send[1]
     },
 
     handleDataMsg: function (msg) {
@@ -1933,33 +1963,30 @@
     },
 
     sendMsg: function (msg, internal) {
-      if (internal) return this.iocb(msg)  // a user or sm msg
+      if (!internal) {  // a user or sm msg
 
-      switch (this.msgstate) {
-        case STATES.MSGSTATE_PLAINTEXT:
-          if (this.REQUIRE_ENCRYPTION) {
+        switch (this.msgstate) {
+          case STATES.MSGSTATE_PLAINTEXT:
+            if (this.REQUIRE_ENCRYPTION) {
+              this.storedMgs.push(msg)
+              this.sendQueryMsg()
+              return
+            }
+            if (this.SEND_WHITESPACE_TAG) {
+              // and haven't received a PT msg since entering PT
+              // msg += whitespace_tag
+            }
+            break
+          case STATES.MSGSTATE_FINISHED:
             this.storedMgs.push(msg)
-            this.sendQueryMsg()
+            this.error('Message cannot be sent at this time.')
             return
-          }
-          if (this.SEND_WHITESPACE_TAG) {
-            // and haven't received a PT msg since entering PT
-            // msg += whitespace_tag
-          }
-          break
-        case STATES.MSGSTATE_FINISHED:
-          this.storedMgs.push(msg)
-          this.error('Message cannot be sent at this time.')
-          return
-        default:
-          this.storedMgs.push(msg)
-          var otr = this
-          this.prepareMsg(msg, function (err, msg) {
-            if (err) return otr.error(err)
-            otr.iocb(msg)
-          })
-          return
+          default:
+            msg = this.prepareMsg(msg)
+        }
+
       }
+      if (msg) this.iocb(msg)
     },
 
     receiveMsg: function (msg) {
@@ -1979,6 +2006,14 @@
         case 'data':
           msg.msg = this.handleDataMsg(msg)
           break
+        case 'query':
+          if (msg.version !== '2') return
+          if (this.msgstate === STATES.MSGSTATE_ENCRYPTED) this.akeInit()
+          this.ake.initiateAKE()
+          break
+        default:
+          if (this.REQUIRE_ENCRYPTION)
+            return this.error('Received an unencrypted message.')
       }
 
       if (msg.msg) this.uicb(msg.msg)
