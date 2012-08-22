@@ -131,7 +131,7 @@ describe('OTR', function () {
     var io = function (msg) { userB.receiveMsg(msg) }
 
     userA = new OTR(keys.userA, ui(0), io, { fragment_size: 200, send_interval: 40 })
-    userB = new OTR(keys.userB, ui(1), userA.receiveMsg)
+    userB = new OTR(keys.userB, ui(1), userA.receiveMsg, { send_interval: 20 })
 
     userA.REQUIRE_ENCRYPTION = true
     userB.REQUIRE_ENCRYPTION = true
