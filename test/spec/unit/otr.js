@@ -25,15 +25,13 @@ describe('OTR', function () {
     userA.receiveMsg('?OTR?v2?')
   })
 
-  it('should query with versions one and two', function () {
+  it('should query with versions two', function () {
     var userB = new OTR(keys.userB, cb, cb)
     var userA = new OTR(keys.userA, cb, function (msg) {
-      assert.equal('?OTR?v2?', msg, 'Versions 1 and 2.')
+      assert.equal('?OTRv2?', msg, 'Versions 2.')
       userB.receiveMsg(msg)
-      assert.ok(userB.versions['1'], 'version 1 & 2')
-      assert.ok(userB.versions['2'], 'version 1 & 2')
+      assert.ok(userB.versions['2'], 'version 2')
     })
-    userA.ALLOW_V1 = true
     userA.sendQueryMsg()
   })
 
