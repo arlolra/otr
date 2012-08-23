@@ -10,7 +10,7 @@ Off-the Record Messaging Protocol v2 in JavaScript
 This library hasn't been properly vetted by security researchers. Do not use
 in life and death situations!
 
-`Math.random()` is replaced by `seedrandom.js`, seeded by either `window.crypto.getRandomValues()` in the [browser](https://developer.mozilla.org/en-US/docs/DOM/window.crypto.getRandomValues), or `crypto.randomBytes()` in [node.js](http://nodejs.org/api/crypto.html#crypto_crypto_randombytes_size_callback).
+`Math.random()` is replaced by `seedrandom.js`, seeded with either `window.crypto.getRandomValues()` in the [browser](https://developer.mozilla.org/en-US/docs/DOM/window.crypto.getRandomValues), or `crypto.randomBytes()` in [node.js](http://nodejs.org/api/crypto.html#crypto_crypto_randombytes_size_callback).
 
 ---
 

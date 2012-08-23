@@ -29,30 +29,31 @@
   }
 
   var SeedRandom = root.SeedRandom
+    , crypto = root.crypto
 
-  var buffer, crypto
+  var buf
   if (typeof require !== 'undefined') {
     module.exports = BigInt
     SeedRandom || (SeedRandom = require('./seedrandom.js'))
     crypto = require('crypto')
     try {
-      buffer = crypto.randomBytes(1024)
+      buf = crypto.randomBytes(1024)
     } catch (e) { throw e }
   } else {
     root.BigInt = BigInt
     if ( (typeof window.crypto !== 'undefined') &&
          (typeof window.crypto.getRandomValues === 'function')
     ) {
-      buffer = new Uint8Array(1024)
-      window.crypto.getRandomValues(buffer)
+      buf = new Uint8Array(1024)
+      crypto.getRandomValues(buf)
     } else {
       throw new Error('Keys should not be generated without CSPRNG.')
     }
   }
 
   var i, len, seed = ''
-  for (i = 0, len = buffer.length; i < len; i++) {
-    seed += String.fromCharCode(buffer[i])
+  for (i = 0, len = buf.length; i < len; i++) {
+    seed += String.fromCharCode(buf[i])
   }
 
   SeedRandom(Math)
