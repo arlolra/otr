@@ -65,6 +65,24 @@ method.
     var newmsg = "Message to userA."
     buddyList.userA.sendMsg(newmsg)
 
+**Going encrypted**: Initially, messages are sent in plaintext. To setup a secure
+communication channel, at the moment, one must manually initiate the authenticated
+key exchange.
+
+    buddyList.userA.sendQueryMsg()
+
+Alternatively, one can set the policy `REQUIRE_ENCRYPTION` and send a plaintext
+message. This will store the message, initiate the authentication and then,
+upon success, send it out.
+
+    buddyList.userA.REQUIRE_ENCRYPTION = true
+    buddyList.userA.sendMsg('My plaintext message to be encrypted.')
+
+The protocol does specify a policy whereby a plaintext message can be appended
+with whitespace tags to indicate ones willingness to speak with OTR, but this
+has yet to be implemented. See [issue 13](https://github.com/arlolra/otr/issues/13)
+for updates.
+
 ---
 
 Spec: http://www.cypherpunks.ca/otr/Protocol-v2-3.1.0.html
