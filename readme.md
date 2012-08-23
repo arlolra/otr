@@ -1,4 +1,4 @@
-Off-the Record Messaging Protocol v2 in JavaScript
+Off-the Record Messaging Protocol in JavaScript
 ==================================================
 
 [![Build Status](https://secure.travis-ci.org/arlolra/otr.png?branch=master)](http://travis-ci.org/arlolra/otr)
