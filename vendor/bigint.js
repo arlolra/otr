@@ -2,6 +2,63 @@
 
   var root = this
 
+  var BigInt = {
+      str2bigInt    : str2bigInt
+    , bigInt2str    : bigInt2str
+    , multMod       : multMod
+    , powMod        : powMod
+    , inverseMod    : inverseMod
+    , randBigInt    : randBigInt
+    , equals        : equals
+    , sub           : sub
+    , mod           : mod
+    , mult          : mult
+    , divInt_       : divInt_
+    , rightShift_   : rightShift_
+    , leftShift_    : leftShift_
+    , dup           : dup
+    , greater       : greater
+    , add           : add
+    , isZero        : isZero
+    , bitSize       : bitSize
+    , randTruePrime : randTruePrime
+    , millerRabin   : millerRabin
+    , divide_       : divide_
+    , trim          : trim
+    , expand        : expand
+  }
+
+  var SeedRandom = root.SeedRandom
+
+  var buffer, crypto
+  if (typeof require !== 'undefined') {
+    module.exports = BigInt
+    SeedRandom || (SeedRandom = require('./seedrandom.js'))
+    crypto = require('crypto')
+    try {
+      buffer = crypto.randomBytes(1024)
+    } catch (e) { throw e }
+  } else {
+    root.BigInt = BigInt
+    if ( (typeof window.crypto !== 'undefined') &&
+         (typeof window.crypto.getRandomValues === 'function')
+    ) {
+      buffer = new Uint8Array(1024)
+      window.crypto.getRandomValues(buffer)
+    } else {
+      throw new Error('Keys should not be generated without CSPRNG.')
+    }
+  }
+
+  var i, len, seed = ''
+  for (i = 0, len = buffer.length; i < len; i++) {
+    seed += String.fromCharCode(buffer[i])
+  }
+
+  SeedRandom(Math)
+  Math.seedrandom(seed)
+  seed = null
+
   ////////////////////////////////////////////////////////////////////////////////////////
   // Big Integer Library v. 5.4
   // Created 2000, last modified 2009
@@ -343,7 +400,7 @@
                 return randProbPrimeRounds(k,40); //number from HAC remark 4.26 (only an estimate)
   }
 
-  //return a k-bit probable random prime using n rounds of Miller Rabin (after trial division with small primes)	
+  //return a k-bit probable random prime using n rounds of Miller Rabin (after trial division with small primes)
   function randProbPrimeRounds(k,n) {
     var ans, i, divisible, B; 
     B=30000;  //B is largest prime to use in trial division
@@ -907,7 +964,7 @@
       if (r[i]==y[ky-1])
         q[i-ky]=mask;
       else
-        q[i-ky]=Math.floor((r[i]*radix+r[i-1])/y[ky-1]);	
+        q[i-ky]=Math.floor((r[i]*radix+r[i-1])/y[ky-1]);
 
       //The following for(;;) loop is equivalent to the commented while loop, 
       //except that the uncommented version avoids overflow.
@@ -1504,38 +1561,6 @@
     if (!greater(n,sa))
       sub_(sa,n);
     copy_(x,sa);
-  }
-
-  var BigInt = {
-      str2bigInt    : str2bigInt
-    , bigInt2str    : bigInt2str
-    , multMod       : multMod
-    , powMod        : powMod
-    , inverseMod    : inverseMod
-    , randBigInt    : randBigInt
-    , equals        : equals
-    , sub           : sub
-    , mod           : mod
-    , mult          : mult
-    , divInt_       : divInt_
-    , rightShift_   : rightShift_
-    , leftShift_    : leftShift_
-    , dup           : dup
-    , greater       : greater
-    , add           : add
-    , isZero        : isZero
-    , bitSize       : bitSize
-    , randTruePrime : randTruePrime
-    , millerRabin   : millerRabin
-    , divide_       : divide_
-    , trim          : trim
-    , expand        : expand
-  }
-
-  if (typeof exports !== 'undefined') {
-    module.exports = BigInt
-  } else {
-    root.BigInt = BigInt
   }
 
 }).call(this)

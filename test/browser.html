@@ -1,11 +1,17 @@
 <!doctype html>
 <html lang="en">
   <head>
+    <meta charset="utf-8" />
     <title>Test OTR</title>
   </head>
   <body></body>
 
-  <!-- Load bigint.js -->
+  <script>
+    var start = (new Date()).getTime();
+  </script>
+
+  <!-- Load seedrandom.js && bigint.js -->
+  <script src="../vendor/seedrandom.js"></script>
   <script src="../vendor/bigint.js"></script>
 
   <!-- Load crypto.js components. TODO: make a build of these -->
@@ -24,17 +30,17 @@
 
   <!-- Ready to go! -->
   <script>
+    document.write('loading scripts / seeding random took <strong>' + ((new Date()).getTime() - start) + 'ms</strong>');
     var ui = function (msg) { console.log(msg); };
-    var start = (new Date()).getTime();
     var userA = new OTR(null, ui, function (msg) {
       userB.receiveMsg(msg);
     });
-   document.write('generating OTR object took <strong>' + ((new Date()).getTime() - start) + 'ms</strong>');
+   document.write('<br />generating OTR object took <strong>' + ((new Date()).getTime() - start) + 'ms</strong>');
    var userB = new OTR(null, ui, userA.receiveMsg);
    start = (new Date()).getTime();
    userA.sendQueryMsg()
    document.write('<br />ake took <strong>' + ((new Date()).getTime() - start) + 'ms</strong>');
-   console.log(userA.msgstate)
+   document.write('<br />message state is ' + (userA.msgstate ? 'encrypted' : 'plaintext') + '</strong>');
   </script>
 
 </html>

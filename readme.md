@@ -7,9 +7,10 @@ Off-the Record Messaging Protocol v2 in JavaScript
 
 ###Warning
 
-Replace `Math.random()`
+This library hasn't been properly vetted by security researchers. Do not use
+in life and death situations!
 
-See: [bigint.js](https://github.com/arlolra/otr/blob/9a1329b0d2d673bae714d4bc5b25109952ed0106/vendor/bigint.js#L62-63)
+`Math.random()` is replaced by `seedrandom.js`, seeded by either `window.crypto.getRandomValues()` in the [browser](https://developer.mozilla.org/en-US/docs/DOM/window.crypto.getRandomValues), or `crypto.randomBytes()` in [node.js](http://nodejs.org/api/crypto.html#crypto_crypto_randombytes_size_callback).
 
 ---
 
@@ -91,5 +92,6 @@ Spec: http://www.cypherpunks.ca/otr/Protocol-v2-3.1.0.html
 
 Using:
 
-- http://code.google.com/p/crypto-js/
-- http://leemon.com/crypto/BigInt.html
+- [crypto-js](http://code.google.com/p/crypto-js/)
+- [bigint.js](http://leemon.com/crypto/BigInt.html)
+- [seedrandom.js](http://davidbau.com/archives/2010/01/30/random_seeds_coded_hints_and_quintillions.html)
