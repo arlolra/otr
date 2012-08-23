@@ -85,6 +85,8 @@ for updates.
 
 ---
 
+###Links
+
 Spec: http://www.cypherpunks.ca/otr/Protocol-v2-3.1.0.html
 
 Using:
