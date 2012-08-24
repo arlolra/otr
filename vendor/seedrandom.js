@@ -132,7 +132,7 @@
     seed = mixkey(flatten(
       use_entropy ? [seed, pool] :
       arguments.length ? seed :
-      [new Date().getTime(), pool, window], 3), key);
+      [new Date().getTime(), pool, root], 3), key);
 
     // Use the seed to initialize an ARC4 generator.
     arc4 = new ARC4(key);

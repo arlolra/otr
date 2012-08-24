@@ -41,8 +41,8 @@
     } catch (e) { throw e }
   } else {
     root.BigInt = BigInt
-    if ( (typeof window.crypto !== 'undefined') &&
-         (typeof window.crypto.getRandomValues === 'function')
+    if ( (typeof crypto !== 'undefined') &&
+         (typeof crypto.getRandomValues === 'function')
     ) {
       buf = new Uint8Array(1024)
       crypto.getRandomValues(buf)
