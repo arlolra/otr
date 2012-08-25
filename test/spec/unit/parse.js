@@ -3,6 +3,7 @@ var assert = require('assert')
   , OTR = function () { this.versions = {} }  // just a constructor
   , P = require('../../../lib/parse.js')
   , HLP = require('../../../lib/helpers.js')
+  , STATES = require('../../../lib/states.js')
   , CryptoJS = require('../../../vendor/cryptojs/cryptojs.js')
 
 describe('Parse', function () {
@@ -106,6 +107,12 @@ describe('Parse', function () {
     assert.equal('encoded_dummy', msg[5].substring(4), 'encmsg')
     assert.equal('this is a dummy mac\x00', msg[6], 'mac')
     assert.equal('\x00\x00\x00\x00', msg[7], 'oldmacs')
+  })
+
+  it('should parse whitespace tags', function () {
+    var msg = P.parseMsg(otr, 'this is a test' + STATES.WHITESPACE_TAG + ' random ' + STATES.WHITESPACE_TAG_V2)
+    assert.ok(~msg.ver.indexOf(STATES.OTR_VERSION_2))
+    assert.equal(msg.msg, 'this is a test random ')
   })
 
 })

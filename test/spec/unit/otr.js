@@ -25,7 +25,7 @@ describe('OTR', function () {
     userA.receiveMsg('?OTR?v2?')
   })
 
-  it('should query with versions two', function () {
+  it('should query with version two', function () {
     var userB = new OTR(keys.userB, cb, cb)
     var userA = new OTR(keys.userA, cb, function (msg) {
       assert.equal('?OTRv2?', msg, 'Versions 2.')
@@ -33,6 +33,36 @@ describe('OTR', function () {
       assert.ok(userB.versions['2'], 'version 2')
     })
     userA.sendQueryMsg()
+  })
+
+  it('should not send the whitespace tags', function () {
+    var userA = new OTR(keys.userA, cb, function (msg) {
+      assert.ok(!~msg.indexOf(STATES.WHITESPACE_TAG))
+      assert.ok(!~msg.indexOf(STATES.WHITESPACE_TAG_V2))
+    })
+    userA.SEND_WHITESPACE_TAG = false
+    userA.sendMsg('hi')
+  })
+
+  it('should send the whitespace tags', function () {
+    var userA = new OTR(keys.userA, cb, function (msg) {
+      assert.ok(~msg.indexOf(STATES.WHITESPACE_TAG))
+      assert.ok(~msg.indexOf(STATES.WHITESPACE_TAG_V2))
+    })
+    userA.SEND_WHITESPACE_TAG = true
+    userA.sendMsg('hi')
+  })
+
+  it('whitespace start ake', function () {
+    var userB = new OTR(keys.userB, function (msg) {
+      assert.equal('hi', msg)
+      assert.equal(userB.msgstate, STATES.MSGSTATE_ENCRYPTED)
+      assert.equal(userA.msgstate, STATES.MSGSTATE_ENCRYPTED)
+    }, function (msg) { userA.receiveMsg(msg) })
+    var userA = new OTR(keys.userA, cb, userB.receiveMsg)
+    userB.WHITESPACE_START_AKE = true
+    userA.SEND_WHITESPACE_TAG = true
+    userA.sendMsg('hi')
   })
 
   it('should go through the ake dance', function () {

@@ -86,6 +86,27 @@ for updates.
 
 ---
 
+###Policies
+
+To be set on a per-correspondent basis. The defaults are as follows:
+
+    // Allow version 2 of the OTR protocol to be used.
+    ALLOW_V2 = true
+
+    // Refuse to send unencrypted messages.
+    REQUIRE_ENCRYPTION = false
+
+    // Advertise your support of OTR using the whitespace tag.
+    SEND_WHITESPACE_TAG = false
+
+    // Start the OTR AKE when you receive a whitespace tag.
+    WHITESPACE_START_AKE = false
+
+    // Start the OTR AKE when you receive an OTR Error Message.
+    ERROR_START_AKE = false
+
+---
+
 ###Links
 
 Spec: http://www.cypherpunks.ca/otr/Protocol-v2-3.1.0.html
