@@ -9,7 +9,7 @@ describe('DSA', function() {
   var key
 
   it('should generate a key - timed', function () {
-    key = new DSA.Key()   
+    key = new DSA()   
   })
 
   it('should generate a key with q > 2^159 and q < 2^160', function () {

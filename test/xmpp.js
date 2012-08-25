@@ -1,5 +1,5 @@
 var xmpp = require('simple-xmpp')
-  , OTR  = require('../lib/otr.js')
+  , OTR  = require('../index.js').OTR
   , keys = require('./spec/unit/data/keys.js')
 
 var from = ''

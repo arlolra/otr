@@ -1,6 +1,5 @@
 var DSA = require('../../../../lib/dsa.js')
   , BigInt = require('../../../../vendor/bigint.js')
-  , util = require('util')
 
 var userA = { N: 160,
   L: 1024,

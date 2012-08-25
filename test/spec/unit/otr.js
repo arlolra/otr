@@ -1,10 +1,10 @@
 /*global describe before it */
 var assert = require('assert')
-  , OTR = require('../../../lib/otr.js')
-  , HLP = require('../../../lib/helpers.js')
   , keys = require('./data/keys.js')
-  , ParseOTR = require('../../../lib/parse.js')
-  , STATES = require('../../../lib/states.js')
+  , CONST = require('../../../lib/const.js')
+  , HLP = require('../../../lib/helpers.js')
+  , Parse = require('../../../lib/parse.js')
+  , OTR = require('../../../lib/otr.js')
 
 describe('OTR', function () {
 
@@ -17,7 +17,7 @@ describe('OTR', function () {
   it('should initiate AKE', function () {
     var userB = new OTR(keys.userB, cb, cb)
     var userA = new OTR(keys.userA, cb, function (msg) {
-      msg = ParseOTR.parseMsg(userB, msg)
+      msg = Parse.parseMsg(userB, msg)
       assert.equal('\x02', msg.type, 'Message type.')
       assert.equal('\x00\x02', msg.version, 'Message version.')
     })
@@ -37,8 +37,8 @@ describe('OTR', function () {
 
   it('should not send the whitespace tags', function () {
     var userA = new OTR(keys.userA, cb, function (msg) {
-      assert.ok(!~msg.indexOf(STATES.WHITESPACE_TAG))
-      assert.ok(!~msg.indexOf(STATES.WHITESPACE_TAG_V2))
+      assert.ok(!~msg.indexOf(CONST.WHITESPACE_TAG))
+      assert.ok(!~msg.indexOf(CONST.WHITESPACE_TAG_V2))
     })
     userA.SEND_WHITESPACE_TAG = false
     userA.sendMsg('hi')
@@ -46,8 +46,8 @@ describe('OTR', function () {
 
   it('should send the whitespace tags', function () {
     var userA = new OTR(keys.userA, cb, function (msg) {
-      assert.ok(~msg.indexOf(STATES.WHITESPACE_TAG))
-      assert.ok(~msg.indexOf(STATES.WHITESPACE_TAG_V2))
+      assert.ok(~msg.indexOf(CONST.WHITESPACE_TAG))
+      assert.ok(~msg.indexOf(CONST.WHITESPACE_TAG_V2))
     })
     userA.SEND_WHITESPACE_TAG = true
     userA.sendMsg('hi')
@@ -56,8 +56,8 @@ describe('OTR', function () {
   it('whitespace start ake', function () {
     var userB = new OTR(keys.userB, function (msg) {
       assert.equal('hi', msg)
-      assert.equal(userB.msgstate, STATES.MSGSTATE_ENCRYPTED)
-      assert.equal(userA.msgstate, STATES.MSGSTATE_ENCRYPTED)
+      assert.equal(userB.msgstate, CONST.MSGSTATE_ENCRYPTED)
+      assert.equal(userA.msgstate, CONST.MSGSTATE_ENCRYPTED)
     }, function (msg) { userA.receiveMsg(msg) })
     var userA = new OTR(keys.userA, cb, userB.receiveMsg)
     userB.WHITESPACE_START_AKE = true
@@ -70,18 +70,18 @@ describe('OTR', function () {
     var ui = function (msg) { console.log(msg) }
     var checkstate = function (user) {
       switch (user.authstate) {
-        case STATES.AUTHSTATE_AWAITING_DHKEY:
+        case CONST.AUTHSTATE_AWAITING_DHKEY:
           // This fails sometimes because bigInt2bits trims leading zeros
           // and r is random bits. So, there's a slightly greater than
           // 1/256 chance that bytes are missing.
           // assert.equal(HLP.bigInt2bits(userB.ake.r).length, 128 / 8)
           assert.equal(userB.ake.myhashed.length, (256 / 8) + 4)
           break
-        case STATES.AUTHSTATE_AWAITING_REVEALSIG:
+        case CONST.AUTHSTATE_AWAITING_REVEALSIG:
           assert.equal(user.ake.encrypted.length, 192 + 4)
           assert.equal(user.ake.hashed.length, 256 / 8)
           break
-        case STATES.AUTHSTATE_AWAITING_SIG:
+        case CONST.AUTHSTATE_AWAITING_SIG:
           assert.equal(user.ake.their_y.length, 192)
           assert.equal(user.ake.ssid.length, 64 / 8)
           assert.equal(user.ake.c.length, 128 / 8)
@@ -102,13 +102,13 @@ describe('OTR', function () {
       userA.receiveMsg(msg)
     })
 
-    assert.equal(userB.msgstate, STATES.MSGSTATE_PLAINTEXT, 'Plaintext')
-    assert.equal(userA.msgstate, STATES.MSGSTATE_PLAINTEXT, 'Plaintext')
+    assert.equal(userB.msgstate, CONST.MSGSTATE_PLAINTEXT, 'Plaintext')
+    assert.equal(userA.msgstate, CONST.MSGSTATE_PLAINTEXT, 'Plaintext')
 
     userA.sendQueryMsg()  // ask to initiate ake
 
-    assert.equal(userB.msgstate, STATES.MSGSTATE_ENCRYPTED, 'Encrypted')
-    assert.equal(userA.msgstate, STATES.MSGSTATE_ENCRYPTED, 'Encrypted')
+    assert.equal(userB.msgstate, CONST.MSGSTATE_ENCRYPTED, 'Encrypted')
+    assert.equal(userA.msgstate, CONST.MSGSTATE_ENCRYPTED, 'Encrypted')
   })
 
   it('should receive an encrypted message', function () {
@@ -117,8 +117,8 @@ describe('OTR', function () {
 
     var userA, userB
     var ui = function (msg) {
-      assert.equal(userA.msgstate, STATES.MSGSTATE_ENCRYPTED)
-      assert.equal(userB.msgstate, STATES.MSGSTATE_ENCRYPTED)
+      assert.equal(userA.msgstate, CONST.MSGSTATE_ENCRYPTED)
+      assert.equal(userB.msgstate, CONST.MSGSTATE_ENCRYPTED)
       assert.equal(msgs[counter++], msg, 'Encrypted message.')
     }
     var io = function (msg) { userB.receiveMsg(msg) }
@@ -151,7 +151,7 @@ describe('OTR', function () {
     var ui = function (ind) {
       return function (msg) {
         var u = users[ind]
-        assert.equal(u.u.msgstate, STATES.MSGSTATE_ENCRYPTED, 'Message state unencrypted. Msg: ' + msg)
+        assert.equal(u.u.msgstate, CONST.MSGSTATE_ENCRYPTED, 'Message state unencrypted. Msg: ' + msg)
         assert.equal(u.m[u.c++], msg, 'Encrypted message: ' + msg)
         if (++counter === msgs.length) done()
       }

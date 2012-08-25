@@ -1,6 +1,6 @@
 /*!
 
-  otr.js v0.0.5-pre - 2012-08-24
+  otr.js v0.0.5-pre - 2012-08-25
   (c) 2012 - Arlo Breault <arlolra@gmail.com>
   Freely distributed under the LGPL license.
 
@@ -9,30 +9,20 @@
 
 */
 
+var OTR = {}, DSA = {}
+
 ;(function () {
 
   var root = this
 
-  var DH = {
-      "N": "FFFFFFFFFFFFFFFFC90FDAA22168C234C4C6628B80DC1CD129024E088A67CC74020BBEA63B139B22514A08798E3404DDEF9519B3CD3A431B302B0A6DF25F14374FE1356D6D51C245E485B576625E7EC6F44C42E9A637ED6B0BFF5CB6F406B7EDEE386BFB5A899FA5AE9F24117C4B1FE649286651ECE45B3DC2007CB8A163BF0598DA48361C55D39A69163FA8FD24CF5F83655D23DCA3AD961C62F356208552BB9ED529077096966D670C354E4ABC9804F1746C08CA237327FFFFFFFFFFFFFFFF"
-    , "G": "2"
-  }
+  var CONST = {
 
-  if (typeof exports !== 'undefined') {
-    module.exports = DH
-  } else {
-    root.DH = DH
-  }
-
-}).call(this)
-;(function () {
-
-  var root = this
-
-  var STATES = {
+    // diffie-heilman
+      N : 'FFFFFFFFFFFFFFFFC90FDAA22168C234C4C6628B80DC1CD129024E088A67CC74020BBEA63B139B22514A08798E3404DDEF9519B3CD3A431B302B0A6DF25F14374FE1356D6D51C245E485B576625E7EC6F44C42E9A637ED6B0BFF5CB6F406B7EDEE386BFB5A899FA5AE9F24117C4B1FE649286651ECE45B3DC2007CB8A163BF0598DA48361C55D39A69163FA8FD24CF5F83655D23DCA3AD961C62F356208552BB9ED529077096966D670C354E4ABC9804F1746C08CA237327FFFFFFFFFFFFFFFF'
+    , G : '2'
 
     // otr message states
-      MSGSTATE_PLAINTEXT : 0
+    , MSGSTATE_PLAINTEXT : 0
     , MSGSTATE_ENCRYPTED : 1
     , MSGSTATE_FINISHED  : 2
 
@@ -53,9 +43,9 @@
   }
 
   if (typeof exports !== 'undefined') {
-    module.exports = STATES
+    module.exports = CONST
   } else {
-    root.STATES = STATES
+    root.OTR.CONST = CONST
   }
 
 }).call(this)
@@ -63,19 +53,17 @@
 
   var root = this
 
-  var HLP
+  var HLP, CryptoJS, BigInt
   if (typeof exports !== 'undefined') {
     HLP = exports
+    CryptoJS = require('../vendor/crypto.js')
+    BigInt = require('../vendor/bigint.js')
   } else {
-    HLP = root.HLP = {}
-  }
-
-  var BigInt = root.BigInt
-    , CryptoJS = root.CryptoJS
-
-  if (typeof require !== 'undefined') {
-    BigInt || (BigInt = require('../vendor/bigint.js'))
-    CryptoJS || (CryptoJS = require('../vendor/crypto.js'))
+    HLP = {}
+    if (root.OTR) root.OTR.HLP = HLP
+    if (root.DSA) root.DSA.HLP = HLP
+    CryptoJS = root.CryptoJS
+    BigInt = root.BigInt
   }
 
   // data types (byte lengths)
@@ -427,21 +415,21 @@
 
   var root = this
 
-  var DSA
+  var CryptoJS, BigInt, HLP
   if (typeof exports !== 'undefined') {
-    DSA = exports
+    module.exports = DSA
+    CryptoJS = require('../vendor/crypto.js')
+    BigInt = require('../vendor/bigint.js')
+    HLP = require('./helpers.js')
   } else {
-    DSA = root.DSA = {}
-  }
-
-  var BigInt = root.BigInt
-    , CryptoJS = root.CryptoJS
-    , HLP = root.HLP
-
-  if (typeof require !== 'undefined') {
-    BigInt || (BigInt = require('../vendor/bigint.js'))
-    CryptoJS || (CryptoJS = require('../vendor/crypto.js'))
-    HLP || (HLP = require('./helpers.js'))
+    // copy over and expose internals
+    Object.keys(root.DSA).forEach(function (k) {
+      DSA[k] = root.DSA[k]
+    })
+    root.DSA = DSA
+    CryptoJS = root.CryptoJS
+    BigInt = root.BigInt
+    HLP = DSA.HLP
   }
 
   var ZERO = BigInt.str2bigInt('0', 10)
@@ -474,10 +462,8 @@
     return k
   }
 
-  DSA.Key = Key
-
-  function Key() {
-    if (!(this instanceof Key)) return new Key()
+  function DSA() {
+    if (!(this instanceof DSA)) return new DSA()
 
     this.N = 160
     this.L = 1024
@@ -491,9 +477,9 @@
     this.y = BigInt.powMod(this.g, this.x, this.p)
   }
 
-  Key.prototype = {
+  DSA.prototype = {
 
-    constructor: Key,
+    constructor: DSA,
 
     makePQ: function() {
       var g = this.N
@@ -639,8 +625,8 @@
   }
 
   DSA.inherit = function (key) {
-    key.__proto__ = DSA.Key.prototype
-    key.constructor = DSA.Key
+    key.__proto__ = DSA.prototype
+    key.constructor = DSA
     key.type = '\x00\x00'
   }
 
@@ -649,24 +635,568 @@
 
   var root = this
 
+  var Parse, CryptoJS, CONST, HLP
   if (typeof exports !== 'undefined') {
-    module.exports = SM
+    Parse = exports
+    CryptoJS = require('../vendor/crypto.js')
+    CONST = require('./const.js')
+    HLP = require('./helpers.js')
   } else {
-    root.SM = SM
+    Parse = root.OTR.Parse = {}
+    CryptoJS = root.CryptoJS
+    CONST = root.OTR.CONST
+    HLP = root.OTR.HLP
   }
 
-  var BigInt = root.BigInt
-    , CryptoJS = root.CryptoJS
-    , DH = root.DH
-    , HLP = root.HLP
-    , DSA = root.DSA
+  Parse.parseMsg = function (otr, msg) {
 
-  if (typeof require !== 'undefined') {
-    BigInt || (BigInt = require('../vendor/bigint.js'))
-    CryptoJS || (CryptoJS = require('../vendor/crypto.js'))
-    DH || (DH = require('./dh.js'))
-    HLP || (HLP = require('./helpers.js'))
-    DSA || (DSA = require('./dsa.js'))
+    // is this otr?
+    var start = msg.indexOf(CONST.OTR_TAG)
+    if (!~start) {
+
+      // restart fragments
+      this.initFragment(otr)
+
+      // whitespace tags
+      var ver = []
+      ind = msg.indexOf(CONST.WHITESPACE_TAG)
+
+      if (~ind) {
+
+        msg = msg.split('')
+        msg.splice(ind, 16)
+
+        var len = msg.length
+        for (; ind < len;) {
+          if (msg.slice(ind, ind + 8).join('') === CONST.WHITESPACE_TAG_V2) {
+            msg.splice(ind, 8)
+            ver.push(CONST.OTR_VERSION_2)
+            break
+          }
+          ind += 8
+        }
+
+        msg = msg.join('')
+
+      }
+
+      return { msg: msg, ver: ver }
+    }
+
+    var ind = start + CONST.OTR_TAG.length
+    var com = msg[ind]
+
+    // message fragment
+    if (com === ',') {
+      return this.msgFragment(otr, msg.substring(ind + 1))
+    }
+
+    this.initFragment(otr)
+
+    // query message
+    if (~['?', 'v'].indexOf(com)) {
+
+      // version 1
+      if (msg[ind] === '?') {
+        otr.versions['1'] = true
+        ind += 1
+      }
+
+      // other versions
+      var qs = msg.substring(ind + 1)
+      var qi = qs.indexOf('?')
+
+      if (qi < 1) return
+      qs = qs.substring(0, qi).split('')
+
+      if (msg[ind] === 'v') {
+        qs.forEach(function (q) {
+          otr.versions[q] = true
+        })
+      }
+
+      // start ake
+      if (otr.ALLOW_V2 && otr.versions['2']) {
+        return { cls: 'query', version: '2' }
+      }
+
+      return
+    }
+
+    // otr message
+    if (com === ':') {
+
+      ind += 1
+
+      var info = msg.substring(ind, ind + 4)
+      if (info.length < 4) return { msg: msg }
+      info = CryptoJS.enc.Base64.parse(info).toString(CryptoJS.enc.Latin1)
+
+      var version = info.substring(0, 2)
+      var type = info.substring(2)
+
+      // only supporting otr version 2
+      if (!otr['ALLOW_V' + HLP.unpackSHORT(version)]) return { msg: msg }
+
+      ind += 4
+
+      var end = msg.substring(ind).indexOf('.')
+      if (!~end) return { msg: msg }
+
+      msg = CryptoJS.enc.Base64.parse(msg.substring(ind, ind + end))
+      msg = CryptoJS.enc.Latin1.stringify(msg)
+
+      var cls
+      if (~['\x02', '\x0a', '\x11', '\x12'].indexOf(type)) {
+        cls = 'ake'
+      } else if (type === '\x03') {
+        cls = 'data'
+      }
+
+      return {
+          version: version
+        , type: type
+        , msg: msg
+        , cls: cls
+      }
+    }
+
+    // error message
+    if (msg.substring(ind, ind + 7) === ' Error:') {
+      if (otr.ERROR_START_AKE) {
+        otr.sendQueryMsg()
+      }
+      return { msg: msg.substring(ind + 7), cls: 'error' }
+    }
+
+    return { msg: msg }
+  }
+
+  Parse.initFragment = function (otr) {
+    otr.fragment = { s: '', j: 0, k: 0 }
+  }
+
+  Parse.msgFragment = function (otr, msg) {
+    msg = msg.split(',')
+
+    if (msg.length < 4 ||
+      isNaN(parseInt(msg[0], 10)) ||
+      isNaN(parseInt(msg[1], 10))
+    ) return
+
+    var k = parseInt(msg[0], 10)
+    var n = parseInt(msg[1], 10)
+    msg = msg[2]
+
+    if (n < k || n === 0 || k === 0) {
+      this.initFragment(otr)
+      return
+    }
+
+    if (k === 1) {
+      this.initFragment(otr)
+      otr.fragment = { k: 1, n: n, s: msg }
+    } else if (n === otr.fragment.n && k === (otr.fragment.k + 1)) {
+      otr.fragment.s += msg
+      otr.fragment.k += 1
+    } else {
+      this.initFragment(otr)
+    }
+
+    if (n === k) {
+      msg = otr.fragment.s
+      this.initFragment(otr)
+      return this.parseMsg(otr, msg)
+    }
+
+    return
+  }
+
+}).call(this)
+;(function () {
+
+  var root = this
+
+  var CryptoJS, BigInt, CONST, HLP, DSA
+  if (typeof exports !== 'undefined') {
+    module.exports = AKE
+    CryptoJS = require('../vendor/crypto.js')
+    BigInt = require('../vendor/bigint.js')
+    CONST = require('./const.js')
+    HLP = require('./helpers.js')
+    DSA = require('./dsa.js')
+  } else {
+    root.OTR.AKE = AKE
+    CryptoJS = root.CryptoJS
+    BigInt = root.BigInt
+    CONST = root.OTR.CONST
+    HLP = root.OTR.HLP
+    DSA = root.DSA
+  }
+
+  // diffie-hellman modulus and generator
+  // see group 5, RFC 3526
+  var G = BigInt.str2bigInt(CONST.G, 10)
+  var N = BigInt.str2bigInt(CONST.N, 16)
+  var TWO = BigInt.str2bigInt('2', 10)
+  var N_MINUS_2 = BigInt.sub(N, TWO)
+
+  // helpers
+  function checkGroup(g) {
+    return HLP.GTOE(g, TWO) && HLP.GTOE(N_MINUS_2, g)
+  }
+
+  function hMac(gx, gy, pk, kid, m) {
+    var pass = CryptoJS.enc.Latin1.parse(m)
+    var hmac = CryptoJS.algo.HMAC.create(CryptoJS.algo.SHA256, pass)
+    hmac.update(CryptoJS.enc.Latin1.parse(HLP.packMPI(gx)))
+    hmac.update(CryptoJS.enc.Latin1.parse(HLP.packMPI(gy)))
+    hmac.update(CryptoJS.enc.Latin1.parse(pk))
+    hmac.update(CryptoJS.enc.Latin1.parse(kid))
+    return (hmac.finalize()).toString(CryptoJS.enc.Latin1)
+  }
+
+  var DEBUG = false
+  function debug(msg) {
+    if (DEBUG && typeof console !== 'undefined') console.log(msg)
+  }
+
+  // AKE constructor
+  function AKE(otr) {
+    if (!(this instanceof AKE)) return new AKE(otr)
+
+    // otr instance
+    this.otr = otr
+
+    // our keys
+    this.our_dh = otr.our_old_dh
+    this.our_keyid = otr.our_keyid - 1
+
+    // their keys
+    this.their_y = null
+    this.their_keyid = null
+    this.their_priv_pk = null
+
+    // state
+    this.ssid = null
+    this.transmittedRS = false
+    this.r = null
+    this.priv = otr.priv
+
+    // bind methods
+    var self = this
+    ;['sendMsg'].forEach(function (meth) {
+      self[meth] = self[meth].bind(self)
+    })
+  }
+
+  AKE.prototype = {
+
+    constructor: AKE,
+
+    createKeys: function(g) {
+      var s = BigInt.powMod(g, this.our_dh.privateKey, N)
+      var secbytes = HLP.packMPI(s)
+      this.ssid = HLP.mask(HLP.h2('\x00', secbytes), 0, 64)  // first 64-bits
+      var tmp = HLP.h2('\x01', secbytes)
+      this.c = HLP.mask(tmp, 0, 128)  // first 128-bits
+      this.c_prime = HLP.mask(tmp, 128, 128)  // second 128-bits
+      this.m1 = HLP.h2('\x02', secbytes)
+      this.m2 = HLP.h2('\x03', secbytes)
+      this.m1_prime = HLP.h2('\x04', secbytes)
+      this.m2_prime = HLP.h2('\x05', secbytes)
+    },
+
+    verifySignMac: function (mac, aesctr, m2, c, their_y, our_dh_pk, m1, ctr) {
+      // verify mac
+      var vmac = HLP.makeMac(aesctr, m2)
+      if (mac !== vmac) return ['MACs do not match.']
+
+      // decrypt x
+      var x = HLP.decryptAes(aesctr.substring(4), c, ctr)
+      x = HLP.splitype(['PUBKEY', 'INT', 'SIG'], x)
+
+      var m = hMac(their_y, our_dh_pk, x[0], x[1], m1)
+      var pub = DSA.parsePublic(x[0])
+
+      var r = HLP.bits2bigInt(x[2].substring(0, 20))
+      var s = HLP.bits2bigInt(x[2].substring(20))
+
+      // verify sign m
+      if (!DSA.verify(pub, m, r, s)) return ['Cannot verify signature of m.']
+
+      return [null, HLP.readLen(x[1]), pub]
+    },
+
+    makeM: function (their_y, m1, c, m2) {
+      var pk = this.priv.packPublic()
+      var kid = HLP.packINT(this.our_keyid)
+      var m = hMac(this.our_dh.publicKey, their_y, pk, kid, m1)
+      m = this.priv.sign(m)
+      var msg = pk + kid + HLP.bigInt2bits(m[0]) + HLP.bigInt2bits(m[1])
+      var aesctr = HLP.packData(HLP.makeAes(msg, c, HLP.packCtr(0)))
+      var mac = HLP.makeMac(aesctr, m2)
+      return aesctr + mac
+    },
+
+    akeSuccess: function () {
+      debug('success')
+
+      if (BigInt.equals(this.their_y, this.our_dh.publicKey))
+        return this.otr.error('equal keys - we have a problem.', true)
+
+      if ( this.their_keyid !== this.otr.their_keyid &&
+           this.their_keyid !== (this.otr.their_keyid - 1) ) {
+
+        // our keys
+        this.otr.our_old_dh = this.our_dh
+
+        // their keys
+        this.otr.their_y = this.their_y
+        this.otr.their_old_y = null
+        this.otr.their_keyid = this.their_keyid
+        this.otr.their_priv_pk = this.their_priv_pk
+        DSA.inherit(this.otr.their_priv_pk)
+
+        // rotate keys
+        this.otr.sessKeys[0] = [ new this.otr.dhSession(
+            this.otr.our_dh
+          , this.otr.their_y
+        ), null ]
+        this.otr.sessKeys[1] = [ new this.otr.dhSession(
+            this.otr.our_old_dh
+          , this.otr.their_y
+        ), null ]
+
+      }
+
+      // ake info
+      this.otr.ssid = this.ssid
+      this.otr.transmittedRS = this.transmittedRS
+      this.otr.smInit()
+
+      // go encrypted
+      this.otr.authstate = CONST.AUTHSTATE_NONE
+      this.otr.msgstate = CONST.MSGSTATE_ENCRYPTED
+
+      // send stored msgs
+      this.otr.sendStored()
+    },
+
+    handleAKE: function (msg) {
+      var send, vsm
+
+      switch (msg.type) {
+
+        case '\x02':
+          debug('d-h key message')
+
+          if (!this.otr.ALLOW_V2) return  // ignore
+
+          msg = HLP.splitype(['DATA', 'DATA'], msg.msg)
+
+          if (this.otr.authstate === CONST.AUTHSTATE_AWAITING_DHKEY) {
+            var ourHash = HLP.readMPI(this.myhashed)
+            var theirHash = HLP.readMPI(msg[1])
+            if (BigInt.greater(ourHash, theirHash)) {
+              send = this.dhcommit
+              break  // ignore
+            } else {
+              // forget
+              this.our_dh = this.otr.dh()
+              this.otr.authstate = CONST.AUTHSTATE_NONE
+              this.r = null
+              this.myhashed = null
+            }
+          } else if (
+            this.otr.authstate === CONST.AUTHSTATE_AWAITING_SIG
+          ) this.our_dh = this.otr.dh()
+
+          this.otr.authstate = CONST.AUTHSTATE_AWAITING_REVEALSIG
+
+          this.encrypted = msg[0].substring(4)
+          this.hashed = msg[1].substring(4)
+
+          send = '\x0a'
+          send += HLP.packMPI(this.our_dh.publicKey)
+          break
+
+        case '\x0a':
+          debug('reveal signature message')
+
+          if (!this.otr.ALLOW_V2) return  // ignore
+
+          msg = HLP.splitype(['MPI'], msg.msg)
+
+          if (this.otr.authstate !== CONST.AUTHSTATE_AWAITING_DHKEY) {
+            if (this.otr.authstate === CONST.AUTHSTATE_AWAITING_SIG) {
+              if (!BigInt.equals(this.their_y, HLP.readMPI(msg[0]))) return
+            } else {
+              return  // ignore
+            }
+          }
+
+          this.otr.authstate = CONST.AUTHSTATE_AWAITING_SIG
+
+          this.their_y = HLP.readMPI(msg[0])
+
+          // verify gy is legal 2 <= gy <= N-2
+          if (!checkGroup(this.their_y))
+            return this.otr.error('Illegal g^y.', true)
+
+          this.createKeys(this.their_y)
+
+          send = '\x11'
+          send += HLP.packMPI(this.r)
+          send += this.makeM(this.their_y, this.m1, this.c, this.m2)
+          break
+
+        case '\x11':
+          debug('signature message')
+
+          if ( !this.otr.ALLOW_V2 ||
+               this.otr.authstate !== CONST.AUTHSTATE_AWAITING_REVEALSIG
+          ) return  // ignore
+
+          msg = HLP.splitype(['DATA', 'DATA', 'MAC'], msg.msg)
+
+          this.r = HLP.readMPI(msg[0])
+
+          // decrypt their_y
+          var key = CryptoJS.enc.Hex.parse(BigInt.bigInt2str(this.r, 16))
+          key = CryptoJS.enc.Latin1.stringify(key)
+          var gxmpi = HLP.decryptAes(this.encrypted, key, HLP.packCtr(0))
+
+          this.their_y = HLP.readMPI(gxmpi)
+
+          // verify hash
+          var hash = CryptoJS.SHA256(CryptoJS.enc.Latin1.parse(gxmpi))
+
+          if (this.hashed !== hash.toString(CryptoJS.enc.Latin1))
+            return this.otr.error('Hashed g^x does not match.', true)
+
+          // verify gx is legal 2 <= g^x <= N-2
+          if (!checkGroup(this.their_y))
+            return this.otr.error('Illegal g^x.', true)
+
+          this.createKeys(this.their_y)
+
+          vsm = this.verifySignMac(
+              msg[2]
+            , msg[1]
+            , this.m2
+            , this.c
+            , this.their_y
+            , this.our_dh.publicKey
+            , this.m1
+            , HLP.packCtr(0)
+          )
+          if (vsm[0]) return this.otr.error(vsm[0], true)
+
+          // store their key
+          this.their_keyid = vsm[1]
+          this.their_priv_pk = vsm[2]
+
+          send = '\x12'
+          send += this.makeM(
+              this.their_y
+            , this.m1_prime
+            , this.c_prime
+            , this.m2_prime
+          )
+          this.sendMsg(send)
+
+          this.akeSuccess()
+          return
+
+        case '\x12':
+          debug('data message')
+
+          if ( !this.otr.ALLOW_V2 ||
+               this.otr.authstate !== CONST.AUTHSTATE_AWAITING_SIG
+          ) return  // ignore
+
+          msg = HLP.splitype(['DATA', 'MAC'], msg.msg)
+
+          vsm = this.verifySignMac(
+              msg[1]
+            , msg[0]
+            , this.m2_prime
+            , this.c_prime
+            , this.their_y
+            , this.our_dh.publicKey
+            , this.m1_prime
+            , HLP.packCtr(0)
+          )
+          if (vsm[0]) return this.otr.error(vsm[0], true)
+
+          // store their key
+          this.their_keyid = vsm[1]
+          this.their_priv_pk = vsm[2]
+
+          this.transmittedRS = true
+          this.akeSuccess()
+          return
+
+        default:
+          return  // ignore
+
+      }
+
+      this.sendMsg(send)
+    },
+
+    sendMsg: function (msg) {
+      msg = CONST.OTR_VERSION_2 + msg
+      msg = HLP.wrapMsg(msg, this.otr.fragment_size)
+      if (msg[0]) return this.otr.error(msg[0])
+      this.otr.sendMsg(msg[1], true)
+    },
+
+    initiateAKE: function () {
+      debug('d-h commit message')
+
+      // save in case we have to resend
+      this.dhcommit = '\x02'
+
+      this.otr.authstate = CONST.AUTHSTATE_AWAITING_DHKEY
+
+      var gxmpi = HLP.packMPI(this.our_dh.publicKey)
+
+      this.r = HLP.randomValue()
+      var key = CryptoJS.enc.Hex.parse(BigInt.bigInt2str(this.r, 16))
+      key = CryptoJS.enc.Latin1.stringify(key)
+      this.dhcommit += HLP.packData(HLP.makeAes(gxmpi, key, HLP.packCtr(0)))
+
+      this.myhashed = CryptoJS.SHA256(CryptoJS.enc.Latin1.parse(gxmpi))
+      this.myhashed = HLP.packData(this.myhashed.toString(CryptoJS.enc.Latin1))
+      this.dhcommit += this.myhashed
+
+      this.sendMsg(this.dhcommit)
+    }
+
+  }
+
+}).call(this)
+;(function () {
+
+  var root = this
+
+  var CryptoJS, BigInt, CONST, HLP, DSA
+  if (typeof exports !== 'undefined') {
+    module.exports = SM
+    CryptoJS = require('../vendor/crypto.js')
+    BigInt = require('../vendor/bigint.js')
+    CONST = require('./const.js')
+    HLP = require('./helpers.js')
+    DSA = require('./dsa.js')
+  } else {
+    root.OTR.SM = SM
+    CryptoJS = root.CryptoJS
+    BigInt = root.BigInt
+    CONST = root.OTR.CONST
+    HLP = root.OTR.HLP
+    DSA = root.DSA
   }
 
   // smp machine states
@@ -682,8 +1212,8 @@
 
   // diffie-hellman modulus and generator
   // see group 5, RFC 3526
-  var G = BigInt.str2bigInt(DH.G, 10)
-  var N = BigInt.str2bigInt(DH.N, 16)
+  var G = BigInt.str2bigInt(CONST.G, 10)
+  var N = BigInt.str2bigInt(CONST.N, 16)
 
   // to calculate D's for zero-knowledge proofs
   var Q = BigInt.sub(N, BigInt.str2bigInt('1', 10))
@@ -1043,604 +1573,47 @@
 
   var root = this
 
-  if (typeof exports !== 'undefined') {
-    module.exports = AKE
-  } else {
-    root.AKE = AKE
-  }
-
-  var CryptoJS = root.CryptoJS
-    , BigInt = root.BigInt
-    , DH = root.DH
-    , HLP = root.HLP
-    , DSA = root.DSA
-    , STATES = root.STATES
-
-  if (typeof require !== 'undefined') {
-    CryptoJS || (CryptoJS = require('../vendor/crypto.js'))
-    BigInt || (BigInt = require('../vendor/bigint.js'))
-    DH || (DH = require('./dh.js'))
-    HLP || (HLP = require('./helpers.js'))
-    DSA || (DSA = require('./dsa.js'))
-    STATES || (STATES = require('./states.js'))
-  }
-
-  // diffie-hellman modulus and generator
-  // see group 5, RFC 3526
-  var G = BigInt.str2bigInt(DH.G, 10)
-  var N = BigInt.str2bigInt(DH.N, 16)
-  var TWO = BigInt.str2bigInt('2', 10)
-  var N_MINUS_2 = BigInt.sub(N, TWO)
-
-  // helpers
-  function checkGroup(g) {
-    return HLP.GTOE(g, TWO) && HLP.GTOE(N_MINUS_2, g)
-  }
-
-  function hMac(gx, gy, pk, kid, m) {
-    var pass = CryptoJS.enc.Latin1.parse(m)
-    var hmac = CryptoJS.algo.HMAC.create(CryptoJS.algo.SHA256, pass)
-    hmac.update(CryptoJS.enc.Latin1.parse(HLP.packMPI(gx)))
-    hmac.update(CryptoJS.enc.Latin1.parse(HLP.packMPI(gy)))
-    hmac.update(CryptoJS.enc.Latin1.parse(pk))
-    hmac.update(CryptoJS.enc.Latin1.parse(kid))
-    return (hmac.finalize()).toString(CryptoJS.enc.Latin1)
-  }
-
-  var DEBUG = false
-  function debug(msg) {
-    if (DEBUG && typeof console !== 'undefined') console.log(msg)
-  }
-
-  // AKE constructor
-  function AKE(otr) {
-    if (!(this instanceof AKE)) return new AKE(otr)
-
-    // otr instance
-    this.otr = otr
-
-    // our keys
-    this.our_dh = otr.our_old_dh
-    this.our_keyid = otr.our_keyid - 1
-
-    // their keys
-    this.their_y = null
-    this.their_keyid = null
-    this.their_priv_pk = null
-
-    // state
-    this.ssid = null
-    this.transmittedRS = false
-    this.r = null
-    this.priv = otr.priv
-
-    // bind methods
-    var self = this
-    ;['sendMsg'].forEach(function (meth) {
-      self[meth] = self[meth].bind(self)
-    })
-  }
-
-  AKE.prototype = {
-
-    constructor: AKE,
-
-    createKeys: function(g) {
-      var s = BigInt.powMod(g, this.our_dh.privateKey, N)
-      var secbytes = HLP.packMPI(s)
-      this.ssid = HLP.mask(HLP.h2('\x00', secbytes), 0, 64)  // first 64-bits
-      var tmp = HLP.h2('\x01', secbytes)
-      this.c = HLP.mask(tmp, 0, 128)  // first 128-bits
-      this.c_prime = HLP.mask(tmp, 128, 128)  // second 128-bits
-      this.m1 = HLP.h2('\x02', secbytes)
-      this.m2 = HLP.h2('\x03', secbytes)
-      this.m1_prime = HLP.h2('\x04', secbytes)
-      this.m2_prime = HLP.h2('\x05', secbytes)
-    },
-
-    verifySignMac: function (mac, aesctr, m2, c, their_y, our_dh_pk, m1, ctr) {
-      // verify mac
-      var vmac = HLP.makeMac(aesctr, m2)
-      if (mac !== vmac) return ['MACs do not match.']
-
-      // decrypt x
-      var x = HLP.decryptAes(aesctr.substring(4), c, ctr)
-      x = HLP.splitype(['PUBKEY', 'INT', 'SIG'], x)
-
-      var m = hMac(their_y, our_dh_pk, x[0], x[1], m1)
-      var pub = DSA.parsePublic(x[0])
-
-      var r = HLP.bits2bigInt(x[2].substring(0, 20))
-      var s = HLP.bits2bigInt(x[2].substring(20))
-
-      // verify sign m
-      if (!DSA.verify(pub, m, r, s)) return ['Cannot verify signature of m.']
-
-      return [null, HLP.readLen(x[1]), pub]
-    },
-
-    makeM: function (their_y, m1, c, m2) {
-      var pk = this.priv.packPublic()
-      var kid = HLP.packINT(this.our_keyid)
-      var m = hMac(this.our_dh.publicKey, their_y, pk, kid, m1)
-      m = this.priv.sign(m)
-      var msg = pk + kid + HLP.bigInt2bits(m[0]) + HLP.bigInt2bits(m[1])
-      var aesctr = HLP.packData(HLP.makeAes(msg, c, HLP.packCtr(0)))
-      var mac = HLP.makeMac(aesctr, m2)
-      return aesctr + mac
-    },
-
-    akeSuccess: function () {
-      debug('success')
-
-      if (BigInt.equals(this.their_y, this.our_dh.publicKey))
-        return this.otr.error('equal keys - we have a problem.', true)
-
-      if ( this.their_keyid !== this.otr.their_keyid &&
-           this.their_keyid !== (this.otr.their_keyid - 1) ) {
-
-        // our keys
-        this.otr.our_old_dh = this.our_dh
-
-        // their keys
-        this.otr.their_y = this.their_y
-        this.otr.their_old_y = null
-        this.otr.their_keyid = this.their_keyid
-        this.otr.their_priv_pk = this.their_priv_pk
-        DSA.inherit(this.otr.their_priv_pk)
-
-        // rotate keys
-        this.otr.sessKeys[0] = [ new this.otr.dhSession(
-            this.otr.our_dh
-          , this.otr.their_y
-        ), null ]
-        this.otr.sessKeys[1] = [ new this.otr.dhSession(
-            this.otr.our_old_dh
-          , this.otr.their_y
-        ), null ]
-
-      }
-
-      // ake info
-      this.otr.ssid = this.ssid
-      this.otr.transmittedRS = this.transmittedRS
-      this.otr.smInit()
-
-      // go encrypted
-      this.otr.authstate = STATES.AUTHSTATE_NONE
-      this.otr.msgstate = STATES.MSGSTATE_ENCRYPTED
-
-      // send stored msgs
-      this.otr.sendStored()
-    },
-
-    handleAKE: function (msg) {
-      var send, vsm
-
-      switch (msg.type) {
-
-        case '\x02':
-          debug('d-h key message')
-
-          if (!this.otr.ALLOW_V2) return  // ignore
-
-          msg = HLP.splitype(['DATA', 'DATA'], msg.msg)
-
-          if (this.otr.authstate === STATES.AUTHSTATE_AWAITING_DHKEY) {
-            var ourHash = HLP.readMPI(this.myhashed)
-            var theirHash = HLP.readMPI(msg[1])
-            if (BigInt.greater(ourHash, theirHash)) {
-              send = this.dhcommit
-              break  // ignore
-            } else {
-              // forget
-              this.our_dh = this.otr.dh()
-              this.otr.authstate = STATES.AUTHSTATE_NONE
-              this.r = null
-              this.myhashed = null
-            }
-          } else if (
-            this.otr.authstate === STATES.AUTHSTATE_AWAITING_SIG
-          ) this.our_dh = this.otr.dh()
-
-          this.otr.authstate = STATES.AUTHSTATE_AWAITING_REVEALSIG
-
-          this.encrypted = msg[0].substring(4)
-          this.hashed = msg[1].substring(4)
-
-          send = '\x0a'
-          send += HLP.packMPI(this.our_dh.publicKey)
-          break
-
-        case '\x0a':
-          debug('reveal signature message')
-
-          if (!this.otr.ALLOW_V2) return  // ignore
-
-          msg = HLP.splitype(['MPI'], msg.msg)
-
-          if (this.otr.authstate !== STATES.AUTHSTATE_AWAITING_DHKEY) {
-            if (this.otr.authstate === STATES.AUTHSTATE_AWAITING_SIG) {
-              if (!BigInt.equals(this.their_y, HLP.readMPI(msg[0]))) return
-            } else {
-              return  // ignore
-            }
-          }
-
-          this.otr.authstate = STATES.AUTHSTATE_AWAITING_SIG
-
-          this.their_y = HLP.readMPI(msg[0])
-
-          // verify gy is legal 2 <= gy <= N-2
-          if (!checkGroup(this.their_y))
-            return this.otr.error('Illegal g^y.', true)
-
-          this.createKeys(this.their_y)
-
-          send = '\x11'
-          send += HLP.packMPI(this.r)
-          send += this.makeM(this.their_y, this.m1, this.c, this.m2)
-          break
-
-        case '\x11':
-          debug('signature message')
-
-          if ( !this.otr.ALLOW_V2 ||
-               this.otr.authstate !== STATES.AUTHSTATE_AWAITING_REVEALSIG
-          ) return  // ignore
-
-          msg = HLP.splitype(['DATA', 'DATA', 'MAC'], msg.msg)
-
-          this.r = HLP.readMPI(msg[0])
-
-          // decrypt their_y
-          var key = CryptoJS.enc.Hex.parse(BigInt.bigInt2str(this.r, 16))
-          key = CryptoJS.enc.Latin1.stringify(key)
-          var gxmpi = HLP.decryptAes(this.encrypted, key, HLP.packCtr(0))
-
-          this.their_y = HLP.readMPI(gxmpi)
-
-          // verify hash
-          var hash = CryptoJS.SHA256(CryptoJS.enc.Latin1.parse(gxmpi))
-
-          if (this.hashed !== hash.toString(CryptoJS.enc.Latin1))
-            return this.otr.error('Hashed g^x does not match.', true)
-
-          // verify gx is legal 2 <= g^x <= N-2
-          if (!checkGroup(this.their_y))
-            return this.otr.error('Illegal g^x.', true)
-
-          this.createKeys(this.their_y)
-
-          vsm = this.verifySignMac(
-              msg[2]
-            , msg[1]
-            , this.m2
-            , this.c
-            , this.their_y
-            , this.our_dh.publicKey
-            , this.m1
-            , HLP.packCtr(0)
-          )
-          if (vsm[0]) return this.otr.error(vsm[0], true)
-
-          // store their key
-          this.their_keyid = vsm[1]
-          this.their_priv_pk = vsm[2]
-
-          send = '\x12'
-          send += this.makeM(
-              this.their_y
-            , this.m1_prime
-            , this.c_prime
-            , this.m2_prime
-          )
-          this.sendMsg(send)
-
-          this.akeSuccess()
-          return
-
-        case '\x12':
-          debug('data message')
-
-          if ( !this.otr.ALLOW_V2 ||
-               this.otr.authstate !== STATES.AUTHSTATE_AWAITING_SIG
-          ) return  // ignore
-
-          msg = HLP.splitype(['DATA', 'MAC'], msg.msg)
-
-          vsm = this.verifySignMac(
-              msg[1]
-            , msg[0]
-            , this.m2_prime
-            , this.c_prime
-            , this.their_y
-            , this.our_dh.publicKey
-            , this.m1_prime
-            , HLP.packCtr(0)
-          )
-          if (vsm[0]) return this.otr.error(vsm[0], true)
-
-          // store their key
-          this.their_keyid = vsm[1]
-          this.their_priv_pk = vsm[2]
-
-          this.transmittedRS = true
-          this.akeSuccess()
-          return
-
-        default:
-          return  // ignore
-
-      }
-
-      this.sendMsg(send)
-    },
-
-    sendMsg: function (msg) {
-      msg = STATES.OTR_VERSION_2 + msg
-      msg = HLP.wrapMsg(msg, this.otr.fragment_size)
-      if (msg[0]) return this.otr.error(msg[0])
-      this.otr.sendMsg(msg[1], true)
-    },
-
-    initiateAKE: function () {
-      debug('d-h commit message')
-
-      // save in case we have to resend
-      this.dhcommit = '\x02'
-
-      this.otr.authstate = STATES.AUTHSTATE_AWAITING_DHKEY
-
-      var gxmpi = HLP.packMPI(this.our_dh.publicKey)
-
-      this.r = HLP.randomValue()
-      var key = CryptoJS.enc.Hex.parse(BigInt.bigInt2str(this.r, 16))
-      key = CryptoJS.enc.Latin1.stringify(key)
-      this.dhcommit += HLP.packData(HLP.makeAes(gxmpi, key, HLP.packCtr(0)))
-
-      this.myhashed = CryptoJS.SHA256(CryptoJS.enc.Latin1.parse(gxmpi))
-      this.myhashed = HLP.packData(this.myhashed.toString(CryptoJS.enc.Latin1))
-      this.dhcommit += this.myhashed
-
-      this.sendMsg(this.dhcommit)
-    }
-
-  }
-
-}).call(this)
-;(function () {
-
-  var root = this
-
-  var ParseOTR
-  if (typeof exports !== 'undefined') {
-    ParseOTR = exports
-  } else {
-    ParseOTR = root.ParseOTR = {}
-  }
-
-  var CryptoJS = root.CryptoJS
-    , HLP = root.HLP
-    , STATES = root.STATES
-
-  if (typeof require !== 'undefined') {
-    CryptoJS || (CryptoJS = require('../vendor/crypto.js'))
-    HLP || (HLP = require('./helpers.js'))
-    STATES || (STATES = require('./states.js'))
-  }
-
-  ParseOTR.parseMsg = function (otr, msg) {
-
-    // is this otr?
-    var start = msg.indexOf(STATES.OTR_TAG)
-    if (!~start) {
-
-      // restart fragments
-      this.initFragment(otr)
-
-      // whitespace tags
-      var ver = []
-      ind = msg.indexOf(STATES.WHITESPACE_TAG)
-
-      if (~ind) {
-
-        msg = msg.split('')
-        msg.splice(ind, 16)
-
-        var len = msg.length
-        for (; ind < len;) {
-          if (msg.slice(ind, ind + 8).join('') === STATES.WHITESPACE_TAG_V2) {
-            msg.splice(ind, 8)
-            ver.push(STATES.OTR_VERSION_2)
-            break
-          }
-          ind += 8
-        }
-
-        msg = msg.join('')
-
-      }
-
-      return { msg: msg, ver: ver }
-    }
-
-    var ind = start + STATES.OTR_TAG.length
-    var com = msg[ind]
-
-    // message fragment
-    if (com === ',') {
-      return this.msgFragment(otr, msg.substring(ind + 1))
-    }
-
-    this.initFragment(otr)
-
-    // query message
-    if (~['?', 'v'].indexOf(com)) {
-
-      // version 1
-      if (msg[ind] === '?') {
-        otr.versions['1'] = true
-        ind += 1
-      }
-
-      // other versions
-      var qs = msg.substring(ind + 1)
-      var qi = qs.indexOf('?')
-
-      if (qi < 1) return
-      qs = qs.substring(0, qi).split('')
-
-      if (msg[ind] === 'v') {
-        qs.forEach(function (q) {
-          otr.versions[q] = true
-        })
-      }
-
-      // start ake
-      if (otr.ALLOW_V2 && otr.versions['2']) {
-        return { cls: 'query', version: '2' }
-      }
-
-      return
-    }
-
-    // otr message
-    if (com === ':') {
-
-      ind += 1
-
-      var info = msg.substring(ind, ind + 4)
-      if (info.length < 4) return { msg: msg }
-      info = CryptoJS.enc.Base64.parse(info).toString(CryptoJS.enc.Latin1)
-
-      var version = info.substring(0, 2)
-      var type = info.substring(2)
-
-      // only supporting otr version 2
-      if (!otr['ALLOW_V' + HLP.unpackSHORT(version)]) return { msg: msg }
-
-      ind += 4
-
-      var end = msg.substring(ind).indexOf('.')
-      if (!~end) return { msg: msg }
-
-      msg = CryptoJS.enc.Base64.parse(msg.substring(ind, ind + end))
-      msg = CryptoJS.enc.Latin1.stringify(msg)
-
-      var cls
-      if (~['\x02', '\x0a', '\x11', '\x12'].indexOf(type)) {
-        cls = 'ake'
-      } else if (type === '\x03') {
-        cls = 'data'
-      }
-
-      return {
-          version: version
-        , type: type
-        , msg: msg
-        , cls: cls
-      }
-    }
-
-    // error message
-    if (msg.substring(ind, ind + 7) === ' Error:') {
-      if (otr.ERROR_START_AKE) {
-        otr.sendQueryMsg()
-      }
-      return { msg: msg.substring(ind + 7), cls: 'error' }
-    }
-
-    return { msg: msg }
-  }
-
-  ParseOTR.initFragment = function (otr) {
-    otr.fragment = { s: '', j: 0, k: 0 }
-  }
-
-  ParseOTR.msgFragment = function (otr, msg) {
-    msg = msg.split(',')
-
-    if (msg.length < 4 ||
-      isNaN(parseInt(msg[0], 10)) ||
-      isNaN(parseInt(msg[1], 10))
-    ) return
-
-    var k = parseInt(msg[0], 10)
-    var n = parseInt(msg[1], 10)
-    msg = msg[2]
-
-    if (n < k || n === 0 || k === 0) {
-      this.initFragment(otr)
-      return
-    }
-
-    if (k === 1) {
-      this.initFragment(otr)
-      otr.fragment = { k: 1, n: n, s: msg }
-    } else if (n === otr.fragment.n && k === (otr.fragment.k + 1)) {
-      otr.fragment.s += msg
-      otr.fragment.k += 1
-    } else {
-      this.initFragment(otr)
-    }
-
-    if (n === k) {
-      msg = otr.fragment.s
-      this.initFragment(otr)
-      return this.parseMsg(otr, msg)
-    }
-
-    return
-  }
-
-}).call(this)
-;(function () {
-
-  var root = this
-
+  var CryptoJS, BigInt, CONST, HLP, Parse, AKE, SM, DSA
   if (typeof exports !== 'undefined') {
     module.exports = OTR
+    CryptoJS = require('../vendor/crypto.js')
+    BigInt = require('../vendor/bigint.js')
+    CONST = require('./const.js')
+    HLP = require('./helpers.js')
+    Parse = require('./parse.js')
+    AKE = require('./ake.js')
+    SM = require('./sm.js')
+    DSA = require('./dsa.js')
   } else {
+    // copy over and expose internals
+    Object.keys(root.OTR).forEach(function (k) {
+      OTR[k] = root.OTR[k]
+    })
     root.OTR = OTR
-  }
-
-  var CryptoJS = root.CryptoJS
-    , BigInt = root.BigInt
-    , DH = root.DH
-    , HLP = root.HLP
-    , DSA = root.DSA
-    , AKE = root.AKE
-    , SM = root.SM
-    , STATES = root.STATES
-    , ParseOTR = root.ParseOTR
-
-  if (typeof require !== 'undefined') {
-    CryptoJS || (CryptoJS = require('../vendor/crypto.js'))
-    BigInt || (BigInt = require('../vendor/bigint.js'))
-    DH || (DH = require('./dh.js'))
-    HLP || (HLP = require('./helpers.js'))
-    DSA || (DSA = require('./dsa.js'))
-    AKE || (AKE = require('./ake.js'))
-    SM || (SM = require('./sm.js'))
-    STATES || (STATES = require('./states.js'))
-    ParseOTR || (ParseOTR = require('./parse.js'))
+    CryptoJS = root.CryptoJS
+    BigInt = root.BigInt
+    CONST = OTR.CONST
+    HLP = OTR.HLP
+    Parse = OTR.Parse
+    AKE = OTR.AKE
+    SM = OTR.SM
+    DSA = root.DSA
   }
 
   // diffie-hellman modulus and generator
   // see group 5, RFC 3526
-  var G = BigInt.str2bigInt(DH.G, 10)
-  var N = BigInt.str2bigInt(DH.N, 16)
+  var G = BigInt.str2bigInt(CONST.G, 10)
+  var N = BigInt.str2bigInt(CONST.N, 16)
 
   // OTR contructor
   function OTR(priv, uicb, iocb, options) {
     if (!(this instanceof OTR)) return new OTR(priv, uicb, iocb, options)
 
     // private keys
-    if (priv && !(priv instanceof DSA.Key))
+    if (priv && !(priv instanceof DSA))
       throw new Error('Requires long-lived DSA key.')
 
-    this.priv = priv ? priv : new DSA.Key()
+    this.priv = priv ? priv : new DSA()
 
     // options
     options = options || {}
@@ -1678,8 +1651,8 @@
 
     init: function () {
 
-      this.msgstate = STATES.MSGSTATE_PLAINTEXT
-      this.authstate = STATES.AUTHSTATE_NONE
+      this.msgstate = CONST.MSGSTATE_PLAINTEXT
+      this.authstate = CONST.AUTHSTATE_NONE
 
       this.ALLOW_V2 = true
 
@@ -1688,7 +1661,7 @@
       this.WHITESPACE_START_AKE = false
       this.ERROR_START_AKE = false
 
-      ParseOTR.initFragment(this)
+      Parse.initFragment(this)
 
       this.versions = {}
 
@@ -1846,7 +1819,7 @@
     },
 
     prepareMsg: function (msg) {
-      if (this.msgstate !== STATES.MSGSTATE_ENCRYPTED || this.their_keyid === 0)
+      if (this.msgstate !== CONST.MSGSTATE_ENCRYPTED || this.their_keyid === 0)
         return this.error('Not ready to encrypt.')
 
       var sessKeys = this.sessKeys[1][0]
@@ -1854,7 +1827,7 @@
 
       var ctr = HLP.packCtr(sessKeys.send_counter)
 
-      var send = STATES.OTR_VERSION_2 + '\x03'  // version and type
+      var send = CONST.OTR_VERSION_2 + '\x03'  // version and type
       send += '\x00'  // flag
       send += HLP.packINT(this.our_keyid - 1)
       send += HLP.packINT(this.their_keyid)
@@ -1880,7 +1853,7 @@
       // ignore flag
       var ign = (msg[0] === '\x01')
 
-      if (this.msgstate !== STATES.MSGSTATE_ENCRYPTED || msg.length !== 8) {
+      if (this.msgstate !== CONST.MSGSTATE_ENCRYPTED || msg.length !== 8) {
         if (!ign) this.error('Received an unreadable encrypted message.', true)
         return
       }
@@ -1989,18 +1962,18 @@
       if (!internal) {  // a user or sm msg
 
         switch (this.msgstate) {
-          case STATES.MSGSTATE_PLAINTEXT:
+          case CONST.MSGSTATE_PLAINTEXT:
             if (this.REQUIRE_ENCRYPTION) {
               this.storedMgs.push(msg)
               this.sendQueryMsg()
               return
             }
             if (this.SEND_WHITESPACE_TAG) {
-              msg += STATES.WHITESPACE_TAG  // 16 byte tag
-              if (this.ALLOW_V2) msg += STATES.WHITESPACE_TAG_V2
+              msg += CONST.WHITESPACE_TAG  // 16 byte tag
+              if (this.ALLOW_V2) msg += CONST.WHITESPACE_TAG_V2
             }
             break
-          case STATES.MSGSTATE_FINISHED:
+          case CONST.MSGSTATE_FINISHED:
             this.storedMgs.push(msg)
             this.error('Message cannot be sent at this time.')
             return
@@ -2015,7 +1988,7 @@
     receiveMsg: function (msg) {
 
       // parse type
-      msg = ParseOTR.parseMsg(this, msg)
+      msg = Parse.parseMsg(this, msg)
 
       if (!msg) return
 
@@ -2031,12 +2004,12 @@
           break
         case 'query':
           if (msg.version !== '2') return
-          if (this.msgstate === STATES.MSGSTATE_ENCRYPTED) this.akeInit()
+          if (this.msgstate === CONST.MSGSTATE_ENCRYPTED) this.akeInit()
           this.ake.initiateAKE()
           break
         default:
           if ( this.REQUIRE_ENCRYPTION ||
-               this.msgstate !== STATES.MSGSTATE_PLAINTEXT
+               this.msgstate !== CONST.MSGSTATE_PLAINTEXT
           ) this.error('Received an unencrypted message.')
 
           // received a plaintext message
@@ -2045,7 +2018,7 @@
 
           // received a whitespace tag
           if ( this.WHITESPACE_START_AKE &&
-               ~msg.ver.indexOf(STATES.OTR_VERSION_2)
+               ~msg.ver.indexOf(CONST.OTR_VERSION_2)
           ) this.ake.initiateAKE()
       }
 
@@ -2071,11 +2044,11 @@
     },
 
     endOtr: function () {
-      if (this.msgstate === STATES.MSGSTATE_ENCRYPTED) {
+      if (this.msgstate === CONST.MSGSTATE_ENCRYPTED) {
         this.sendMsg('\x00\x01\x00\x00')
         this.sm = null
       }
-      this.msgstate = STATES.MSGSTATE_PLAINTEXT
+      this.msgstate = CONST.MSGSTATE_PLAINTEXT
     }
 
   }

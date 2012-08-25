@@ -32,6 +32,11 @@ Although this is a client library, it can be used [on the server](https://github
 
     npm install otr
 
+And then,
+
+    var DSA = require('otr').DSA
+    var OTR = require('otr').OTR
+
 ---
 
 ###Usage
@@ -40,7 +45,7 @@ Although this is a client library, it can be used [on the server](https://github
 expensive and can take several seconds.
 
     // precompute your DSA key
-    var myKey = new DSA.Key()
+    var myKey = new DSA()
 
 For each user you're communicating with, instantiate an OTR object.
 

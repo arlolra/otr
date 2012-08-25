@@ -19,26 +19,27 @@ module.exports = function (grunt) {
       pkg: '<json:package.json>'
     , meta: {
         banner: 
-          '/*!\n\n  <%= pkg.name %>.js v<%= pkg.version %> - ' +
-          '<%= grunt.template.today("yyyy-mm-dd") %>\n' +
-          '  (c) <%= grunt.template.today("yyyy") %> - <%= pkg.author %>\n' +
-          '  Freely distributed under the <%= pkg.license %> license.\n\n' +
-          '  This file is concatenated for the browser.\n' +
-          '  Please see: <%= pkg.homepage %>' +
-          '\n\n*/',
-        cryptojs: 'module.exports = CryptoJS'
+            '/*!\n\n  <%= pkg.name %>.js v<%= pkg.version %> - ' +
+            '<%= grunt.template.today("yyyy-mm-dd") %>\n' +
+            '  (c) <%= grunt.template.today("yyyy") %> - <%= pkg.author %>\n' +
+            '  Freely distributed under the <%= pkg.license %> license.\n\n' +
+            '  This file is concatenated for the browser.\n' +
+            '  Please see: <%= pkg.homepage %>' +
+            '\n\n*/'
+        , cryptojs: 'module.exports = CryptoJS'
+        , globals: 'var OTR = {}, DSA = {}'
       }
     , concat: {
           otr: {
               src: [
                   '<banner:meta.banner>'
-                , 'lib/dh.js'
-                , 'lib/states.js'
+                , '<banner:meta.globals>'
+                , 'lib/const.js'
                 , 'lib/helpers.js'
                 , 'lib/dsa.js'
-                , 'lib/sm.js'
-                , 'lib/ake.js'
                 , 'lib/parse.js'
+                , 'lib/ake.js'
+                , 'lib/sm.js'
                 , 'lib/otr.js'
               ]
             , dest: 'build/otr.js'
