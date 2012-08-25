@@ -66,23 +66,31 @@ describe('OTR', function () {
   })
 
   it('should go through the ake dance', function () {
-    var userA, userB
-    var ui = function (msg) { console.log(msg) }
+    var userA, userB, counter = 0
+    var ui = function (msg) { assert.ok(!msg, msg) }
     var checkstate = function (user) {
-      switch (user.authstate) {
-        case CONST.AUTHSTATE_AWAITING_DHKEY:
-          // This fails sometimes because bigInt2bits trims leading zeros
-          // and r is random bits. So, there's a slightly greater than
-          // 1/256 chance that bytes are missing.
-          // assert.equal(HLP.bigInt2bits(userB.ake.r).length, 128 / 8)
-          assert.equal(userB.ake.myhashed.length, (256 / 8) + 4)
+      switch (counter) {
+        case 0:
+        case 1:
+          assert.equal(user.authstate, CONST.AUTHSTATE_NONE)
           break
-        case CONST.AUTHSTATE_AWAITING_REVEALSIG:
-          assert.equal(user.ake.encrypted.length, 192 + 4)
+        case 2:
+          assert.equal(user.authstate, CONST.AUTHSTATE_AWAITING_DHKEY)
+          // This fails sometimes because MPIs use a minimum-length encoding.
+          // So, there's a 1/256 chance that first byte is missing.
+          // assert.equal(HLP.bigInt2bits(userB.ake.r).length, 128 / 8)
+          assert.equal(user.ake.myhashed.length, (256 / 8) + 4)
+          break
+        case 3:
+          assert.equal(user.authstate, CONST.AUTHSTATE_AWAITING_REVEALSIG)
+          // Occasionally fails for the same reason as above (195 == 196)
+          // assert.equal(user.ake.encrypted.length, 192 + 4)
           assert.equal(user.ake.hashed.length, 256 / 8)
           break
-        case CONST.AUTHSTATE_AWAITING_SIG:
-          assert.equal(user.ake.their_y.length, 192)
+        case 4:
+          assert.equal(user.authstate, CONST.AUTHSTATE_AWAITING_SIG)
+          // Same, fails (191 == 192).
+          // assert.equal(user.ake.their_y.length, 192)
           assert.equal(user.ake.ssid.length, 64 / 8)
           assert.equal(user.ake.c.length, 128 / 8)
           assert.equal(user.ake.c_prime.length, 128 / 8)
@@ -92,13 +100,14 @@ describe('OTR', function () {
           assert.equal(user.ake.m2_prime.length, 256 / 8)
           break
       }
+      counter++
     }
     userA = new OTR(keys.userA, ui, function (msg) {
-      checkstate(userA)
+      checkstate(userB)
       userB.receiveMsg(msg)
     })
     userB = new OTR(keys.userB, ui, function (msg) {
-      checkstate(userB)
+      checkstate(userA)
       userA.receiveMsg(msg)
     })
 

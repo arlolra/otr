@@ -5,7 +5,7 @@ TEST=*
 TASK=default
 
 test:
-	./node_modules/.bin/mocha -R spec test/spec/unit/$(TEST).js
+	./node_modules/.bin/mocha -G -R spec test/spec/unit/$(TEST).js
 
 build:
 	./node_modules/.bin/grunt $(TASK)

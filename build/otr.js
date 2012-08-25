@@ -247,12 +247,16 @@ var OTR = {}, DSA = {}
     return HLP.packINT(d.length) + d
   }
 
-  HLP.bigInt2bits = function (bi) {
+  HLP.bigInt2bits = function (bi, pad) {
+    pad || (pad = 0)
     bi = BigInt.dup(bi)
     var ba = ''
     while (!BigInt.isZero(bi)) {
       ba = _num2bin[bi[0] & 0xff] + ba
       BigInt.rightShift_(bi, 8)
+    }
+    while (ba.length < pad) {
+      ba = '\x00' + ba
     }
     return ba
   }
@@ -485,13 +489,15 @@ var OTR = {}, DSA = {}
       var g = this.N
       this.seed = BigInt.randBigInt(this.N)
 
-      var u = (CryptoJS.SHA1(HLP.bigInt2bits(this.seed))).toString(CryptoJS.enc.Hex)
       var tmp = BigInt.mod(BigInt.add(this.seed, ONE), HLP.twotothe(g))
-      tmp = (CryptoJS.SHA1(HLP.bigInt2bits(tmp))).toString(CryptoJS.enc.Hex)
+      tmp = CryptoJS.SHA1(CryptoJS.enc.Latin1.parse(HLP.bigInt2bits(tmp)))
+
+      var u = CryptoJS.enc.Latin1.parse(HLP.bigInt2bits(this.seed))
+      u = CryptoJS.SHA1(u)
       u = HLP.bigBitWise(
           'XOR'
-        , BigInt.str2bigInt(tmp, 16)
-        , BigInt.str2bigInt(u, 16)
+        , BigInt.str2bigInt(tmp.toString(CryptoJS.enc.Hex), 16)
+        , BigInt.str2bigInt(u.toString(CryptoJS.enc.Hex), 16)
       )
 
       this.q = HLP.bigBitWise('OR', u, HLP.twotothe(g - 1))
@@ -521,7 +527,8 @@ var OTR = {}, DSA = {}
             cache_seed_plus_offset
           , BigInt.str2bigInt(i.toString(), 10)
         )
-        V = CryptoJS.SHA1(HLP.bigInt2bits(BigInt.mod(V, HLP.twotothe(g))))
+        V = HLP.bigInt2bits(BigInt.mod(V, HLP.twotothe(g)))
+        V = CryptoJS.SHA1(CryptoJS.enc.Latin1.parse(V))
         V = BigInt.str2bigInt(V.toString(CryptoJS.enc.Hex), 16)
         if (i === n) V = BigInt.mod(V, HLP.twotothe(b))
         V = BigInt.mult(V, HLP.twotothe(g * i))
@@ -933,7 +940,9 @@ var OTR = {}, DSA = {}
       var kid = HLP.packINT(this.our_keyid)
       var m = hMac(this.our_dh.publicKey, their_y, pk, kid, m1)
       m = this.priv.sign(m)
-      var msg = pk + kid + HLP.bigInt2bits(m[0]) + HLP.bigInt2bits(m[1])
+      var msg = pk + kid
+      msg += HLP.bigInt2bits(m[0], 20)  // pad to 20 bytes
+      msg += HLP.bigInt2bits(m[1], 20)
       var aesctr = HLP.packData(HLP.makeAes(msg, c, HLP.packCtr(0)))
       var mac = HLP.makeMac(aesctr, m2)
       return aesctr + mac
