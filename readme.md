@@ -1,4 +1,4 @@
-Off-the Record Messaging Protocol in JavaScript
+[Off-the Record Messaging Protocol](http://www.cypherpunks.ca/otr/) in JavaScript
 ==================================================
 
 [![Build Status](https://secure.travis-ci.org/arlolra/otr.png?branch=master)](http://travis-ci.org/arlolra/otr)
@@ -87,7 +87,7 @@ upon success, send it out.
     buddyList.userA.sendMsg('My plaintext message to be encrypted.')
 
 
-Another policty, `SEND_WHITESPACE_TAG`, will append tags to plaintext messages,
+Another policy, `SEND_WHITESPACE_TAG`, will append tags to plaintext messages,
 indicating a willingness to speak OTR. If the recipient in turn has set the
 policy `WHITESPACE_START_AKE`, the AKE will be initiated.
 
@@ -126,3 +126,9 @@ Using:
 - [crypto-js](http://code.google.com/p/crypto-js/)
 - [bigint.js](http://leemon.com/crypto/BigInt.html)
 - [seedrandom.js](http://davidbau.com/archives/2010/01/30/random_seeds_coded_hints_and_quintillions.html)
+
+---
+
+###License
+
+LGPL. Mainly because that's what [libotr](http://www.cypherpunks.ca/otr/) is using.
