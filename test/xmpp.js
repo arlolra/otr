@@ -1,5 +1,5 @@
 var xmpp = require('simple-xmpp')
-  , OTR  = require('../otr.js')
+  , OTR  = require('../lib/otr.js')
   , keys = require('./spec/unit/data/keys.js')
 
 var from = ''
@@ -13,7 +13,7 @@ function cb(msg) {
 }
 
 var otr = new OTR(keys.userA, ui, cb, {
-    fragment_size: 10
+    fragment_size: 200
   , send_interval: 200
 })
 
