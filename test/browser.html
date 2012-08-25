@@ -10,23 +10,13 @@
     var start = (new Date()).getTime();
   </script>
 
-  <!-- Load seedrandom.js && bigint.js -->
-  <script src="../vendor/seedrandom.js"></script>
-  <script src="../vendor/bigint.js"></script>
+  <!-- Load dependencies -->
+  <script src="../build/dep/seedrandom.js"></script>
+  <script src="../build/dep/bigint.js"></script>
+  <script src="../build/dep/crypto.js"></script>
 
-  <!-- Load crypto.js components. TODO: make a build of these -->
-  <script src="http://crypto-js.googlecode.com/svn/tags/3.0.2/build/components/core.js" type="text/javascript"></script>
-  <script src="http://crypto-js.googlecode.com/svn/tags/3.0.2/build/components/enc-base64.js" type="text/javascript"></script>
-  <script src="http://crypto-js.googlecode.com/svn/tags/3.0.2/build/components/cipher-core.js" type="text/javascript"></script>
-  <script src="http://crypto-js.googlecode.com/svn/tags/3.0.2/build/components/aes.js" type="text/javascript"></script>
-  <script src="http://crypto-js.googlecode.com/svn/tags/3.0.2/build/components/sha1.js" type="text/javascript"></script>
-  <script src="http://crypto-js.googlecode.com/svn/tags/3.0.2/build/components/sha256.js" type="text/javascript"></script>
-  <script src="http://crypto-js.googlecode.com/svn/tags/3.0.2/build/components/hmac.js" type="text/javascript"></script>
-  <script src="http://crypto-js.googlecode.com/svn/tags/3.0.2/build/components/pad-nopadding.js" type="text/javascript"></script>
-  <script src="http://crypto-js.googlecode.com/svn/tags/3.0.2/build/components/mode-ctr.js" type="text/javascript"></script>
-
-  <!-- Load otr.j or otr.min.js -->
-  <script src="../otr.min.js"></script>
+  <!-- Load otr.js or otr.min.js -->
+  <script src="../build/otr.min.js"></script>
 
   <!-- Ready to go! -->
   <script>

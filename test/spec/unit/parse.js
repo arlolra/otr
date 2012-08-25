@@ -4,7 +4,7 @@ var assert = require('assert')
   , P = require('../../../lib/parse.js')
   , HLP = require('../../../lib/helpers.js')
   , STATES = require('../../../lib/states.js')
-  , CryptoJS = require('../../../vendor/cryptojs/cryptojs.js')
+  , CryptoJS = require('../../../vendor/crypto.js')
 
 describe('Parse', function () {
 

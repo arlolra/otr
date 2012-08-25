@@ -16,7 +16,17 @@ in life and death situations!
 
 ###Install
 
-For now, see [this example](https://github.com/arlolra/otr/blob/master/test/browser.html) for use in the browser.
+Include the build files on the page,
+
+    <!-- Load dependencies -->
+    <script src="build/dep/seedrandom.js"></script>
+    <script src="build/dep/bigint.js"></script>
+    <script src="build/dep/crypto.js"></script>
+
+    <!-- Load otr.js or otr.min.js -->
+    <script src="build/otr.min.js"></script>
+
+Here's an [example](https://github.com/arlolra/otr/blob/master/test/browser.html) use in the browser.
 
 Although this is a client library, it can be used [on the server](https://github.com/arlolra/otr/blob/master/test/xmpp.js).
 
@@ -27,14 +37,12 @@ Although this is a client library, it can be used [on the server](https://github
 ###Usage
 
 **Initial setup**: Compute your long-lived key beforehand. Currently this is
-expensive and can take upwards of half a second. For each user you're
-communicating with, instantiate an OTR object.
-
-    var OTR = require('otr')
-      , DSA = require('dsa')
+expensive and can take several seconds.
 
     // precompute your DSA key
     var myKey = new DSA.Key()
+
+For each user you're communicating with, instantiate an OTR object.
 
     // provide some callbacks to otr
     var uicb = function (msg) {
@@ -66,9 +74,8 @@ method.
     var newmsg = "Message to userA."
     buddyList.userA.sendMsg(newmsg)
 
-**Going encrypted**: Initially, messages are sent in plaintext. To setup a secure
-communication channel, at the moment, one must manually initiate the authenticated
-key exchange.
+**Going encrypted**: Initially, messages are sent in plaintext. To manually
+initiate the authenticated key exchange.
 
     buddyList.userA.sendQueryMsg()
 
@@ -79,10 +86,10 @@ upon success, send it out.
     buddyList.userA.REQUIRE_ENCRYPTION = true
     buddyList.userA.sendMsg('My plaintext message to be encrypted.')
 
-The protocol does specify a policy whereby a plaintext message can be appended
-with whitespace tags to indicate ones willingness to speak with OTR, but this
-has yet to be implemented. See [issue 13](https://github.com/arlolra/otr/issues/13)
-for updates.
+
+Another policty, `SEND_WHITESPACE_TAG`, will append tags to plaintext messages,
+indicating a willingness to speak OTR. If the recipient in turn has set the
+policy `WHITESPACE_START_AKE`, the AKE will be initiated.
 
 ---
 
@@ -109,7 +116,10 @@ To be set on a per-correspondent basis. The defaults are as follows:
 
 ###Links
 
-Spec: http://www.cypherpunks.ca/otr/Protocol-v2-3.1.0.html
+Spec:
+
+- http://www.cypherpunks.ca/otr/Protocol-v2-3.1.0.html
+- See: `specs/`
 
 Using:
 

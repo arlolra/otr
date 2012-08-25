@@ -1,6 +1,6 @@
 {
   "name": "otr",
-  "version": "0.0.4",
+  "version": "0.0.5-pre",
   "description": "Off-the-Record Messaging Protocol",
   "homepage": "https://github.com/arlolra/otr",
   "main": "lib/otr.js",
@@ -23,6 +23,7 @@
   "devDependencies": {
     "mocha": "*",
     "grunt": "0.3.x",
+    "grunt-clean": "0.3.x",
     "simple-xmpp": "0.1.x"
   },
   "author": "Arlo Breault <arlolra@gmail.com>",

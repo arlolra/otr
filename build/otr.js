@@ -1,6 +1,6 @@
 /*!
 
-  otr.js v0.0.4 - 2012-08-21
+  otr.js v0.0.5-pre - 2012-08-24
   (c) 2012 - Arlo Breault <arlolra@gmail.com>
   Freely distributed under the LGPL license.
 
@@ -41,7 +41,14 @@
     , AUTHSTATE_AWAITING_DHKEY     : 1
     , AUTHSTATE_AWAITING_REVEALSIG : 2
     , AUTHSTATE_AWAITING_SIG       : 3
-    , AUTHSTATE_V1_SETUP           : 4
+
+    // whitespace tags
+    , WHITESPACE_TAG    : '\x20\x09\x20\x20\x09\x09\x09\x09\x20\x09\x20\x09\x20\x09\x20\x20'
+    , WHITESPACE_TAG_V2 : '\x20\x20\x09\x09\x20\x20\x09\x20'
+
+    // otr tags
+    , OTR_TAG       : '?OTR'
+    , OTR_VERSION_2 : '\x00\x02'
 
   }
 
@@ -68,7 +75,7 @@
 
   if (typeof require !== 'undefined') {
     BigInt || (BigInt = require('../vendor/bigint.js'))
-    CryptoJS || (CryptoJS = require('../vendor/cryptojs/cryptojs.js'))
+    CryptoJS || (CryptoJS = require('../vendor/crypto.js'))
   }
 
   // data types (byte lengths)
@@ -433,7 +440,7 @@
 
   if (typeof require !== 'undefined') {
     BigInt || (BigInt = require('../vendor/bigint.js'))
-    CryptoJS || (CryptoJS = require('../vendor/cryptojs/cryptojs.js'))
+    CryptoJS || (CryptoJS = require('../vendor/crypto.js'))
     HLP || (HLP = require('./helpers.js'))
   }
 
@@ -656,7 +663,7 @@
 
   if (typeof require !== 'undefined') {
     BigInt || (BigInt = require('../vendor/bigint.js'))
-    CryptoJS || (CryptoJS = require('../vendor/cryptojs/cryptojs.js'))
+    CryptoJS || (CryptoJS = require('../vendor/crypto.js'))
     DH || (DH = require('./dh.js'))
     HLP || (HLP = require('./helpers.js'))
     DSA || (DSA = require('./dsa.js'))
@@ -1050,7 +1057,7 @@
     , STATES = root.STATES
 
   if (typeof require !== 'undefined') {
-    CryptoJS || (CryptoJS = require('../vendor/cryptojs/cryptojs.js'))
+    CryptoJS || (CryptoJS = require('../vendor/crypto.js'))
     BigInt || (BigInt = require('../vendor/bigint.js'))
     DH || (DH = require('./dh.js'))
     HLP || (HLP = require('./helpers.js'))
@@ -1082,7 +1089,7 @@
 
   var DEBUG = false
   function debug(msg) {
-    if (DEBUG && console) console.log(msg)
+    if (DEBUG && typeof console !== 'undefined') console.log(msg)
   }
 
   // AKE constructor
@@ -1233,8 +1240,7 @@
               this.myhashed = null
             }
           } else if (
-            this.otr.authstate === STATES.AUTHSTATE_AWAITING_SIG ||
-            this.otr.authstate === STATES.AUTHSTATE_V1_SETUP
+            this.otr.authstate === STATES.AUTHSTATE_AWAITING_SIG
           ) this.our_dh = this.otr.dh()
 
           this.otr.authstate = STATES.AUTHSTATE_AWAITING_REVEALSIG
@@ -1372,7 +1378,7 @@
     },
 
     sendMsg: function (msg) {
-      msg = '\x00\x02' + msg
+      msg = STATES.OTR_VERSION_2 + msg
       msg = HLP.wrapMsg(msg, this.otr.fragment_size)
       if (msg[0]) return this.otr.error(msg[0])
       this.otr.sendMsg(msg[1], true)
@@ -1416,30 +1422,50 @@
 
   var CryptoJS = root.CryptoJS
     , HLP = root.HLP
+    , STATES = root.STATES
 
   if (typeof require !== 'undefined') {
-    CryptoJS || (CryptoJS = require('../vendor/cryptojs/cryptojs.js'))
+    CryptoJS || (CryptoJS = require('../vendor/crypto.js'))
     HLP || (HLP = require('./helpers.js'))
+    STATES || (STATES = require('./states.js'))
   }
-
-  // tags
-  var OTR_TAG = '?OTR'
-
-  // otr versions
-  var OTR_VERSION_1 = '\x00\x01'
-    , OTR_VERSION_2 = '\x00\x02'
 
   ParseOTR.parseMsg = function (otr, msg) {
 
     // is this otr?
-    var start = msg.indexOf(OTR_TAG)
+    var start = msg.indexOf(STATES.OTR_TAG)
     if (!~start) {
-      // check for tags
+
+      // restart fragments
       this.initFragment(otr)
-      return { msg: msg }
+
+      // whitespace tags
+      var ver = []
+      ind = msg.indexOf(STATES.WHITESPACE_TAG)
+
+      if (~ind) {
+
+        msg = msg.split('')
+        msg.splice(ind, 16)
+
+        var len = msg.length
+        for (; ind < len;) {
+          if (msg.slice(ind, ind + 8).join('') === STATES.WHITESPACE_TAG_V2) {
+            msg.splice(ind, 8)
+            ver.push(STATES.OTR_VERSION_2)
+            break
+          }
+          ind += 8
+        }
+
+        msg = msg.join('')
+
+      }
+
+      return { msg: msg, ver: ver }
     }
 
-    var ind = start + OTR_TAG.length
+    var ind = start + STATES.OTR_TAG.length
     var com = msg[ind]
 
     // message fragment
@@ -1474,8 +1500,6 @@
       // start ake
       if (otr.ALLOW_V2 && otr.versions['2']) {
         return { cls: 'query', version: '2' }
-      } else if (otr.ALLOW_V1 && otr.versions['1']) {
-        // not yet
       }
 
       return
@@ -1592,7 +1616,7 @@
     , ParseOTR = root.ParseOTR
 
   if (typeof require !== 'undefined') {
-    CryptoJS || (CryptoJS = require('../vendor/cryptojs/cryptojs.js'))
+    CryptoJS || (CryptoJS = require('../vendor/crypto.js'))
     BigInt || (BigInt = require('../vendor/bigint.js'))
     DH || (DH = require('./dh.js'))
     HLP || (HLP = require('./helpers.js'))
@@ -1657,7 +1681,6 @@
       this.msgstate = STATES.MSGSTATE_PLAINTEXT
       this.authstate = STATES.AUTHSTATE_NONE
 
-      this.ALLOW_V1 = false
       this.ALLOW_V2 = true
 
       this.REQUIRE_ENCRYPTION = false
@@ -1831,7 +1854,7 @@
 
       var ctr = HLP.packCtr(sessKeys.send_counter)
 
-      var send = '\x00\x02' + '\x03'  // version and type
+      var send = STATES.OTR_VERSION_2 + '\x03'  // version and type
       send += '\x00'  // flag
       send += HLP.packINT(this.our_keyid - 1)
       send += HLP.packINT(this.their_keyid)
@@ -1946,8 +1969,8 @@
         , msg = '?OTR'
 
       if (this.ALLOW_V2) versions['2'] = true
-      if (this.ALLOW_V1) versions['1'] = true
 
+      // but we don't allow v1
       if (versions['1']) msg += '?'
 
       var vs = Object.keys(versions)
@@ -1973,8 +1996,8 @@
               return
             }
             if (this.SEND_WHITESPACE_TAG) {
-              // and haven't received a PT msg since entering PT
-              // msg += whitespace_tag
+              msg += STATES.WHITESPACE_TAG  // 16 byte tag
+              if (this.ALLOW_V2) msg += STATES.WHITESPACE_TAG_V2
             }
             break
           case STATES.MSGSTATE_FINISHED:
@@ -2012,8 +2035,18 @@
           this.ake.initiateAKE()
           break
         default:
-          if (this.REQUIRE_ENCRYPTION)
-            return this.error('Received an unencrypted message.')
+          if ( this.REQUIRE_ENCRYPTION ||
+               this.msgstate !== STATES.MSGSTATE_PLAINTEXT
+          ) this.error('Received an unencrypted message.')
+
+          // received a plaintext message
+          // stop sending the whitespace tag
+          this.SEND_WHITESPACE_TAG = false
+
+          // received a whitespace tag
+          if ( this.WHITESPACE_START_AKE &&
+               ~msg.ver.indexOf(STATES.OTR_VERSION_2)
+          ) this.ake.initiateAKE()
       }
 
       if (msg.msg) this.uicb(msg.msg)
