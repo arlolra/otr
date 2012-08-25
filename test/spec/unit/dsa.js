@@ -8,8 +8,12 @@ describe('DSA', function() {
 
   var key
 
-  it('should generate a key - timed', function () {
-    key = new DSA()   
+  before(function () {
+    // time the keygen but require before
+    process.stdout.write('      generating the key ... ')
+    var start = (new Date()).getTime()
+    key = new DSA()
+    console.log('(' + ((new Date()).getTime() - start) + 'ms)')
   })
 
   it('should generate a key with q > 2^159 and q < 2^160', function () {
