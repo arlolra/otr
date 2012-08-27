@@ -313,6 +313,8 @@ whitespace version tags, if it is present, for backwards
 compatibility)</li>
 <li>"\x20\x20\x09\x09\x20\x20\x09\x20" to indicate a willingness to use
 OTR version 2 with Bob</li>
+<li>"\x20\x20\x09\x09\x20\x20\x09\x09" to indicate a willingness to use
+OTR version 3 with Bob</li>
 </ul>
 <p>If Bob is willing to use OTR with Alice (with a protocol version that
 Alice has offered), he should start the AKE.  On the other hand, if
@@ -623,11 +625,16 @@ you should change the SMP state to SMP_EXPECT1 (see below).</dd>
 <dd>Like a SMP Message 1, but whose value begins with a NUL-terminated
 user-specified question.</dd>
 <dt>Type 8: Extra symmetric key</dt>
-<dd>The value begins with a 4-byte indication of what this symmetric key
-will be used for (file transfer, voice encryption, etc.). After that, the
-contents are use-specific (which file, etc.). There are no currently
-defined uses. See the "extra symmetric key" section below for details on
-how this key is derived.</dd>
+<dd>If you wish to use the extra symmetric key, compute it yourself as
+outlined in the section "Extra symmetric key", below.  Then send this
+type 8 TLV to your buddy to indicate that you'd like to use the extra
+symmetric key for something.  The value of the TLV begins with a 4-byte
+indication of what this symmetric key will be used for (file transfer,
+voice encryption, etc.). After that, the contents are use-specific
+(which file, etc.). There are no currently defined uses.  Note that the
+value of the key itself is <em>not</em> placed into the TLV; your buddy
+will compute it on his/her own.
+</dd>
 </dl>
 <p>SMP Message TLVs (types 2-5) all carry data sharing the same general
 format:</p> 
@@ -1209,10 +1216,20 @@ sending AES key.</li>
 receiving AES key.</li>
 </ul>
 <h4>Extra symmetric key</h4>
-<p>OTR version 3 defined an additional symmetric key that is derived
-during the AKE. The extra symmetric key is derived by calculating
+<p>OTR version 3 defines an additional symmetric key that can be derived
+by the communicating parties to use for application-specific purposes,
+such as file transfer, voice encryption, etc.  When one party wishes to
+use the extra symmetric key, he or she creates a type 8 TLV attached to
+a Data Message (see above).  The key itself is then derived using the
+same "secbytes" used to compute the encryption and MAC keys used to
+protect the Data Message.
+The extra symmetric key is derived by calculating
 h2(0xFF) and keeping the entire 256 bits, using the same definition
 of h2 as above.</p>
+<p>Upon receipt of the Data Message containing the type 8 TLV, the
+recipient will compute the extra symmetric key in the same way.  Note
+that the value of the extra symmetric key is <em>not</em> contained in
+the TLV itself.</p>
 <h4>Revealing MAC keys</h4>
 <p>Whenever you are about to forget either one of your old D-H key pairs, or
 one of your correspondent's old D-H public keys, take all of the
