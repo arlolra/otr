@@ -65,7 +65,7 @@ For each user you're communicating with, instantiate an OTR object.
 
     var buddyList = {
         'userA': new OTR(myKey, uicb, iocb, options)
-      , 'userB' new OTR(myKey uicb, iocb, options)
+      , 'userB': new OTR(myKey uicb, iocb, options)
     }
 
 **New message from userA received**: Pass the received message to the `receiveMsg`
