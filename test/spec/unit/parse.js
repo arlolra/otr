@@ -4,7 +4,7 @@ var assert = require('assert')
   , CONST = require('../../../lib/const.js')
   , HLP = require('../../../lib/helpers.js')
   , Parse = require('../../../lib/parse.js')
-  , OTR = function () { this.versions = {} }  // just a constructor
+  , OTR = function () {}  // just a constructor
 
 describe('Parse', function () {
 
@@ -29,57 +29,53 @@ describe('Parse', function () {
   })
 
   it('should parse otr "Version 1 Only" query message', function () {
-    Parse.parseMsg(otr, '?OTR?')
-    assert.equal(1, Object.keys(otr.versions).length, 'version 1')
-    assert.ok(otr.versions['1'], 'version 1')
+    var msg = Parse.parseMsg(otr, '?OTR?')
+    assert.equal(1, msg.ver.length, 'version 1')
+    assert.ok(~msg.ver.indexOf(CONST.OTR_VERSION_1), 'version 1')
   })
 
   it('should parse otr "Version 2 Only" query message', function () {
-    Parse.parseMsg(otr, '?OTRv2?')
-    assert.equal(1, Object.keys(otr.versions).length, 'version 2')
-    assert.ok(otr.versions['2'], 'version 2')
+    var msg = Parse.parseMsg(otr, '?OTRv2?')
+    assert.equal(1, msg.ver.length, 'version 2')
+    assert.ok(~msg.ver.indexOf(CONST.OTR_VERSION_2), 'version 2')
   })
 
   it('should parse otr "Version 1 & 2" query message', function () {
-    Parse.parseMsg(otr, '?OTR?v2?')
-    assert.equal(2, Object.keys(otr.versions).length, 'version 1 & 2')
-    assert.ok(otr.versions['1'], 'version 1 & 2')
-    assert.ok(otr.versions['2'], 'version 1 & 2')
+    var msg = Parse.parseMsg(otr, '?OTR?v2?')
+    assert.equal(2, msg.ver.length, 'version 1 & 2')
+    assert.ok(~msg.ver.indexOf(CONST.OTR_VERSION_1), 'version 1 & 2')
+    assert.ok(~msg.ver.indexOf(CONST.OTR_VERSION_2), 'version 1 & 2')
   })
 
   it('should parse otr "Version 3 & 2" query message, order should not matter', function () {
-    Parse.parseMsg(otr, '?OTRv32?')
-    assert.equal(2, Object.keys(otr.versions).length, 'version 3 & 2')
-    assert.ok(otr.versions['3'], 'version 3 & 2')
-    assert.ok(otr.versions['2'], 'version 3 & 2')
+    var msg = Parse.parseMsg(otr, '?OTRv32?')
+    assert.equal(2, msg.ver.length, 'version 3 & 2')
+    assert.ok(~msg.ver.indexOf(CONST.OTR_VERSION_3), 'version 3 & 2')
+    assert.ok(~msg.ver.indexOf(CONST.OTR_VERSION_2), 'version 3 & 2')
   })
 
   it('should parse otr "Version 2, 4, x only" query message', function () {
-    Parse.parseMsg(otr, '?OTRv24x?')
-    assert.equal(3, Object.keys(otr.versions).length, 'version 2, 4, x')
-    assert.ok(otr.versions['2'], 'version 2, 4, x')
-    assert.ok(otr.versions['4'], 'version 2, 4, x')
-    assert.ok(otr.versions.x, 'version 2, 4, x')
+    var msg = Parse.parseMsg(otr, '?OTRv24x?')
+    assert.equal(1, msg.ver.length, 'version 2, 4, x')
+    assert.ok(~msg.ver.indexOf(CONST.OTR_VERSION_2), 'version 2, 4, x')
   })
 
   it('should parse otr "Version 2, 4, x" query message', function () {
-    Parse.parseMsg(otr, '?OTR?v24x?')
-    assert.equal(4, Object.keys(otr.versions).length, 'version 1, 2, 4, x')
-    assert.ok(otr.versions['1'], 'version 1, 2, 4, x')
-    assert.ok(otr.versions['2'], 'version 1, 2, 4, x')
-    assert.ok(otr.versions['4'], 'version 1, 2, 4, x')
-    assert.ok(otr.versions.x, 'version 1, 2, 4, x')
+    var msg = Parse.parseMsg(otr, '?OTR?v24x?')
+    assert.equal(2, msg.ver.length, 'version 1, 2, 4, x')
+    assert.ok(~msg.ver.indexOf(CONST.OTR_VERSION_1), 'version 1, 2, 4, x')
+    assert.ok(~msg.ver.indexOf(CONST.OTR_VERSION_2), 'version 1, 2, 4, x')
   })
 
   it('should parse otr "Version 1 Only" query message 2', function () {
-    Parse.parseMsg(otr, '?OTR?v?')
-    assert.equal(1, Object.keys(otr.versions).length, 'version 1 ?')
-    assert.ok(otr.versions['1'], 'version 1 ?')
+    var msg = Parse.parseMsg(otr, '?OTR?v?')
+    assert.equal(1, msg.ver.length, 'version 1 ?')
+    assert.ok(~msg.ver.indexOf(CONST.OTR_VERSION_1), 'version 1 ?')
   })
 
   it('should parse otr bizarre claim query message', function () {
-    Parse.parseMsg(otr, '?OTRv?')
-    assert.equal(0, Object.keys(otr.versions).length, 'version bizarre')
+    var msg = Parse.parseMsg(otr, '?OTRv?')
+    assert.equal(0, msg.ver.length, 'version bizarre')
   })
 
   it('should parse otr error message', function () {
