@@ -47,6 +47,13 @@ describe('Parse', function () {
     assert.ok(otr.versions['2'], 'version 1 & 2')
   })
 
+  it('should parse otr "Version 3 & 2" query message, order should not matter', function () {
+    Parse.parseMsg(otr, '?OTRv32?')
+    assert.equal(2, Object.keys(otr.versions).length, 'version 3 & 2')
+    assert.ok(otr.versions['3'], 'version 3 & 2')
+    assert.ok(otr.versions['2'], 'version 3 & 2')
+  })
+
   it('should parse otr "Version 2, 4, x only" query message', function () {
     Parse.parseMsg(otr, '?OTRv24x?')
     assert.equal(3, Object.keys(otr.versions).length, 'version 2, 4, x')
@@ -110,8 +117,9 @@ describe('Parse', function () {
   })
 
   it('should parse whitespace tags', function () {
-    var msg = Parse.parseMsg(otr, 'this is a test' + CONST.WHITESPACE_TAG + ' random ' + CONST.WHITESPACE_TAG_V2)
+    var msg = Parse.parseMsg(otr, 'this is a test' + CONST.WHITESPACE_TAG + ' random ' + CONST.WHITESPACE_TAG_V3 + CONST.WHITESPACE_TAG_V2)
     assert.ok(~msg.ver.indexOf(CONST.OTR_VERSION_2))
+    assert.ok(~msg.ver.indexOf(CONST.OTR_VERSION_3))
     assert.equal(msg.msg, 'this is a test random ')
   })
 

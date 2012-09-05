@@ -28,9 +28,32 @@ describe('OTR', function () {
   it('should query with version two', function () {
     var userB = new OTR(keys.userB, cb, cb)
     var userA = new OTR(keys.userA, cb, function (msg) {
-      assert.equal('?OTRv2?', msg, 'Versions 2.')
+      assert.equal('?OTRv2?', msg, msg)
       userB.receiveMsg(msg)
-      assert.ok(userB.versions['2'], 'version 2')
+      assert.ok(userB.versions['2'], 'Version 2')
+    })
+    userA.ALLOW_V3 = false
+    userA.sendQueryMsg()
+  })
+
+  it('should query with version three', function () {
+    var userB = new OTR(keys.userB, cb, cb)
+    var userA = new OTR(keys.userA, cb, function (msg) {
+      assert.equal('?OTRv3?', msg, msg)
+      userB.receiveMsg(msg)
+      assert.ok(userB.versions['3'], 'Version 3')
+    })
+    userA.ALLOW_V2 = false
+    userA.sendQueryMsg()
+  })
+
+  it('should query with versions two and three', function () {
+    var userB = new OTR(keys.userB, cb, cb)
+    var userA = new OTR(keys.userA, cb, function (msg) {
+      assert.equal('?OTRv23?', msg, msg)
+      userB.receiveMsg(msg)
+      assert.ok(userB.versions['2'], 'Version 2')
+      assert.ok(userB.versions['3'], 'Version 3')
     })
     userA.sendQueryMsg()
   })
@@ -48,6 +71,7 @@ describe('OTR', function () {
     var userA = new OTR(keys.userA, cb, function (msg) {
       assert.ok(~msg.indexOf(CONST.WHITESPACE_TAG))
       assert.ok(~msg.indexOf(CONST.WHITESPACE_TAG_V2))
+      assert.ok(~msg.indexOf(CONST.WHITESPACE_TAG_V3))
     })
     userA.SEND_WHITESPACE_TAG = true
     userA.sendMsg('hi')

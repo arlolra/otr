@@ -102,8 +102,9 @@ policy `WHITESPACE_START_AKE`, the AKE will be initiated.
 
 To be set on a per-correspondent basis. The defaults are as follows:
 
-    // Allow version 2 of the OTR protocol to be used.
+    // Allow version 2 or 3 of the OTR protocol to be used.
     ALLOW_V2 = true
+    ALLOW_V3 = true
 
     // Refuse to send unencrypted messages.
     REQUIRE_ENCRYPTION = false
