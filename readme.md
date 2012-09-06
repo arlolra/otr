@@ -124,6 +124,7 @@ To be set on a per-correspondent basis. The defaults are as follows:
 
 Spec:
 
+- http://www.cypherpunks.ca/otr/Protocol-v3-4.0.0.html
 - http://www.cypherpunks.ca/otr/Protocol-v2-3.1.0.html
 - See: `specs/`
 
