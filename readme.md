@@ -135,6 +135,14 @@ Using:
 
 ---
 
+###In The Wild
+
+A sampling of projects that use this library:
+
+- [Cryptocat](https://github.com/kaepora/cryptocat)
+
+---
+
 ###License
 
 LGPL. Mainly because that's what [libotr](http://www.cypherpunks.ca/otr/) is using.
