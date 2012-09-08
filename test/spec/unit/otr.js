@@ -14,6 +14,12 @@ describe('OTR', function () {
     var userA = new OTR(keys.userA, cb, cb)
   })
 
+  it('should generate an instance tag', function () {
+    var tag = HLP.readLen(OTR.makeInstanceTag())
+    assert.ok(tag >= 0x00000100)
+    assert.ok(tag <= 0xffffffff)
+  })
+
   it('should initiate AKE', function () {
     var userB = new OTR(keys.userB, cb, cb)
     var userA = new OTR(keys.userA, cb, function (msg) {

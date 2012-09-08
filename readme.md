@@ -120,6 +120,18 @@ To be set on a per-correspondent basis. The defaults are as follows:
 
 ---
 
+###Instance Tags
+
+These are intended to be persistent and can be precomputed.
+
+    var myTag = OTR.makeInstanceTag()
+    var options = { instance_tag: myTag }
+
+    var userA = new OTR(myKey, uicb, iocb, options)
+    var userB = new OTR(myKey, uicb, iocb, options)
+
+---
+
 ###Links
 
 Spec:
