@@ -132,6 +132,23 @@ These are intended to be persistent and can be precomputed.
 
 ---
 
+###Fingerprints
+
+OTR public key fingerprints can be obtained as follows:
+
+    // assume you've gone through the ake with userA
+    var userA = new OTR(myKey, uicb, iocb, options)
+
+    // for my key, either one of the following
+    DSA.fingerprint(myKey)
+    // or,
+    DSA.fingerprint(userA.priv)
+
+    // for their key
+    DSA.fingerprint(userA.their_priv_pk)
+
+---
+
 ###Links
 
 Spec:
