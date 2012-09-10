@@ -140,6 +140,44 @@ describe('OTR', function () {
     assert.equal(userA.msgstate, CONST.MSGSTATE_ENCRYPTED, 'Encrypted')
   })
 
+it('should go through the ake dance, v2', function () {
+    var ui = function (msg) { assert.ok(!msg, msg) }
+    var userA = new OTR(keys.userA, ui, function (msg) {
+      userB.receiveMsg(msg)
+    })
+    var userB = new OTR(keys.userB, ui, function (msg) {
+      userA.receiveMsg(msg)
+    })
+    assert.equal(userB.msgstate, CONST.MSGSTATE_PLAINTEXT, 'Plaintext')
+    assert.equal(userA.msgstate, CONST.MSGSTATE_PLAINTEXT, 'Plaintext')
+    userA.ALLOW_V2 = true
+    userA.ALLOW_V3 = false
+    userA.ALLOW_V2 = true
+    userB.ALLOW_V3 = false
+    userA.sendQueryMsg()
+    assert.equal(userB.msgstate, CONST.MSGSTATE_ENCRYPTED, 'Encrypted')
+    assert.equal(userA.msgstate, CONST.MSGSTATE_ENCRYPTED, 'Encrypted')
+  })
+
+  it('should not go through the ake dance', function () {
+    var ui = function (msg) { assert.ok(!msg, msg) }
+    var userA = new OTR(keys.userA, ui, function (msg) {
+      userB.receiveMsg(msg)
+    })
+    var userB = new OTR(keys.userB, ui, function (msg) {
+      userA.receiveMsg(msg)
+    })
+    assert.equal(userB.msgstate, CONST.MSGSTATE_PLAINTEXT, 'Plaintext')
+    assert.equal(userA.msgstate, CONST.MSGSTATE_PLAINTEXT, 'Plaintext')
+    userA.ALLOW_V2 = false
+    userA.ALLOW_V3 = true
+    userB.ALLOW_V2 = true
+    userB.ALLOW_V3 = false
+    userA.sendQueryMsg()
+    assert.equal(userB.msgstate, CONST.MSGSTATE_PLAINTEXT, 'Plaintext')
+    assert.equal(userA.msgstate, CONST.MSGSTATE_PLAINTEXT, 'Plaintext')
+  })
+
   it('should receive an encrypted message', function () {
     var msgs = ['Hope this works.', 'Second message.', 'Third!', '4', '5', '6', '7', '8888888888888888888']
     var counter = 0
