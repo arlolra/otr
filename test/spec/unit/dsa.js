@@ -42,7 +42,7 @@ describe('DSA', function() {
   })
 
   it('should return a fingerprint for the public key', function () {
-    var finger = DSA.fingerprint(key)
+    var finger = key.fingerprint()
     assert.equal(40, finger.length, 'SHA1 Hex')
   })
 

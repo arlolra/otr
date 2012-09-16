@@ -140,12 +140,12 @@ OTR public key fingerprints can be obtained as follows:
     var userA = new OTR(myKey, uicb, iocb, options)
 
     // for my key, either one of the following
-    DSA.fingerprint(myKey)
+    myKey.fingerprint()
     // or,
-    DSA.fingerprint(userA.priv)
+    userA.priv.fingerprint()
 
     // for their key
-    DSA.fingerprint(userA.their_priv_pk)
+    userA.their_priv_pk.fingerprint()
 
 ---
 
