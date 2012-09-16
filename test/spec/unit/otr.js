@@ -250,4 +250,15 @@ it('should go through the ake dance, v2', function () {
     })
   })
 
+  it('should ignore messages with diff instance tags', function () {
+    var userB = new OTR(keys.userB, function (msg) {
+      console.log(msg)
+      assert.ok(!msg)
+    }, function (msg) { userA.receiveMsg(msg) })
+    var userA = new OTR(keys.userA, cb, userB.receiveMsg)
+    userA.sendQueryMsg()
+    userA.their_instance_tag = OTR.makeInstanceTag()
+    userA.sendMsg('hi')
+  })
+
 })
