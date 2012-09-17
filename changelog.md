@@ -1,4 +1,11 @@
 
+0.0.6 / 2012-09-17
+==================
+
+  * support v3 of the otr protocol
+  * change and document fingerprint api
+  * fix read int
+
 0.0.5 / 2012-08-25 
 ==================
 
