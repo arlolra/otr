@@ -210,7 +210,7 @@ it('should go through the ake dance, v2', function () {
     assert.equal(counter, 8)
   })
 
-  it('should send fragments', function (done) {
+  it('should send v2 fragments', function (done) {
     this.timeout(5000)
 
     var msgs = [
@@ -236,6 +236,54 @@ it('should go through the ake dance, v2', function () {
     userA = new OTR(keys.userA, ui(0), io, { fragment_size: 200, send_interval: 40 })
     userB = new OTR(keys.userB, ui(1), userA.receiveMsg, { send_interval: 20 })
 
+    userA.ALLOW_V2 = true
+    userA.ALLOW_V3 = false
+    userB.ALLOW_V2 = true
+    userB.ALLOW_V3 = false
+    userA.REQUIRE_ENCRYPTION = true
+    userB.REQUIRE_ENCRYPTION = true
+
+    var ind, users = [
+        { u: userA, m: [], c: 0 }
+      , { u: userB, m: [], c: 0 }
+    ]
+    msgs.forEach(function (m, i) {
+      ind = Math.floor(Math.random() * 2)  // assign the messages randomly
+      users[ind ? 0 : 1].m.push(m)  // expect the other user to receive it
+      users[ind].u.sendMsg(m)
+    })
+  })
+
+  it('should send v3 fragments', function (done) {
+    this.timeout(5000)
+
+    var msgs = [
+        'Hope this works.'
+      , 'Second message.'
+      , 'This is a bit of a longer message.'
+      , 'Some messages can be quite long and must be fragmented over several pieces.'
+      , 'Lalalala alal allaallal alal al alalal alalaaall  lal lal la lal ala  al ala l al a al al al alalalalal alalal  a lal la aal ala lalala l lala lal lala lal la l  alal lalaall la lal la'
+    ]
+    var counter = 0
+
+    var userA, userB
+    var ui = function (ind) {
+      return function (msg) {
+        var u = users[ind]
+        assert.equal(u.u.msgstate, CONST.MSGSTATE_ENCRYPTED, 'Message state unencrypted. Msg: ' + msg)
+        assert.equal(u.m[u.c++], msg, 'Encrypted message: ' + msg)
+        if (++counter === msgs.length) done()
+      }
+    }
+    var io = function (msg) { userB.receiveMsg(msg) }
+
+    userA = new OTR(keys.userA, ui(0), io, { fragment_size: 200, send_interval: 40 })
+    userB = new OTR(keys.userB, ui(1), userA.receiveMsg, { send_interval: 20 })
+
+    userA.ALLOW_V2 = false
+    userA.ALLOW_V3 = true
+    userB.ALLOW_V2 = false
+    userB.ALLOW_V3 = true
     userA.REQUIRE_ENCRYPTION = true
     userB.REQUIRE_ENCRYPTION = true
 
