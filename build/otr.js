@@ -1,6 +1,6 @@
 /*!
 
-  otr.js v0.0.6 - 2012-09-17
+  otr.js v0.0.7 - 2012-09-20
   (c) 2012 - Arlo Breault <arlolra@gmail.com>
   Freely distributed under the LGPL license.
 
@@ -123,14 +123,14 @@ var OTR = {}, DSA = {}
     return mac.toString(CryptoJS.enc.Latin1)
   }
 
-  HLP.makeAes = function (msg, c, iv) {
+  HLP.encryptAes = function (msg, c, iv) {
     var opts = {
         mode: CryptoJS.mode.CTR
       , iv: CryptoJS.enc.Latin1.parse(iv)
       , padding: CryptoJS.pad.NoPadding
     }
     var aesctr = CryptoJS.AES.encrypt(
-        CryptoJS.enc.Latin1.parse(msg)
+        msg
       , CryptoJS.enc.Latin1.parse(c)
       , opts
     )
@@ -145,12 +145,11 @@ var OTR = {}, DSA = {}
       , iv: CryptoJS.enc.Latin1.parse(iv)
       , padding: CryptoJS.pad.NoPadding
     }
-    var aesctr = CryptoJS.AES.decrypt(
+    return CryptoJS.AES.decrypt(
         CryptoJS.enc.Base64.stringify(msg)
       , CryptoJS.enc.Latin1.parse(c)
       , opts
     )
-    return aesctr.toString(CryptoJS.enc.Latin1)
   }
 
   HLP.multPowMod = function (a, b, c, d, e) {
@@ -958,7 +957,7 @@ var OTR = {}, DSA = {}
 
       // decrypt x
       var x = HLP.decryptAes(aesctr.substring(4), c, ctr)
-      x = HLP.splitype(['PUBKEY', 'INT', 'SIG'], x)
+      x = HLP.splitype(['PUBKEY', 'INT', 'SIG'], x.toString(CryptoJS.enc.Latin1))
 
       var m = hMac(their_y, our_dh_pk, x[0], x[1], m1)
       var pub = DSA.parsePublic(x[0])
@@ -980,7 +979,8 @@ var OTR = {}, DSA = {}
       var msg = pk + kid
       msg += HLP.bigInt2bits(m[0], 20)  // pad to 20 bytes
       msg += HLP.bigInt2bits(m[1], 20)
-      var aesctr = HLP.packData(HLP.makeAes(msg, c, HLP.packCtr(0)))
+      msg = CryptoJS.enc.Latin1.parse(msg)
+      var aesctr = HLP.packData(HLP.encryptAes(msg, c, HLP.packCtr(0)))
       var mac = HLP.makeMac(aesctr, m2)
       return aesctr + mac
     },
@@ -1109,7 +1109,9 @@ var OTR = {}, DSA = {}
           // decrypt their_y
           var key = CryptoJS.enc.Hex.parse(BigInt.bigInt2str(this.r, 16))
           key = CryptoJS.enc.Latin1.stringify(key)
+
           var gxmpi = HLP.decryptAes(this.encrypted, key, HLP.packCtr(0))
+          gxmpi = gxmpi.toString(CryptoJS.enc.Latin1)
 
           this.their_y = HLP.readMPI(gxmpi)
 
@@ -1222,16 +1224,16 @@ var OTR = {}, DSA = {}
       this.otr.authstate = CONST.AUTHSTATE_AWAITING_DHKEY
 
       var gxmpi = HLP.packMPI(this.our_dh.publicKey)
+      gxmpi = CryptoJS.enc.Latin1.parse(gxmpi)
 
       this.r = HLP.randomValue()
       var key = CryptoJS.enc.Hex.parse(BigInt.bigInt2str(this.r, 16))
       key = CryptoJS.enc.Latin1.stringify(key)
 
-      // save in case we have to resend
-      this.dhcommit = HLP.packData(HLP.makeAes(gxmpi, key, HLP.packCtr(0)))
-
-      this.myhashed = CryptoJS.SHA256(CryptoJS.enc.Latin1.parse(gxmpi))
+      this.myhashed = CryptoJS.SHA256(gxmpi)
       this.myhashed = HLP.packData(this.myhashed.toString(CryptoJS.enc.Latin1))
+
+      this.dhcommit = HLP.packData(HLP.encryptAes(gxmpi, key, HLP.packCtr(0)))
       this.dhcommit += this.myhashed
 
       this.sendMsg(version, '\x02', this.dhcommit)
@@ -1938,7 +1940,14 @@ var OTR = {}, DSA = {}
       send += HLP.packINT(this.their_keyid)
       send += HLP.packMPI(this.our_dh.publicKey)
       send += ctr.substring(0, 8)
-      send += HLP.packData(HLP.makeAes(msg, sessKeys.sendenc, ctr))
+
+      var aes = HLP.encryptAes(
+          CryptoJS.enc.Utf8.parse(msg)
+        , sessKeys.sendenc
+        , ctr
+      )
+
+      send += HLP.packData(aes)
       send += HLP.make1Mac(send, sessKeys.sendmac)
       send += HLP.packData(this.oldMacKeys.splice(0).join(''))
 
@@ -2018,6 +2027,7 @@ var OTR = {}, DSA = {}
         , sessKeys.rcvenc
         , HLP.padCtr(msg[4])
       )
+      out = out.toString(CryptoJS.enc.Utf8)
 
       if (!our_keyid) this.rotateOurKeys()
       if (!their_keyid) this.rotateTheirKeys(HLP.readMPI(msg[3]))

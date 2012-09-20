@@ -1,4 +1,9 @@
 
+0.0.7 / 2012-09-20
+==================
+
+  * support utf8 encoded messages
+
 0.0.6 / 2012-09-17
 ==================
 
@@ -6,7 +11,7 @@
   * change and document fingerprint api
   * fix read int
 
-0.0.5 / 2012-08-25 
+0.0.5 / 2012-08-25
 ==================
 
   * pad signature
@@ -16,7 +21,7 @@
   * document ake
   * don't allow v1
 
-0.0.4 / 2012-08-21 
+0.0.4 / 2012-08-21
 ==================
 
   * fix send message fragments
