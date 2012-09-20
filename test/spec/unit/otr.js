@@ -300,13 +300,22 @@ it('should go through the ake dance, v2', function () {
 
   it('should ignore messages with diff instance tags', function () {
     var userB = new OTR(keys.userB, function (msg) {
-      console.log(msg)
-      assert.ok(!msg)
+      assert.ok(!msg, msg)
     }, function (msg) { userA.receiveMsg(msg) })
     var userA = new OTR(keys.userA, cb, userB.receiveMsg)
     userA.sendQueryMsg()
     userA.their_instance_tag = OTR.makeInstanceTag()
     userA.sendMsg('hi')
+  })
+
+  it('should send utf8 data', function () {
+    var m = 'hello يا هلا يا حبيبي خذني إلى القمر'
+    var userB = new OTR(keys.userB, function (msg) {
+      assert.equal(m, msg, msg)
+    }, function (msg) { userA.receiveMsg(msg) })
+    var userA = new OTR(keys.userA, cb, userB.receiveMsg)
+    userA.sendQueryMsg()
+    userA.sendMsg(m)
   })
 
 })
