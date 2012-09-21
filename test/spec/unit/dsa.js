@@ -6,18 +6,19 @@ var assert = require('assert')
 
 describe('DSA', function() {
 
-  var key
-
+  var key, L, N
   before(function () {
     // time the keygen but require before
     process.stdout.write('      generating the key ... ')
     var start = (new Date()).getTime()
-    key = new DSA()
+    L = 1024
+    N = 160
+    key = new DSA(L)
     console.log('(' + ((new Date()).getTime() - start) + 'ms)')
   })
 
-  it('should generate a key with q > 2^159 and q < 2^160', function () {
-    assert.ok(HLP.between(key.q, HLP.twotothe(159), HLP.twotothe(160)),'In between.')
+  it('should generate a key with q > 2^(N - 1) and q < 2^N', function () {
+    assert.ok(HLP.between(key.q, HLP.twotothe(N - 1), HLP.twotothe(N)),'In between.')
   })
 
   it('should generate a key with q being a multiple of q', function () {
