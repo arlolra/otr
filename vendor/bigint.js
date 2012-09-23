@@ -68,7 +68,7 @@
   //
   // Version history:
   // v 5.4  3 Oct 2009
-  //   - added "var i" to greaterShift() so i is not global. (Thanks to PŽter Szab— for finding that bug)
+  //   - added "var i" to greaterShift() so i is not global. (Thanks to Péter Szabó for finding that bug)
   //
   // v 5.3  21 Sep 2009
   //   - added randProbPrime(k) for probable primes
@@ -239,41 +239,41 @@
   ////////////////////////////////////////////////////////////////////////////////////////
 
   //globals
-  bpe=0;         //bits stored per array element
-  mask=0;        //AND this with an array element to chop it down to bpe bits
-  radix=mask+1;  //equals 2^bpe.  A single 1 bit to the left of the last bit of mask.
+  var bpe=0;         //bits stored per array element
+  var mask=0;        //AND this with an array element to chop it down to bpe bits
+  var radix=mask+1;  //equals 2^bpe.  A single 1 bit to the left of the last bit of mask.
 
   //the digits for converting to different bases
-  digitsStr='0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz_=!@#$%^&*()[]{}|;:,.<>/?`~ \\\'\"+-';
+  var digitsStr='0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz_=!@#$%^&*()[]{}|;:,.<>/?`~ \\\'\"+-';
 
   //initialize the global variables
   for (bpe=0; (1<<(bpe+1)) > (1<<bpe); bpe++);  //bpe=number of bits in the mantissa on this platform
   bpe>>=1;                   //bpe=number of bits in one element of the array representing the bigInt
   mask=(1<<bpe)-1;           //AND the mask with an integer to get its bpe least significant bits
   radix=mask+1;              //2^bpe.  a single 1 bit to the left of the first bit of mask
-  one=int2bigInt(1,1,1);     //constant used in powMod_()
+  var one=int2bigInt(1,1,1);     //constant used in powMod_()
 
   //the following global variables are scratchpad memory to 
   //reduce dynamic memory allocation in the inner loop
-  t=new Array(0);
-  ss=t;       //used in mult_()
-  s0=t;       //used in multMod_(), squareMod_() 
-  s1=t;       //used in powMod_(), multMod_(), squareMod_() 
-  s2=t;       //used in powMod_(), multMod_()
-  s3=t;       //used in powMod_()
-  s4=t; s5=t; //used in mod_()
-  s6=t;       //used in bigInt2str()
-  s7=t;       //used in powMod_()
-  T=t;        //used in GCD_()
-  sa=t;       //used in mont_()
-  mr_x1=t; mr_r=t; mr_a=t;                                      //used in millerRabin()
-  eg_v=t; eg_u=t; eg_A=t; eg_B=t; eg_C=t; eg_D=t;               //used in eGCD_(), inverseMod_()
-  md_q1=t; md_q2=t; md_q3=t; md_r=t; md_r1=t; md_r2=t; md_tt=t; //used in mod_()
+  var t=new Array(0);
+  var ss=t;       //used in mult_()
+  var s0=t;       //used in multMod_(), squareMod_()
+  var s1=t;       //used in powMod_(), multMod_(), squareMod_()
+  var s2=t;       //used in powMod_(), multMod_()
+  var s3=t;       //used in powMod_()
+  var s4=t, s5=t; //used in mod_()
+  var s6=t;       //used in bigInt2str()
+  var s7=t;       //used in powMod_()
+  var T=t;        //used in GCD_()
+  var sa=t;       //used in mont_()
+  var mr_x1=t, mr_r=t, mr_a=t;                                      //used in millerRabin()
+  var eg_v=t, eg_u=t, eg_A=t, eg_B=t, eg_C=t, eg_D=t;               //used in eGCD_(), inverseMod_()
+  var md_q1=t, md_q2=t, md_q3=t, md_r=t, md_r1=t, md_r2=t, md_tt=t; //used in mod_()
 
-  primes=t; pows=t; s_i=t; s_i2=t; s_R=t; s_rm=t; s_q=t; s_n1=t; 
-    s_a=t; s_r2=t; s_n=t; s_b=t; s_d=t; s_x1=t; s_x2=t, s_aa=t; //used in randTruePrime_()
+  var primes=t, pows=t, s_i=t, s_i2=t, s_R=t, s_rm=t, s_q=t, s_n1=t;
+  var s_a=t, s_r2=t, s_n=t, s_b=t, s_d=t, s_x1=t, s_x2=t, s_aa=t; //used in randTruePrime_()
     
-  rpprb=t; //used in randProbPrimeRounds() (which also uses "primes")
+  var rpprb=t; //used in randProbPrimeRounds() (which also uses "primes")
 
   ////////////////////////////////////////////////////////////////////////////////////////
 
@@ -332,6 +332,8 @@
     addInt_(mr_x1,-1);
 
     //s=the highest power of two that divides mr_r
+
+    /*
     k=0;
     for (i=0;i<mr_r.length;i++)
       for (j=1;j<mask;j<<=1)
@@ -341,6 +343,14 @@
            j=mask;
         } else
           k++;
+    */
+
+    /* http://www.javascripter.net/math/primes/millerrabinbug-bigint54.htm */
+    if (isZero(mr_r)) return 0;
+    for (k=0; mr_r[k]==0; k++);
+    for (i=1,j=2; mr_r[k]%j==0; j*=2,i++ );
+    s = k*bpe + i - 1;
+    /* end */
 
     if (s)                
       rightShift_(mr_r,s);
@@ -507,7 +517,7 @@
   //generate a k-bit true random prime using Maurer's algorithm,
   //and put it into ans.  The bigInt ans must be large enough to hold it.
   function randTruePrime_(ans,k) {
-    var c,m,pm,dd,j,r,B,divisible,z,zz,recSize;
+    var c,w,m,pm,dd,j,r,B,divisible,z,zz,recSize,recLimit;
 
     if (primes.length==0)
       primes=findPrimes(30000);  //check for divisibility by primes <=30000
@@ -515,7 +525,7 @@
     if (pows.length==0) {
       pows=new Array(512);
       for (j=0;j<512;j++) {
-        pows[j]=Math.pow(2,j/511.-1.);
+        pows[j]=Math.pow(2,j/511.0-1.0);
       }
     }
 
@@ -563,7 +573,7 @@
       for (r=1; k-k*r<=m; )
         r=pows[Math.floor(Math.random()*512)];   //r=Math.pow(2,Math.random()-1);
     else
-      r=.5;
+      r=0.5;
 
     //simulation suggests the more complex algorithm using r=.333 is only slightly faster.
 
@@ -673,7 +683,7 @@
   //set x to the greatest common divisor of bigInts x and y (each with same number of elements).
   //y is destroyed.
   function GCD_(x,y) {
-    var i,xp,yp,A,B,C,D,q,sing;
+    var i,xp,yp,A,B,C,D,q,sing,qp;
     if (T.length!=x.length)
       T=dup(x);
 
@@ -1027,7 +1037,7 @@
   //Pad the array with leading zeros so that it has at least minSize elements.
   //There will always be at least one leading 0 element.
   function int2bigInt(t,bits,minSize) {   
-    var i,k;
+    var i,k, buff;
     k=Math.ceil(bits/bpe)+1;
     k=minSize>k ? minSize : k;
     buff=new Array(k);
@@ -1157,7 +1167,7 @@
 
   //returns a duplicate of bigInt x
   function dup(x) {
-    var i;
+    var i, buff;
     buff=new Array(x.length);
     copy_(buff,x);
     return buff;
