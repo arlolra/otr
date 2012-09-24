@@ -2,7 +2,7 @@
 0.0.8 / 2012-09-24
 ==================
 
-* dsa key generation fixes
+  * dsa key generation fixes
 
 0.0.7 / 2012-09-20
 ==================
