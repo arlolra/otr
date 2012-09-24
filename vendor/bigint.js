@@ -5,6 +5,7 @@
   var BigInt = {
       str2bigInt    : str2bigInt
     , bigInt2str    : bigInt2str
+    , int2bigInt    : int2bigInt
     , multMod       : multMod
     , powMod        : powMod
     , inverseMod    : inverseMod
@@ -12,6 +13,8 @@
     , equals        : equals
     , sub           : sub
     , mod           : mod
+    , mod_          : mod_
+    , modInt        : modInt
     , mult          : mult
     , divInt_       : divInt_
     , rightShift_   : rightShift_
@@ -19,6 +22,8 @@
     , dup           : dup
     , greater       : greater
     , add           : add
+    , addInt        : addInt
+    , addInt_       : addInt_
     , isZero        : isZero
     , bitSize       : bitSize
     , randTruePrime : randTruePrime
