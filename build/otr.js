@@ -1,6 +1,6 @@
 /*!
 
-  otr.js v0.0.7 - 2012-09-20
+  otr.js v0.0.8 - 2012-09-24
   (c) 2012 - Arlo Breault <arlolra@gmail.com>
   Freely distributed under the LGPL license.
 
@@ -459,6 +459,18 @@ var OTR = {}, DSA = {}
   var ZERO = BigInt.str2bigInt('0', 10)
     , ONE = BigInt.str2bigInt('1', 10)
     , TWO = BigInt.str2bigInt('2', 10)
+    , KEY_TYPE = '\x00\x00'
+
+  var DEBUG = false
+  function timer() {
+    var start = (new Date()).getTime()
+    return function (s) {
+      if (!DEBUG || typeof console === 'undefined') return
+      var t = (new Date()).getTime()
+      console.log(s + ': ' + (t - start))
+      start = t
+    }
+  }
 
   function makeRandom(min, max) {
     var c = BigInt.randBigInt(BigInt.bitSize(max))
@@ -466,125 +478,223 @@ var OTR = {}, DSA = {}
     return c
   }
 
-  function pickBase(prime) {
-    var b = BigInt.bitSize(prime)
-    var base = BigInt.randBigInt(b)
-    while (!BigInt.greater(prime, base))  // pick a random that's < ans
-      base = BigInt.randBigInt(b)
-    return base
+  // http://www-cs-students.stanford.edu/~tjw/jsbn/jsbn2.js
+
+  var lowprimes = [2,3,5,7,11,13,17,19,23,29,31,37,41,43,47,53,59,61,67,71,73,79,83,89,97,101,103,107,109,113,127,131,137,139,149,151,157,163,167,173,179,181,191,193,197,199,211,223,227,229,233,239,241,251,257,263,269,271,277,281,283,293,307,311,313,317,331,337,347,349,353,359,367,373,379,383,389,397,401,409,419,421,431,433,439,443,449,457,461,463,467,479,487,491,499,503,509,521,523,541,547,557,563,569,571,577,587,593,599,601,607,613,617,619,631,641,643,647,653,659,661,673,677,683,691,701,709,719,727,733,739,743,751,757,761,769,773,787,797,809,811,821,823,827,829,839,853,857,859,863,877,881,883,887,907,911,919,929,937,941,947,953,967,971,977,983,991,997]
+  var lplim = (1 << 26) / lowprimes[lowprimes.length - 1]
+
+  function isProbablePrime(x, repeat) {
+    var t = x.length - 1
+    for (; t >= 0 && x[t] === 0; t--) ;
+
+    var i
+    if(t == 1 && x[0] <= lowprimes[lowprimes.length - 1]) {
+      for (i = 0; i < lowprimes.length; ++i)
+        if (x[0] == lowprimes[i]) return true
+      return false
+    }
+
+    // even
+    if ((x[0] % 2) === 0) return false
+
+    i = 1
+    var m, j
+    while (i < lowprimes.length) {
+      m = lowprimes[i]
+      j = i + 1
+      while(j < lowprimes.length && m < lplim) m *= lowprimes[j++];
+      m = BigInt.modInt(x, m)
+      while (i < j) if (m % lowprimes[i++] === 0) return false
+    }
+
+    return millerRabin(x, repeat)
   }
 
-  function MR(prime) {
-    var j = 0, k = true
-    // 40x should give 2^-80 confidence
-    for (; j < 40; j++) {
-      if (!BigInt.millerRabin(prime, pickBase(prime))) {
-        k = false
-        break
-      }
-    }
+  function lbit(x) {
+    if (x === 0) return -1
+    var k = 0
+    while ((x & 1) === 0) x >>= 1, k++
     return k
   }
 
-  function DSA() {
-    if (!(this instanceof DSA)) return new DSA()
+  function lowestSetBit(x) {
+    var t = x.length - 1
+    for (; t >= 0 && x[t] === 0; t--) ;
+    var i = 0
+    for (; i < t; i++)
+      if (x[i] !== 0) return (i * BigInt.bpe) + lbit(x[i])
+    return -1
+  }
 
-    this.N = 160
-    this.L = 1024
+  function millerRabin(x, repeat) {
+    var n1 = BigInt.sub(x, ONE)
 
-    this.type = '\x00\x00'
+    var k = lowestSetBit(n1)
+    if (k <= 0) return false
 
-    this.makePQ()
-    this.makeG()
+    var r = BigInt.dup(n1)
+    BigInt.rightShift_(r, k)
 
+    repeat = (repeat + 1) >> 1
+    if (repeat > lowprimes.length) repeat = lowprimes.length;
+
+    var a, i, y, j
+    for (i = 0; i < repeat; i++) {
+
+      // Pick bases at random, instead of starting at 2
+      a = lowprimes[Math.floor(Math.random() * lowprimes.length)]
+      a = BigInt.int2bigInt(a, 0)
+
+      y = BigInt.powMod(a, r, x)
+
+      if (!BigInt.equals(y, ONE) && !BigInt.equals(y, n1)) {
+        j = 1
+        while (j++ < k && !BigInt.equals(y, n1)) {
+          y = BigInt.powMod(y, TWO, x)
+          if (BigInt.equals(y, ONE)) return false
+        }
+        if (!BigInt.equals(y, n1)) return false
+      }
+
+    }
+
+    return true
+  }
+
+  var bit_lengths = {
+      '1024': { N: 160, repeat: 40 }  // 40x should give 2^-80 confidence
+    , '2048': { N: 224, repeat: 56 }
+    , '3072': { N: 256, repeat: 64 }
+  }
+
+  var primes = {}
+
+  function SHAbigInt(bi) {
+    bi = CryptoJS.enc.Latin1.parse(HLP.bigInt2bits(bi))
+    bi = CryptoJS.SHA1(bi)
+    return HLP.bits2bigInt(bi.toString(CryptoJS.enc.Latin1))
+  }
+
+  function inc_(bi, TN) {
+    BigInt.addInt_(bi, 1)
+    BigInt.mod_(bi, TN)
+  }
+
+  function generatePrimes(bit_length) {
+
+    var t = timer()  // for debugging
+
+    // number of MR tests to perform
+    var repeat = bit_lengths[bit_length].repeat
+
+    var N = bit_lengths[bit_length].N
+    var TN = HLP.twotothe(N)
+
+    var n = Math.floor((bit_length - 1) / N)
+    var b = (bit_length - 1) % N
+
+    var bl4 = 4 * bit_length
+    var brk = false
+
+    var q, p, seed, u, tmp, counter, offset, k, cspo, V, W, X, LM1, c
+    for (;;) {
+
+      seed = BigInt.randBigInt(N)
+
+      tmp = BigInt.dup(seed)
+      inc_(tmp, TN)
+      tmp = SHAbigInt(tmp)
+
+      u = SHAbigInt(seed)
+      u = HLP.bigBitWise('XOR', u, tmp)
+
+      q = HLP.bigBitWise('OR', u, HLP.twotothe(N - 1))
+      q[0] |= 1
+
+      if (!isProbablePrime(q, repeat)) continue
+
+      t('q')
+      offset = BigInt.dup(seed)
+      inc_(offset, TN)
+
+      for (counter = 0; counter < bl4; counter++) {
+        W = ZERO
+        cspo = BigInt.addInt(seed, offset)
+
+        for (k = 0; k < (n + 1); k ++) {
+          inc_(offset, TN)
+          V = SHAbigInt(offset)
+          if (k === n) V = BigInt.mod(V, HLP.twotothe(b))
+          V = BigInt.mult(V, HLP.twotothe(N * k))
+          W = BigInt.add(W, V)
+        }
+
+        LM1 = HLP.twotothe(bit_length - 1)
+        X = BigInt.add(W, LM1)
+
+        c = BigInt.mod(X, BigInt.mult(q, TWO))
+        p = BigInt.sub(X, BigInt.sub(c, ONE))
+
+        if (BigInt.greater(LM1, p)) continue
+        if (!isProbablePrime(p, repeat)) continue
+
+        t('p')
+        primes[bit_length] = { p: p, q: q }
+        brk = true
+        break
+      }
+
+      if (brk) break
+    }
+
+    var h = BigInt.dup(TWO)
+    var pm1 = BigInt.sub(p, ONE)
+    var e = BigInt.multMod(pm1, BigInt.inverseMod(q, p), p)
+
+    var g
+    for (;;) {
+      g = BigInt.powMod(h, e, p)
+      if (BigInt.equals(g, ONE)) {
+        h = BigInt.add(h, ONE)
+        continue
+      }
+      primes[bit_length].g = g
+      t('g')
+      return
+    }
+
+    throw new Error('Unreachable!')
+  }
+
+  function DSA(bit_length) {
+    if (!(this instanceof DSA)) return new DSA(bit_length)
+
+    // default to 1024
+    bit_length = parseInt(bit_length ? bit_length : 1024, 10)
+
+    if (!bit_lengths[bit_length])
+      throw new Error('Unsupported bit length.')
+
+    // set primes
+    if (!primes[bit_length]) generatePrimes(bit_length)
+
+    this.p = primes[bit_length].p
+    this.q = primes[bit_length].q
+    this.g = primes[bit_length].g
+
+    // key type
+    this.type = KEY_TYPE
+
+    // private key
     this.x = makeRandom(ZERO, this.q)
+
+    // public keys (p, q, g, y)
     this.y = BigInt.powMod(this.g, this.x, this.p)
   }
 
   DSA.prototype = {
 
     constructor: DSA,
-
-    makePQ: function() {
-      var g = this.N
-      this.seed = BigInt.randBigInt(this.N)
-
-      var tmp = BigInt.mod(BigInt.add(this.seed, ONE), HLP.twotothe(g))
-      tmp = CryptoJS.SHA1(CryptoJS.enc.Latin1.parse(HLP.bigInt2bits(tmp)))
-
-      var u = CryptoJS.enc.Latin1.parse(HLP.bigInt2bits(this.seed))
-      u = CryptoJS.SHA1(u)
-      u = HLP.bigBitWise(
-          'XOR'
-        , BigInt.str2bigInt(tmp.toString(CryptoJS.enc.Hex), 16)
-        , BigInt.str2bigInt(u.toString(CryptoJS.enc.Hex), 16)
-      )
-
-      this.q = HLP.bigBitWise('OR', u, HLP.twotothe(g - 1))
-      this.q = HLP.bigBitWise('OR', this.q, ONE)
-
-      if (!MR(this.q)) return this.makePQ()
-
-      this.counter = 0
-
-      var n = Math.floor(this.L / this.N)
-      var b = (this.L % this.N) - 1
-
-      // var start = new Date()
-      this.step7(TWO, this.N, n, b)
-      // console.log(new Date() - start)
-    },
-
-    step7: function (offset, g, n, b) {
-      var V = ZERO
-      var W = ZERO
-
-      var cache_seed_plus_offset = BigInt.add(this.seed, offset)
-
-      var i = 0
-      for (; i < (n + 1); i++) {
-        V = BigInt.add(
-            cache_seed_plus_offset
-          , BigInt.str2bigInt(i.toString(), 10)
-        )
-        V = HLP.bigInt2bits(BigInt.mod(V, HLP.twotothe(g)))
-        V = CryptoJS.SHA1(CryptoJS.enc.Latin1.parse(V))
-        V = BigInt.str2bigInt(V.toString(CryptoJS.enc.Hex), 16)
-        if (i === n) V = BigInt.mod(V, HLP.twotothe(b))
-        V = BigInt.mult(V, HLP.twotothe(g * i))
-        W = BigInt.add(W, V)
-      }
-
-      var Lminus = HLP.twotothe(this.L - 1)
-      var X = BigInt.add(W, Lminus)
-      // console.log(HLP.between(X, Lminus, HLP.twotothe(this.L)))
-
-      var c = BigInt.mod(X, BigInt.mult(TWO, this.q))
-      this.p = BigInt.sub(X, BigInt.sub(c, ONE))
-
-      if (!BigInt.greater(Lminus, this.p)) {
-        // test the primality of p
-        if (MR(this.p)) return
-      }
-
-      offset = BigInt.add(offset, BigInt.str2bigInt((n + 1).toString(), 10))
-      this.counter += 1
-
-      if (this.counter >= 4096) return this.makePQ()
-      this.step7(offset, g, n, b)
-    },
-
-    makeG: function (e) {
-      var p_minus = BigInt.sub(this.p, ONE)
-      if (!e) e = BigInt.multMod(
-          p_minus
-        , BigInt.inverseMod(this.q, this.p)
-        , this.p
-      )
-      var h = TWO  // makeRandom(ONE, p_minus)
-      this.g = BigInt.powMod(h, e, this.p)
-      if (!BigInt.greater(this.g, ONE)) this.makeG(e)
-    },
 
     packPublic: function () {
       var str = this.type
@@ -595,27 +705,24 @@ var OTR = {}, DSA = {}
       return str
     },
 
-    hsign: function (hm) {
-      var k = makeRandom(ZERO, this.q)
-      var r = BigInt.mod(BigInt.powMod(this.g, k, this.p), this.q)
-      if (BigInt.isZero(r)) return this.hsign(hm)
-      var s = BigInt.inverseMod(k, this.q)
-      s = BigInt.mult(s, BigInt.add(hm, BigInt.mult(this.x, r)))
-      s = BigInt.mod(s, this.q)
-      if (BigInt.isZero(s)) return this.hsign(hm)
-      return [r, s]
-    },
-
     sign: function (m) {
-      var hm = CryptoJS.enc.Latin1.parse(m)  // CryptoJS.SHA1(m)
-      hm = BigInt.str2bigInt(hm.toString(CryptoJS.enc.Hex), 16)
-      return this.hsign(hm)
+      m = CryptoJS.enc.Latin1.parse(m)  // CryptoJS.SHA1(m)
+      m = BigInt.str2bigInt(m.toString(CryptoJS.enc.Hex), 16)
+      var k, r = ZERO, s = ZERO
+      while (BigInt.isZero(s) || BigInt.isZero(r)) {
+        k = makeRandom(ZERO, this.q)
+        r = BigInt.mod(BigInt.powMod(this.g, k, this.p), this.q)
+        if (BigInt.isZero(r)) continue
+        s = BigInt.inverseMod(k, this.q)
+        s = BigInt.mult(s, BigInt.add(m, BigInt.mult(this.x, r)))
+        s = BigInt.mod(s, this.q)
+      }
+      return [r, s]
     },
 
     fingerprint: function () {
       var pk = this.packPublic()
-      if (this.type === '\x00\x00')
-        pk = pk.substring(2)
+      if (this.type === KEY_TYPE) pk = pk.substring(2)
       pk = CryptoJS.enc.Latin1.parse(pk)
       return CryptoJS.SHA1(pk).toString(CryptoJS.enc.Hex)
     }
@@ -655,7 +762,7 @@ var OTR = {}, DSA = {}
   DSA.inherit = function (key) {
     key.__proto__ = DSA.prototype
     key.constructor = DSA
-    key.type = '\x00\x00'
+    key.type = KEY_TYPE
   }
 
 }).call(this)
