@@ -175,4 +175,4 @@ A sampling of projects that use this library:
 
 ###License
 
-LGPL. Mainly because that's what [libotr](http://www.cypherpunks.ca/otr/) is using.
+MPL v2.0
