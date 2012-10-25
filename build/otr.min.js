@@ -1,8 +1,8 @@
 /*!
 
-  otr.js v0.0.8 - 2012-09-24
+  otr.js v0.0.9 - 2012-10-25
   (c) 2012 - Arlo Breault <arlolra@gmail.com>
-  Freely distributed under the LGPL license.
+  Freely distributed under the MPL v2.0 license.
 
   This file is concatenated for the browser.
   Please see: https://github.com/arlolra/otr
