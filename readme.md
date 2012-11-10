@@ -170,6 +170,7 @@ Using:
 A sampling of projects that use this library:
 
 - [Cryptocat](https://github.com/kaepora/cryptocat)
+- [Yabasta](https://github.com/jonkri/yabasta)
 
 ---
 
