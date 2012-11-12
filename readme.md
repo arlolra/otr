@@ -50,7 +50,8 @@ expensive and can take several seconds.
 For each user you're communicating with, instantiate an OTR object.
 
     // provide some callbacks to otr
-    var uicb = function (msg) {
+    var uicb = function (err, msg) {
+      if (err) return console.log("error occurred: " + err)
       console.log("message to display to the user: " + msg)
     }
     var iocb = function (msg) {

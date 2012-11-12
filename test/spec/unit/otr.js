@@ -74,7 +74,8 @@ describe('OTR', function () {
   })
 
   it('whitespace start ake', function () {
-    var userB = new OTR(keys.userB, function (msg) {
+    var userB = new OTR(keys.userB, function (err, msg) {
+      assert.ifError(err)
       assert.equal('hi', msg)
       assert.equal(userB.msgstate, CONST.MSGSTATE_ENCRYPTED)
       assert.equal(userA.msgstate, CONST.MSGSTATE_ENCRYPTED)
@@ -87,7 +88,10 @@ describe('OTR', function () {
 
   it('should go through the ake dance', function () {
     var userA, userB, counter = 0
-    var ui = function (msg) { assert.ok(!msg, msg) }
+    var ui = function (err, msg) {
+      assert.ifError(err)
+      assert.ok(!msg, msg)
+    }
     var checkstate = function (user) {
       switch (counter) {
         case 0:
@@ -141,7 +145,10 @@ describe('OTR', function () {
   })
 
 it('should go through the ake dance, v2', function () {
-    var ui = function (msg) { assert.ok(!msg, msg) }
+    var ui = function (err, msg) {
+      assert.ifError(err)
+      assert.ok(!msg, msg)
+    }
     var userA = new OTR(keys.userA, ui, function (msg) {
       userB.receiveMsg(msg)
     })
@@ -160,7 +167,10 @@ it('should go through the ake dance, v2', function () {
   })
 
   it('should not go through the ake dance', function () {
-    var ui = function (msg) { assert.ok(!msg, msg) }
+    var ui = function (err, msg) {
+      assert.ifError(err)
+      assert.ok(!msg, msg)
+    }
     var userA = new OTR(keys.userA, ui, function (msg) {
       userB.receiveMsg(msg)
     })
@@ -183,7 +193,8 @@ it('should go through the ake dance, v2', function () {
     var counter = 0
 
     var userA, userB
-    var ui = function (msg) {
+    var ui = function (err, msg) {
+      assert.ifError(err)
       assert.equal(userA.msgstate, CONST.MSGSTATE_ENCRYPTED)
       assert.equal(userB.msgstate, CONST.MSGSTATE_ENCRYPTED)
       assert.equal(msgs[counter++], msg, 'Encrypted message.')
@@ -224,7 +235,8 @@ it('should go through the ake dance, v2', function () {
 
     var userA, userB
     var ui = function (ind) {
-      return function (msg) {
+      return function (err, msg) {
+        assert.ifError(err)
         var u = users[ind]
         assert.equal(u.u.msgstate, CONST.MSGSTATE_ENCRYPTED, 'Message state unencrypted. Msg: ' + msg)
         assert.equal(u.m[u.c++], msg, 'Encrypted message: ' + msg)
@@ -268,7 +280,8 @@ it('should go through the ake dance, v2', function () {
 
     var userA, userB
     var ui = function (ind) {
-      return function (msg) {
+      return function (err, msg) {
+        assert.ifError(err)
         var u = users[ind]
         assert.equal(u.u.msgstate, CONST.MSGSTATE_ENCRYPTED, 'Message state unencrypted. Msg: ' + msg)
         assert.equal(u.m[u.c++], msg, 'Encrypted message: ' + msg)
@@ -299,7 +312,8 @@ it('should go through the ake dance, v2', function () {
   })
 
   it('should ignore messages with diff instance tags', function () {
-    var userB = new OTR(keys.userB, function (msg) {
+    var userB = new OTR(keys.userB, function (err, msg) {
+      assert.ifError(err)
       assert.ok(!msg, msg)
     }, function (msg) { userA.receiveMsg(msg) })
     var userA = new OTR(keys.userA, cb, userB.receiveMsg)
@@ -310,7 +324,8 @@ it('should go through the ake dance, v2', function () {
 
   it('should send utf8 data', function () {
     var m = 'hello يا هلا يا حبيبي خذني إلى القمر'
-    var userB = new OTR(keys.userB, function (msg) {
+    var userB = new OTR(keys.userB, function (err, msg) {
+      assert.ifError(err)
       assert.equal(m, msg, msg)
     }, function (msg) { userA.receiveMsg(msg) })
     var userA = new OTR(keys.userA, cb, userB.receiveMsg)
