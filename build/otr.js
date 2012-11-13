@@ -1,6 +1,6 @@
 /*!
 
-  otr.js v0.0.9 - 2012-10-25
+  otr.js v0.0.10 - 2012-11-12
   (c) 2012 - Arlo Breault <arlolra@gmail.com>
   Freely distributed under the MPL v2.0 license.
 
@@ -82,6 +82,11 @@ var OTR = {}, DSA = {}
   // otr message wrapper begin and end
   var WRAPPER_BEGIN = "?OTR"
     , WRAPPER_END   = "."
+
+  HLP.debug = function (msg) {
+    // used as HLP.debug.call(ctx, msg)
+    if (this.debug && typeof console !== 'undefined') console.log(msg)
+  }
 
   HLP.divMod = function (num, den, n) {
     return BigInt.multMod(num, BigInt.inverseMod(den, n), n)
@@ -1006,11 +1011,6 @@ var OTR = {}, DSA = {}
     return (hmac.finalize()).toString(CryptoJS.enc.Latin1)
   }
 
-  var DEBUG = false
-  function debug(msg) {
-    if (DEBUG && typeof console !== 'undefined') console.log(msg)
-  }
-
   // AKE constructor
   function AKE(otr) {
     if (!(this instanceof AKE)) return new AKE(otr)
@@ -1093,7 +1093,7 @@ var OTR = {}, DSA = {}
     },
 
     akeSuccess: function (version) {
-      debug('success')
+      HLP.debug.call(this.otr, 'success')
 
       if (BigInt.equals(this.their_y, this.our_dh.publicKey))
         return this.otr.error('equal keys - we have a problem.', true)
@@ -1144,7 +1144,7 @@ var OTR = {}, DSA = {}
       switch (msg.type) {
 
         case '\x02':
-          debug('d-h key message')
+          HLP.debug.call(this.otr, 'd-h key message')
 
           msg = HLP.splitype(['DATA', 'DATA'], msg.msg)
 
@@ -1176,7 +1176,7 @@ var OTR = {}, DSA = {}
           break
 
         case '\x0a':
-          debug('reveal signature message')
+          HLP.debug.call(this.otr, 'reveal signature message')
 
           msg = HLP.splitype(['MPI'], msg.msg)
 
@@ -1204,7 +1204,7 @@ var OTR = {}, DSA = {}
           break
 
         case '\x11':
-          debug('signature message')
+          HLP.debug.call(this.otr, 'signature message')
 
           if (this.otr.authstate !== CONST.AUTHSTATE_AWAITING_REVEALSIG)
             return  // ignore
@@ -1264,7 +1264,7 @@ var OTR = {}, DSA = {}
           return
 
         case '\x12':
-          debug('data message')
+          HLP.debug.call(this.otr, 'data message')
 
           if (this.otr.authstate !== CONST.AUTHSTATE_AWAITING_SIG)
             return  // ignore
@@ -1305,7 +1305,7 @@ var OTR = {}, DSA = {}
 
       // instance tags for v3
       if (v3) {
-        debug('instance tags')
+        HLP.debug.call(this.otr, 'instance tags')
         send += this.otr.our_instance_tag
         send += this.otr.their_instance_tag
       }
@@ -1326,7 +1326,7 @@ var OTR = {}, DSA = {}
     },
 
     initiateAKE: function (version) {
-      debug('d-h commit message')
+      HLP.debug.call(this.otr, 'd-h commit message')
 
       this.otr.authstate = CONST.AUTHSTATE_AWAITING_DHKEY
 
@@ -1427,8 +1427,13 @@ var OTR = {}, DSA = {}
     },
 
     makeG2s: function () {
+      this.a2 = HLP.randomExponent()
+      this.a3 = HLP.randomExponent()
       this.g2a = BigInt.powMod(G, this.a2, N)
       this.g3a = BigInt.powMod(G, this.a3, N)
+      if ( !HLP.checkGroup(this.g2a, N) ||
+           !HLP.checkGroup(this.g3a, N)
+      ) this.makeG2s()
     },
 
     computeGs: function (g2a, g3a) {
@@ -1510,9 +1515,6 @@ var OTR = {}, DSA = {}
             return this.abort()
 
           this.g3ao = msg[3]  // save for later
-
-          this.a2 = HLP.randomExponent()
-          this.a3 = HLP.randomExponent()
 
           this.makeG2s()
 
@@ -1727,8 +1729,6 @@ var OTR = {}, DSA = {}
       if (this.smpstate !== SMPSTATE_EXPECT1)
         this.abort()  // abort + restart
 
-      this.a2 = HLP.randomValue()
-      this.a3 = HLP.randomValue()
       this.makeG2s()
 
       // zero-knowledge proof that the exponents
@@ -1834,6 +1834,9 @@ var OTR = {}, DSA = {}
 
     // instance tag
     this.our_instance_tag = options.instance_tag || OTR.makeInstanceTag()
+
+    // debug
+    this.debug = !!options.debug
 
     // init vals
     this.init()
@@ -2264,7 +2267,7 @@ var OTR = {}, DSA = {}
           if (this.WHITESPACE_START_AKE) this.doAKE(msg)
       }
 
-      if (msg.msg) this.uicb(msg.msg)
+      if (msg.msg) this.uicb(null, msg.msg)
     },
 
     checkInstanceTags: function (it) {
@@ -2292,12 +2295,11 @@ var OTR = {}, DSA = {}
 
     error: function (err, send) {
       if (send) {
+        if (!this.debug) err = "An OTR error has occurred."
         err = '?OTR Error:' + err
         this.sendMsg(err, true)
         return
       }
-      // should cb be a node style function (err, msg) {}
-      // or just instanceof Error ?
       this.uicb(err)
     },
 
