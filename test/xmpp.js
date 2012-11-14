@@ -4,8 +4,9 @@ var xmpp = require('simple-xmpp')
 
 var from = ''
 
-function ui(msg) {
-  console.log('ui: ' + msg)
+function ui(err, msg) {
+  if (err) console.log('err: ' + err)
+  else console.log('ui: ' + msg)
 }
 
 function cb(msg) {
