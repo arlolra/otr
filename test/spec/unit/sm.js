@@ -58,4 +58,31 @@ describe('SM', function () {
 
   })
 
+  it('should verify the SM secret with question', function () {
+    userA.uicb = function (err, msg) {
+      assert.equal(false, !!err, err)
+      assert.equal(false, !!msg, msg)
+    }
+
+    userA.sendQueryMsg()  // must have AKEd for SM
+
+    assert.equal(userB.msgstate, CONST.MSGSTATE_ENCRYPTED, 'Encrypted')
+    assert.equal(userA.msgstate, CONST.MSGSTATE_ENCRYPTED, 'Encrypted')
+
+    // callback to ask smp question
+    // should be passed in as opts.smcb
+    userB._smcb = function (question) {
+      userB.smpSecret('applesAndOranges')
+    }
+
+    assert.ok(!userA.trust, 'Trust B? false')
+    assert.ok(!userB.trust, 'Trust A? false')
+
+    userA.smpSecret('applesAndOranges', 'What is difference?')
+
+    assert.ok(userA.trust, 'Trust B? false')
+    assert.ok(userB.trust, 'Trust A? false')
+
+  })
+
 })
