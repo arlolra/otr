@@ -11,7 +11,7 @@ describe('SM', function () {
   beforeEach(function () {
     var cb = function (err) { if (err) throw err }
     var io = function (msg) { userA.receiveMsg(msg) }
-    var opts = { debug: true }
+    var opts = {}
     userB = new OTR(keys.userB, cb, io, opts)
     userA = new OTR(keys.userA, cb, userB.receiveMsg, opts)
   })
@@ -31,7 +31,7 @@ describe('SM', function () {
     userA.smpSecret()
   })
 
-  it.skip('should verify the SM secret', function (done) {
+  it('should verify the SM secret', function () {
     userA.uicb = function (err, msg) {
       assert.equal(false, !!err, err)
       assert.equal(false, !!msg, msg)
@@ -43,8 +43,8 @@ describe('SM', function () {
     assert.equal(userA.msgstate, CONST.MSGSTATE_ENCRYPTED, 'Encrypted')
 
     // callback to ask smp question
-    userB.smcb = function (question) {
-      console.log("question")
+    // should be passed in as opts.smcb
+    userB._smcb = function (question) {
       userB.smpSecret('applesAndOranges')
     }
 
@@ -52,6 +52,9 @@ describe('SM', function () {
     assert.ok(!userB.trust, 'Trust A? false')
 
     userA.smpSecret('applesAndOranges')
+
+    assert.ok(userA.trust, 'Trust B? false')
+    assert.ok(userB.trust, 'Trust A? false')
 
   })
 
