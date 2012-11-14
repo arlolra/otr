@@ -92,10 +92,23 @@ upon success, send it out.
     buddyList.userA.REQUIRE_ENCRYPTION = true
     buddyList.userA.sendMsg('My plaintext message to be encrypted.')
 
-
 Another policy, `SEND_WHITESPACE_TAG`, will append tags to plaintext messages,
 indicating a willingness to speak OTR. If the recipient in turn has set the
 policy `WHITESPACE_START_AKE`, the AKE will be initiated.
+
+**Socialist Millionaire Protocol
+
+At any time after establishing encryption, either party can initiate SMP to
+detect impersonation or man-in-the-middle attacks. A shared secret,
+exchanged through an out-of-band channel prior to starting the conversation,
+is required.
+
+    var secret = "cryptocat?"
+    buddyList.userA.smpInit(secret)
+
+If the protocol successfully runs to completion,
+
+    buddyList.userA.trust === true
 
 ---
 
