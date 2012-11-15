@@ -230,7 +230,7 @@ Using:
 
 A sampling of projects that use this library:
 
-- [Cryptocat](https://github.com/kaepora/cryptocat)
+- [Cryptocat](https://github.com/cryptocat/cryptocat)
 - [Yabasta](https://github.com/jonkri/yabasta)
 
 ---
