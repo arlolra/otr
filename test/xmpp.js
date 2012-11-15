@@ -7,6 +7,10 @@ var from = ''
 function ui(err, msg) {
   if (err) console.log('err: ' + err)
   else console.log('ui: ' + msg)
+
+  if (~msg.indexOf('hello')) {
+    otr.smpSecret('cryptocat')
+  }
 }
 
 function cb(msg) {
