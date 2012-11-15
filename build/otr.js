@@ -1,6 +1,6 @@
 /*!
 
-  otr.js v0.0.10 - 2012-11-12
+  otr.js v0.0.11 - 2012-11-15
   (c) 2012 - Arlo Breault <arlolra@gmail.com>
   Freely distributed under the MPL v2.0 license.
 
@@ -42,6 +42,13 @@ var OTR = {}, DSA = {}
     , OTR_VERSION_1 : '\x00\x01'
     , OTR_VERSION_2 : '\x00\x02'
     , OTR_VERSION_3 : '\x00\x03'
+
+    // smp machine states
+    , SMPSTATE_EXPECT0 : 0
+    , SMPSTATE_EXPECT1 : 1
+    , SMPSTATE_EXPECT2 : 2
+    , SMPSTATE_EXPECT3 : 3
+    , SMPSTATE_EXPECT4 : 4
 
   }
 
@@ -85,7 +92,10 @@ var OTR = {}, DSA = {}
 
   HLP.debug = function (msg) {
     // used as HLP.debug.call(ctx, msg)
-    if (this.debug && typeof console !== 'undefined') console.log(msg)
+    if ( this.debug &&
+         typeof this.debug !== 'function' &&
+         typeof console !== 'undefined'
+    ) console.log(msg)
   }
 
   HLP.divMod = function (num, den, n) {
@@ -109,11 +119,11 @@ var OTR = {}, DSA = {}
 
   HLP.smpHash = function (version, fmpi, smpi) {
     var sha256 = CryptoJS.algo.SHA256.create()
-    sha256.update(CryptoJS.enc.Latin1.parse(version.toString()))
+    sha256.update(CryptoJS.enc.Latin1.parse(HLP.packBytes(version, DTS.BYTE)))
     sha256.update(CryptoJS.enc.Latin1.parse(HLP.packMPI(fmpi)))
     if (smpi) sha256.update(CryptoJS.enc.Latin1.parse(HLP.packMPI(smpi)))
     var hash = sha256.finalize()
-    return BigInt.str2bigInt(hash.toString(CryptoJS.enc.Hex), 16)
+    return HLP.bits2bigInt(hash.toString(CryptoJS.enc.Latin1))
   }
 
   HLP.makeMac = function (aesctr, m) {
@@ -1126,7 +1136,7 @@ var OTR = {}, DSA = {}
       // ake info
       this.otr.ssid = this.ssid
       this.otr.transmittedRS = this.transmittedRS
-      this.otr.smInit()
+      this.otr._smInit()
       this.otr_version = version
 
       // go encrypted
@@ -1322,7 +1332,7 @@ var OTR = {}, DSA = {}
       )
       if (send[0]) return this.otr.error(send[0])
 
-      this.otr.sendMsg(send[1], true)
+      this.otr._sendMsg(send[1], true)
     },
 
     initiateAKE: function (version) {
@@ -1370,17 +1380,6 @@ var OTR = {}, DSA = {}
     DSA = root.DSA
   }
 
-  // smp machine states
-  var SMPSTATE_EXPECT1 = 1
-    , SMPSTATE_EXPECT2 = 2
-    , SMPSTATE_EXPECT3 = 3
-    , SMPSTATE_EXPECT4 = 4
-
-  // otr message states
-  var MSGSTATE_PLAINTEXT = 0
-    , MSGSTATE_ENCRYPTED = 1
-    , MSGSTATE_FINISHED = 2
-
   // diffie-hellman modulus and generator
   // see group 5, RFC 3526
   var G = BigInt.str2bigInt(CONST.G, 10)
@@ -1411,19 +1410,19 @@ var OTR = {}, DSA = {}
     // set the initial values
     // also used when aborting
     init: function () {
-      this.smpstate = SMPSTATE_EXPECT1
+      this.smpstate = CONST.SMPSTATE_EXPECT1
       this.secret = null
     },
 
-    makeSecret: function (our) {
+    makeSecret: function (our, secret) {
       var sha256 = CryptoJS.algo.SHA256.create()
-      sha256.update(this.version)
-      sha256.update(our ? this.our_fp : this.their_fp)
-      sha256.update(our ? this.their_fp : this.our_fp)
-      sha256.update(this.otr.ssid)    // secure session id
-      sha256.update(this.otr.secret)  // user input string
+      sha256.update(CryptoJS.enc.Latin1.parse(HLP.packBytes(this.version, 1)))
+      sha256.update(CryptoJS.enc.Hex.parse(our ? this.our_fp : this.their_fp))
+      sha256.update(CryptoJS.enc.Hex.parse(our ? this.their_fp : this.our_fp))
+      sha256.update(CryptoJS.enc.Latin1.parse(this.otr.ssid))
+      sha256.update(CryptoJS.enc.Latin1.parse(secret))  // utf8?
       var hash = sha256.finalize()
-      this.secret = BigInt.str2bigInt(hash.toString(CryptoJS.enc.Hex), 16)
+      this.secret = HLP.bits2bigInt(hash.toString(CryptoJS.enc.Latin1))
     },
 
     makeG2s: function () {
@@ -1464,15 +1463,14 @@ var OTR = {}, DSA = {}
 
     // the bulk of the work
     handleSM: function (msg) {
-      var send, r2, r3, r4, r5, r6, r7, t1, t2, t3, t4
-        , rab, tmp, tmp2, cP, cR, d5, d6, d7, ms
+      var send, r2, r3, r7, t1, t2, t3, t4, rab, tmp2, cR, d7, ms
 
       var expectStates = {
-          2: SMPSTATE_EXPECT1
-        , 3: SMPSTATE_EXPECT2
-        , 4: SMPSTATE_EXPECT3
-        , 5: SMPSTATE_EXPECT4
-        , 7: SMPSTATE_EXPECT1
+          2: CONST.SMPSTATE_EXPECT1
+        , 3: CONST.SMPSTATE_EXPECT2
+        , 4: CONST.SMPSTATE_EXPECT3
+        , 5: CONST.SMPSTATE_EXPECT4
+        , 7: CONST.SMPSTATE_EXPECT1
       }
 
       if (msg.type === 6) {
@@ -1482,26 +1480,26 @@ var OTR = {}, DSA = {}
 
       // abort! there was an error
       if ( this.smpstate !== expectStates[msg.type] ||
-           this.otr.msgstate !== MSGSTATE_ENCRYPTED
+           this.otr.msgstate !== CONST.MSGSTATE_ENCRYPTED
       ) return this.abort()
 
       switch (this.smpstate) {
 
-        case SMPSTATE_EXPECT1:
+        case CONST.SMPSTATE_EXPECT1:
+          HLP.debug.call(this.otr, 'smp tlv 2')
 
           // user specified question
+          var ind, question
           if (msg.type === 7) {
-            var ind = msg.msg.indexOf('\x00')
-            var question = msg.msg.substring(0, ind - 1)
-            msg.msg = msg.msg.substring(ind)
+            ind = msg.msg.indexOf('\x00')
+            question = msg.msg.substring(0, ind)
+            msg.msg = msg.msg.substring(ind + 1)
           }
 
           // 0:g2a, 1:c2, 2:d2, 3:g3a, 4:c3, 5:d3
           ms = HLP.readLen(msg.msg.substr(0, 4))
           if (ms !== 6) return this.abort()
           msg = HLP.unpackMPIs(6, msg.msg.substring(4))
-
-          this.makeSecret()
 
           if ( !HLP.checkGroup(msg[0], N) ||
                !HLP.checkGroup(msg[3], N)
@@ -1529,40 +1527,15 @@ var OTR = {}, DSA = {}
 
           this.computeGs(msg[0], msg[3])
 
-          r4 = HLP.randomExponent()
+          this.smpstate = CONST.SMPSTATE_EXPECT0
 
-          this.computePQ(r4)
+          // invoke question
+          this.otr._smcb('question', question)
+          return
 
-          // zero-knowledge proof that P & Q
-          // were generated according to the protocol
-          r5 = HLP.randomExponent()
-          r6 = HLP.randomExponent()
-          tmp = HLP.multPowMod(G, r5, this.g2, r6, N)
-          cP = HLP.smpHash(5, BigInt.powMod(this.g3, r5, N), tmp)
-          d5 = this.computeD(r5, r4, cP)
-          d6 = this.computeD(r6, this.secret, cP)
+        case CONST.SMPSTATE_EXPECT2:
+          HLP.debug.call(this.otr, 'smp tlv 3')
 
-          this.smpstate = SMPSTATE_EXPECT3
-
-          send = HLP.packINT(11) + HLP.packMPIs([
-              this.g2a
-            , this.c2
-            , this.d2
-            , this.g3a
-            , this.c3
-            , this.d3
-            , this.p
-            , this.q
-            , cP
-            , d5
-            , d6
-          ])
-
-          // TLV
-          send = HLP.packTLV(3, send)
-          break
-
-        case SMPSTATE_EXPECT2:
           // 0:g2a, 1:c2, 2:d2, 3:g3a, 4:c3, 5:d3, 6:p, 7:q, 8:cP, 9:d5, 10:d6
           ms = HLP.readLen(msg.msg.substr(0, 4))
           if (ms !== 11) return this.abort()
@@ -1593,18 +1566,17 @@ var OTR = {}, DSA = {}
           if (!HLP.ZKP(5, msg[8], t1, t2))
             return this.abort()
 
-          r4 = HLP.randomExponent()
-
+          var r4 = HLP.randomExponent()
           this.computePQ(r4)
 
           // zero-knowledge proof that P & Q
           // were generated according to the protocol
-          r5 = HLP.randomExponent()
-          r6 = HLP.randomExponent()
-          tmp = HLP.multPowMod(G, r5, this.g2, r6, N)
-          cP = HLP.smpHash(6, BigInt.powMod(this.g3, r5, N), tmp)
-          d5 = this.computeD(r5, r4, cP)
-          d6 = this.computeD(r6, this.secret, cP)
+          var r5 = HLP.randomExponent()
+          var r6 = HLP.randomExponent()
+          var tmp = HLP.multPowMod(G, r5, this.g2, r6, N)
+          var cP = HLP.smpHash(6, BigInt.powMod(this.g3, r5, N), tmp)
+          var d5 = this.computeD(r5, r4, cP)
+          var d6 = this.computeD(r6, this.secret, cP)
 
           // store these
           this.QoQ = HLP.divMod(this.q, msg[7], N)
@@ -1619,7 +1591,7 @@ var OTR = {}, DSA = {}
           cR = HLP.smpHash(7, BigInt.powMod(G, r7, N), tmp2)
           d7 = this.computeD(r7, this.a3, cR)
 
-          this.smpstate = SMPSTATE_EXPECT4
+          this.smpstate = CONST.SMPSTATE_EXPECT4
 
           send = HLP.packINT(8) + HLP.packMPIs([
               this.p
@@ -1636,7 +1608,9 @@ var OTR = {}, DSA = {}
           send = HLP.packTLV(4, send)
           break
 
-        case SMPSTATE_EXPECT3:
+        case CONST.SMPSTATE_EXPECT3:
+          HLP.debug.call(this.otr, 'smp tlv 4')
+
           // 0:p, 1:q, 2:cP, 3:d5, 4:d6, 5:r, 6:cR, 7:d7
           ms = HLP.readLen(msg.msg.substr(0, 4))
           if (ms !== 8) return this.abort()
@@ -1683,10 +1657,13 @@ var OTR = {}, DSA = {}
           send = HLP.packTLV(5, send)
 
           this.otr.trust = true
+          this.otr._smcb('trust')
           this.init()
           break
 
-        case SMPSTATE_EXPECT4:
+        case CONST.SMPSTATE_EXPECT4:
+          HLP.debug.call(this.otr, 'smp tlv 5')
+
           // 0:r, 1:cR, 2:d7
           ms = HLP.readLen(msg.msg.substr(0, 4))
           if (ms !== 3) return this.abort()
@@ -1706,6 +1683,7 @@ var OTR = {}, DSA = {}
             return this.abort()
 
           this.otr.trust = true
+          this.otr._smcb('trust')
           this.init()
           return
 
@@ -1716,17 +1694,65 @@ var OTR = {}, DSA = {}
 
     // send a message
     sendMsg: function (send) {
-      this.otr.sendMsg('\x00' + send)
+      this.otr._sendMsg('\x00' + send)
     },
 
-    initiate: function () {
+    rcvSecret: function (secret, question) {
+      HLP.debug.call(this.otr, 'receive secret')
 
-      if (this.otr.msgstate !== MSGSTATE_ENCRYPTED)
+      if (this.otr.msgstate !== CONST.MSGSTATE_ENCRYPTED)
         return this.otr.error('Not ready to send encrypted messages.')
 
-      this.makeSecret(true)
+      var fn, our = false
+      if (this.smpstate === CONST.SMPSTATE_EXPECT0) {
+        fn = this.answer
+      } else {
+        fn = this.initiate
+        our = true
+      }
 
-      if (this.smpstate !== SMPSTATE_EXPECT1)
+      this.makeSecret(our, secret)
+      fn.call(this, question)
+    },
+
+    answer: function () {
+      HLP.debug.call(this.otr, 'smp answer')
+
+      var r4 = HLP.randomExponent()
+      this.computePQ(r4)
+
+      // zero-knowledge proof that P & Q
+      // were generated according to the protocol
+      var r5 = HLP.randomExponent()
+      var r6 = HLP.randomExponent()
+      var tmp = HLP.multPowMod(G, r5, this.g2, r6, N)
+      var cP = HLP.smpHash(5, BigInt.powMod(this.g3, r5, N), tmp)
+      var d5 = this.computeD(r5, r4, cP)
+      var d6 = this.computeD(r6, this.secret, cP)
+
+      this.smpstate = CONST.SMPSTATE_EXPECT3
+
+      var send = HLP.packINT(11) + HLP.packMPIs([
+          this.g2a
+        , this.c2
+        , this.d2
+        , this.g3a
+        , this.c3
+        , this.d3
+        , this.p
+        , this.q
+        , cP
+        , d5
+        , d6
+      ])
+
+      this.sendMsg(HLP.packTLV(3, send))
+    },
+
+    initiate: function (question) {
+      HLP.debug.call(this.otr, 'smp initiate')
+
+      if (this.smpstate !== CONST.SMPSTATE_EXPECT1)
         this.abort()  // abort + restart
 
       this.makeG2s()
@@ -1741,9 +1767,18 @@ var OTR = {}, DSA = {}
       this.d3 = this.computeD(r3, this.a3, this.c3)
 
       // set the next expected state
-      this.smpstate = SMPSTATE_EXPECT2
+      this.smpstate = CONST.SMPSTATE_EXPECT2
 
-      var send = HLP.packINT(6) + HLP.packMPIs([
+      var send = ''
+      var type = 2
+
+      if (question) {
+        send += question
+        send += '\x00'
+        type = 7
+      }
+
+      send += HLP.packINT(6) + HLP.packMPIs([
           this.g2a
         , this.c2
         , this.d2
@@ -1752,13 +1787,12 @@ var OTR = {}, DSA = {}
         , this.d3
       ])
 
-      // TLV
-      send = HLP.packTLV(2, send)
-
-      this.sendMsg(send)
+      this.sendMsg(HLP.packTLV(type, send))
     },
 
     abort: function () {
+      this.otr.trust = false
+      this.otr._smcb('abort')
       this.init()
       this.sendMsg(HLP.packTLV(6, ''))
     }
@@ -1838,6 +1872,12 @@ var OTR = {}, DSA = {}
     // debug
     this.debug = !!options.debug
 
+    // smp callback
+    if (!options.smcb || typeof options.smcb !== 'function')
+      options.smcb = function () {}  // no-opt
+
+    this._smcb = options.smcb
+
     // init vals
     this.init()
 
@@ -1886,15 +1926,13 @@ var OTR = {}, DSA = {}
       this.storedMgs = []
       this.oldMacKeys = []
 
+      // smp
       this.sm = null  // initialized after AKE
       this.trust = false  // will be true after successful smp
 
       // when ake is complete
       // save their keys and the session
-      this.akeInit()
-
-      // user provided secret for SM
-      this.secret = 'cryptocat?'
+      this._akeInit()
 
       // receive plaintext message since switching to plaintext
       // used to decide when to stop sending pt tags when SEND_WHITESPACE_TAG
@@ -1902,13 +1940,13 @@ var OTR = {}, DSA = {}
 
     },
 
-    akeInit: function () {
+    _akeInit: function () {
       this.ake = new AKE(this)
       this.transmittedRS = false
       this.ssid = null
     },
 
-    smInit: function () {
+    _smInit: function () {
       this.sm = new SM(this)
     },
 
@@ -2052,7 +2090,7 @@ var OTR = {}, DSA = {}
       send += ctr.substring(0, 8)
 
       var aes = HLP.encryptAes(
-          CryptoJS.enc.Utf8.parse(msg)
+          CryptoJS.enc.Latin1.parse(msg)
         , sessKeys.sendenc
         , ctr
       )
@@ -2137,7 +2175,7 @@ var OTR = {}, DSA = {}
         , sessKeys.rcvenc
         , HLP.padCtr(msg[4])
       )
-      out = out.toString(CryptoJS.enc.Utf8)
+      out = out.toString(CryptoJS.enc.Latin1)
 
       if (!our_keyid) this.rotateOurKeys()
       if (!their_keyid) this.rotateTheirKeys(HLP.readMPI(msg[3]))
@@ -2149,7 +2187,8 @@ var OTR = {}, DSA = {}
         out = out.substring(0, ind)
       }
 
-      return out
+      out = CryptoJS.enc.Latin1.parse(out)
+      return out.toString(CryptoJS.enc.Utf8)
     },
 
     handleTLVs: function (tlvs, sessKeys) {
@@ -2176,6 +2215,16 @@ var OTR = {}, DSA = {}
       }
     },
 
+    smpSecret: function (secret, question) {
+      if (this.msgstate !== CONST.MSGSTATE_ENCRYPTED)
+        return this.error('Must be encrypted for SMP.')
+
+      if (typeof secret !== 'string' || secret.length < 1)
+        return this.error('Secret is required.')
+
+      this.sm.rcvSecret(secret, question)
+    },
+
     sendQueryMsg: function () {
       var versions = {}
         , msg = CONST.OTR_TAG
@@ -2195,10 +2244,16 @@ var OTR = {}, DSA = {}
         msg += '?'
       }
 
-      this.sendMsg(msg, true)
+      this._sendMsg(msg, true)
     },
 
-    sendMsg: function (msg, internal) {
+    sendMsg: function (msg) {
+      msg = CryptoJS.enc.Utf8.parse(msg)
+      msg = msg.toString(CryptoJS.enc.Latin1)
+      this._sendMsg(msg)
+    },
+
+    _sendMsg: function (msg, internal) {
       if (!internal) {  // a user or sm msg
 
         switch (this.msgstate) {
@@ -2250,7 +2305,7 @@ var OTR = {}, DSA = {}
           msg.msg = this.handleDataMsg(msg)
           break
         case 'query':
-          if (this.msgstate === CONST.MSGSTATE_ENCRYPTED) this.akeInit()
+          if (this.msgstate === CONST.MSGSTATE_ENCRYPTED) this._akeInit()
           this.doAKE(msg)
           break
         default:
@@ -2297,7 +2352,7 @@ var OTR = {}, DSA = {}
       if (send) {
         if (!this.debug) err = "An OTR error has occurred."
         err = '?OTR Error:' + err
-        this.sendMsg(err, true)
+        this._sendMsg(err, true)
         return
       }
       this.uicb(err)
@@ -2306,13 +2361,13 @@ var OTR = {}, DSA = {}
     sendStored: function () {
       var self = this
       ;(this.storedMgs.splice(0)).forEach(function (msg) {
-        self.sendMsg(msg)
+        self._sendMsg(msg)
       })
     },
 
     endOtr: function () {
       if (this.msgstate === CONST.MSGSTATE_ENCRYPTED) {
-        this.sendMsg('\x00\x01\x00\x00')
+        this._sendMsg('\x00\x01\x00\x00')
         this.sm = null
       }
       this.msgstate = CONST.MSGSTATE_PLAINTEXT
