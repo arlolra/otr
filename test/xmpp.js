@@ -13,9 +13,27 @@ function cb(msg) {
   xmpp.send(from, msg)
 }
 
+function smcb(type, data) {
+  switch (type) {
+    case 'question':
+      console.log(data)
+      otr.smpSecret('cryptocat')
+      break
+    case 'abort':
+      console.log('aborted')
+      break
+    case 'trust':
+      console.log('trust')
+      console.log(otr.trust)
+      break
+  }
+}
+
 var otr = new OTR(keys.userA, ui, cb, {
     fragment_size: 200
   , send_interval: 200
+  , smcb: smcb
+  , debug: true
 })
 
 xmpp.on('online', function() {
