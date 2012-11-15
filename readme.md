@@ -59,10 +59,7 @@ For each user you're communicating with, instantiate an OTR object.
     }
 
     // provide options
-    var options = {
-        fragment_size: 140  // fragment the message in case of char limits
-      , send_interval: 200  // ms delay between sending fragmented msgs, avoid rate limits
-    }
+    var options = { fragment_size: 140, send_interval: 200 }
 
     var buddyList = {
         'userA': new OTR(myKey, uicb, iocb, options)
@@ -95,6 +92,24 @@ upon success, send it out.
 Another policy, `SEND_WHITESPACE_TAG`, will append tags to plaintext messages,
 indicating a willingness to speak OTR. If the recipient in turn has set the
 policy `WHITESPACE_START_AKE`, the AKE will be initiated.
+
+**Options**: A dictionary of the current options accepted by the OTR constructor.
+
+    var options = {
+
+      // turn on some debuggin logs
+      debug: false,
+
+      // socialist millionaire callback
+      smcb: function () {},
+
+      // fragment the message in case of char limits
+      fragment_size: 140,
+
+      // ms delay between sending fragmented msgs, avoid rate limits
+      send_interval: 200
+
+    }
 
 ---
 
