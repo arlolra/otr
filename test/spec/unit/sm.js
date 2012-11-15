@@ -44,8 +44,20 @@ describe('SM', function () {
 
     // callback to ask smp question
     // should be passed in as opts.smcb
-    userB._smcb = function (question) {
-      userB.smpSecret('applesAndOranges')
+    userB._smcb = function (type, data) {
+      switch (type) {
+        case 'question':
+          this.smpSecret('applesAndOranges')
+          break
+        case 'trust':
+          assert.ok(this.trust)
+          break
+        case 'abort':
+          assert.ok(!this.trust)
+          break
+        default:
+          throw 'should not be here'
+      }
     }
 
     assert.ok(!userA.trust, 'Trust B? false')
@@ -71,8 +83,21 @@ describe('SM', function () {
 
     // callback to ask smp question
     // should be passed in as opts.smcb
-    userB._smcb = function (question) {
-      userB.smpSecret('applesAndOranges')
+    userB._smcb = function (type, data) {
+      switch (type) {
+        case 'question':
+          assert.equal('What is difference?', data, type)
+          this.smpSecret('applesAndOranges')
+          break
+        case 'trust':
+          assert.ok(this.trust)
+          break
+        case 'abort':
+          assert.ok(!this.trust)
+          break
+        default:
+          throw 'should not be here'
+      }
     }
 
     assert.ok(!userA.trust, 'Trust B? false')

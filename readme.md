@@ -96,20 +96,6 @@ Another policy, `SEND_WHITESPACE_TAG`, will append tags to plaintext messages,
 indicating a willingness to speak OTR. If the recipient in turn has set the
 policy `WHITESPACE_START_AKE`, the AKE will be initiated.
 
-**Socialist Millionaire Protocol
-
-At any time after establishing encryption, either party can initiate SMP to
-detect impersonation or man-in-the-middle attacks. A shared secret,
-exchanged through an out-of-band channel prior to starting the conversation,
-is required.
-
-    var secret = "cryptocat?"
-    buddyList.userA.smpInit(secret)
-
-If the protocol successfully runs to completion,
-
-    buddyList.userA.trust === true
-
 ---
 
 ###Policies
@@ -160,6 +146,52 @@ OTR public key fingerprints can be obtained as follows:
 
     // for their key
     userA.their_priv_pk.fingerprint()
+
+---
+
+###Socialist Millionaire Protocol
+
+At any time after establishing encryption, either party can initiate SMP to
+detect impersonation or man-in-the-middle attacks. A shared secret,
+exchanged through an out-of-band channel prior to starting the conversation,
+is required.
+
+    var secret = "ghostbusters"
+    buddyList.userA.smpSecret(secret)
+
+A question can be supplied, as a reminder of the shared secret.
+
+    var question = "who are you going to call?"
+    buddylist.userA.smpSecret(secret, question)
+
+If you plan on using SMP, as opposed to just allowing fingerprints for
+verification, provide on optional callback when initiating OTR,
+otherwise a no-opt is fired.
+
+    function smcb(type, data) {
+      switch (type) {
+        case 'question':
+          // call(data) some function with question?
+          // return the user supplied data to
+          // userA.smpSecret(secret)
+          break
+        case 'abort':
+          // smp was aborted
+          // check userA.trust and update ui
+          break
+        case 'trust':
+          // smp completed
+          // check userA.trust and update ui accordingly
+          break
+      }
+    }
+
+    var options = { smcb: smcb }
+    var userA = new OTR(myKey, uicb, iocb, options)
+
+If the protocol successfully runs to completion,
+
+    buddyList.userA.trust === true
 
 ---
 
