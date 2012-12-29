@@ -190,14 +190,12 @@ otherwise a no-opt is fired.
           // return the user supplied data to
           // userA.smpSecret(secret)
           break
-        case 'abort':
-          // smp was aborted
-          // check userA.trust and update ui
-          break
         case 'trust':
-          // smp completed
+          // smp completed or aborted
           // check userA.trust and update ui accordingly
           break
+        default:
+          throw new Error('Unknown type.')
       }
     }
 

@@ -52,11 +52,8 @@ describe('SM', function () {
         case 'trust':
           assert.ok(this.trust)
           break
-        case 'abort':
-          assert.ok(!this.trust)
-          break
         default:
-          throw 'should not be here'
+          throw new Error('should not be here')
       }
     }
 
@@ -67,6 +64,43 @@ describe('SM', function () {
 
     assert.ok(userA.trust, 'Trust B? false')
     assert.ok(userB.trust, 'Trust A? false')
+
+  })
+
+
+  it('should verify the SM secret failed', function () {
+    userA.uicb = function (err, msg) {
+      assert.equal(false, !!err, err)
+      assert.equal(false, !!msg, msg)
+    }
+
+    userA.sendQueryMsg()  // must have AKEd for SM
+
+    assert.equal(userB.msgstate, CONST.MSGSTATE_ENCRYPTED, 'Encrypted')
+    assert.equal(userA.msgstate, CONST.MSGSTATE_ENCRYPTED, 'Encrypted')
+
+    // callback to ask smp question
+    // should be passed in as opts.smcb
+    userB._smcb = function (type, data) {
+      switch (type) {
+        case 'question':
+          this.smpSecret('bananasAndPears')
+          break
+        case 'trust':
+          assert.ok(!this.trust)
+          break
+        default:
+          throw new Error('should not be here')
+      }
+    }
+
+    assert.ok(!userA.trust, 'Trust B? false')
+    assert.ok(!userB.trust, 'Trust A? false')
+
+    userA.smpSecret('applesAndOranges')
+
+    assert.ok(!userA.trust, 'Trust B? false')
+    assert.ok(!userB.trust, 'Trust A? false')
 
   })
 
@@ -92,11 +126,8 @@ describe('SM', function () {
         case 'trust':
           assert.ok(this.trust)
           break
-        case 'abort':
-          assert.ok(!this.trust)
-          break
         default:
-          throw 'should not be here'
+          throw new Error('should not be here')
       }
     }
 
