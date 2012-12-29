@@ -208,6 +208,20 @@ If the protocol successfully runs to completion,
 
 ---
 
+### Private Keys
+
+To export a private, long-lived key:
+
+  var myKey = new DSA()
+  var string = myKey.packPrivate()  // returns a Base64 encoded string
+
+It can then be imported as follows,
+
+  // string = "AAAAAACA4COdKHpU/np9F8EDdnGiJJmc89p ... I9BzTkQduFA7ovXAMY="
+  var myKey = DSA.parsePrivate(string)
+
+---
+
 ###Links
 
 Spec:

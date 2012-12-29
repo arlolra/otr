@@ -13,7 +13,7 @@ describe('DSA', function() {
     var start = (new Date()).getTime()
     L = 1024
     N = 160
-    key = new DSA(L)
+    key = new DSA(null, L)
     console.log('(' + ((new Date()).getTime() - start) + 'ms)')
   })
 
@@ -49,6 +49,15 @@ describe('DSA', function() {
   it('should return a fingerprint for the public key', function () {
     var finger = key.fingerprint()
     assert.equal(40, finger.length, 'SHA1 Hex')
+  })
+
+  it('should parse a given private key into the correct params', function () {
+    var par = DSA.parsePrivate(key.packPrivate())
+    assert.ok(BigInt.equals(key.p, par.p), 'Pees are good.')
+    assert.ok(BigInt.equals(key.q, par.q), 'Qs.')
+    assert.ok(BigInt.equals(key.g, par.g), 'Gs.')
+    assert.ok(BigInt.equals(key.y, par.y), 'Ys.')
+    assert.ok(BigInt.equals(key.x, par.x), 'Xs.')
   })
 
 })
