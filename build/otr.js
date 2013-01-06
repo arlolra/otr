@@ -1,7 +1,7 @@
 /*!
 
-  otr.js v0.0.11 - 2012-11-15
-  (c) 2012 - Arlo Breault <arlolra@gmail.com>
+  otr.js v0.0.12 - 2013-01-06
+  (c) 2013 - Arlo Breault <arlolra@gmail.com>
   Freely distributed under the MPL v2.0 license.
 
   This file is concatenated for the browser.
@@ -681,8 +681,18 @@ var OTR = {}, DSA = {}
     throw new Error('Unreachable!')
   }
 
-  function DSA(bit_length) {
-    if (!(this instanceof DSA)) return new DSA(bit_length)
+  function DSA(obj, bit_length) {
+    if (!(this instanceof DSA)) return new DSA(obj, bit_length)
+
+    // inherit
+    if (obj) {
+      var self = this
+      ;['p', 'q', 'g', 'y', 'x'].forEach(function (prop) {
+        self[prop] = obj[prop]
+      })
+      this.type = obj.type || KEY_TYPE
+      return
+    }
 
     // default to 1024
     bit_length = parseInt(bit_length ? bit_length : 1024, 10)
@@ -720,6 +730,12 @@ var OTR = {}, DSA = {}
       return str
     },
 
+    packPrivate: function () {
+      var str = this.packPublic() + HLP.packMPI(this.x)
+      str = CryptoJS.enc.Latin1.parse(str)
+      return str.toString(CryptoJS.enc.Base64)
+    },
+
     sign: function (m) {
       m = CryptoJS.enc.Latin1.parse(m)  // CryptoJS.SHA1(m)
       m = BigInt.str2bigInt(m.toString(CryptoJS.enc.Hex), 16)
@@ -744,15 +760,25 @@ var OTR = {}, DSA = {}
 
   }
 
-  DSA.parsePublic = function (str) {
-    str = HLP.splitype(['SHORT', 'MPI', 'MPI', 'MPI', 'MPI'], str)
-    return {
+  DSA.parsePublic = function (str, priv) {
+    var fields = ['SHORT', 'MPI', 'MPI', 'MPI', 'MPI']
+    if (priv) fields.push('MPI')
+    str = HLP.splitype(fields, str)
+    var obj = {
         type: str[0]
       , p: HLP.readMPI(str[1])
       , q: HLP.readMPI(str[2])
       , g: HLP.readMPI(str[3])
       , y: HLP.readMPI(str[4])
     }
+    if (priv) obj.x = HLP.readMPI(str[5])
+    return new DSA(obj)
+  }
+
+  DSA.parsePrivate = function (str) {
+    str = CryptoJS.enc.Base64.parse(str)
+    str = str.toString(CryptoJS.enc.Latin1)
+    return DSA.parsePublic(str, true)
   }
 
   DSA.verify = function (key, m, r, s) {
@@ -1119,7 +1145,6 @@ var OTR = {}, DSA = {}
         this.otr.their_old_y = null
         this.otr.their_keyid = this.their_keyid
         this.otr.their_priv_pk = this.their_priv_pk
-        DSA.inherit(this.otr.their_priv_pk)
 
         // rotate keys
         this.otr.sessKeys[0] = [ new this.otr.dhSession(
@@ -1474,7 +1499,9 @@ var OTR = {}, DSA = {}
       }
 
       if (msg.type === 6) {
+        this.otr.trust = false
         this.init()
+        this.otr._smcb('trust', this.otr.trust)
         return
       }
 
@@ -1657,8 +1684,8 @@ var OTR = {}, DSA = {}
           send = HLP.packTLV(5, send)
 
           this.otr.trust = true
-          this.otr._smcb('trust')
           this.init()
+          this.otr._smcb('trust', this.otr.trust)
           break
 
         case CONST.SMPSTATE_EXPECT4:
@@ -1683,8 +1710,8 @@ var OTR = {}, DSA = {}
             return this.abort()
 
           this.otr.trust = true
-          this.otr._smcb('trust')
           this.init()
+          this.otr._smcb('trust', this.otr.trust)
           return
 
       }
@@ -1792,9 +1819,9 @@ var OTR = {}, DSA = {}
 
     abort: function () {
       this.otr.trust = false
-      this.otr._smcb('abort')
       this.init()
       this.sendMsg(HLP.packTLV(6, ''))
+      this.otr._smcb('trust', this.otr.trust)
     }
 
   }
@@ -1967,13 +1994,14 @@ var OTR = {}, DSA = {}
       // an async option
       // maybe this is outside the scope?
       var self = this
-      function send() {
-        if (!self.outgoing.length) return
-        var msg = self.outgoing.shift()
-        self._iocb(msg)
+      ;(function send(first) {
+        if (!first) {
+          if (!self.outgoing.length) return
+          var msg = self.outgoing.shift()
+          self._iocb(msg)
+        }
         setTimeout(send, self.send_interval)
-      }
-      setTimeout(send, this.send_interval)
+      }(true))
 
     },
 
@@ -2197,18 +2225,28 @@ var OTR = {}, DSA = {}
         type = HLP.unpackSHORT(tlvs.substr(0, 2))
         len = HLP.unpackSHORT(tlvs.substr(2, 2))
 
-        // TODO: handle pathological cases better
-        if (!len || (len + 4) > tlvs.length) break
-
         msg = tlvs.substr(4, len)
 
-        // SMP
-        if (type > 1 && type < 8)
-          this.sm.handleSM({ msg: msg, type: type })
+        // TODO: handle pathological cases better
+        if (msg.length < len) break
 
-        // Extra Symkey
-        if (type === 8) {
-          // sessKeys.extra_symkey
+        switch (type) {
+          case 1:
+            // Disconnected
+            this.msgstate = CONST.MSGSTATE_FINISHED
+            this.uicb(null,
+              'Your buddy closed the private connection! ' +
+              'You should do the same.')
+            break
+          case 2: case 3: case 4:
+          case 5: case 6: case 7:
+            // SMP
+            this.sm.handleSM({ msg: msg, type: type })
+            break
+          case 8:
+            // Extra Symkey
+            // sessKeys.extra_symkey
+            break
         }
 
         tlvs = tlvs.substring(4 + len)
@@ -2248,8 +2286,12 @@ var OTR = {}, DSA = {}
     },
 
     sendMsg: function (msg) {
-      msg = CryptoJS.enc.Utf8.parse(msg)
-      msg = msg.toString(CryptoJS.enc.Latin1)
+      if ( this.REQUIRE_ENCRYPTION ||
+           this.msgstate !== CONST.MSGSTATE_PLAINTEXT
+      ) {
+        msg = CryptoJS.enc.Utf8.parse(msg)
+        msg = msg.toString(CryptoJS.enc.Latin1)
+      }
       this._sendMsg(msg)
     },
 
@@ -2367,7 +2409,7 @@ var OTR = {}, DSA = {}
 
     endOtr: function () {
       if (this.msgstate === CONST.MSGSTATE_ENCRYPTED) {
-        this._sendMsg('\x00\x01\x00\x00')
+        this.sendMsg('\x00\x00\x01\x00\x00')
         this.sm = null
       }
       this.msgstate = CONST.MSGSTATE_PLAINTEXT
