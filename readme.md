@@ -93,6 +93,12 @@ Another policy, `SEND_WHITESPACE_TAG`, will append tags to plaintext messages,
 indicating a willingness to speak OTR. If the recipient in turn has set the
 policy `WHITESPACE_START_AKE`, the AKE will be initiated.
 
+**Close private connection**: To end an encrypted communication,
+
+    buddyList.userA.endOtr()
+
+will return the message state to plaintext and notify the correspondent.
+
 **Options**: A dictionary of the current options accepted by the OTR constructor.
 
     var options = {
