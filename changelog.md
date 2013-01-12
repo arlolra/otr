@@ -1,4 +1,9 @@
 
+0.0.13 / 2013-01-12
+===================
+
+  * use golang simplifications to generate dsa params
+
 0.0.12 / 2013-01-06
 ===================
 

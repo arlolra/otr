@@ -1,6 +1,6 @@
 /*!
 
-  otr.js v0.0.12 - 2013-01-06
+  otr.js v0.0.13 - 2013-01-12
   (c) 2013 - Arlo Breault <arlolra@gmail.com>
   Freely distributed under the MPL v2.0 license.
 
@@ -595,7 +595,7 @@ var OTR = {}, DSA = {}
     BigInt.mod_(bi, TN)
   }
 
-  function generatePrimes(bit_length) {
+  function generatePrimesFIPS(bit_length) {
 
     var t = timer()  // for debugging
 
@@ -681,8 +681,74 @@ var OTR = {}, DSA = {}
     throw new Error('Unreachable!')
   }
 
-  function DSA(obj, bit_length) {
-    if (!(this instanceof DSA)) return new DSA(obj, bit_length)
+  function generatePrimesGO(bit_length) {
+
+    var t = timer()  // for debugging
+
+    // number of MR tests to perform
+    var repeat = bit_lengths[bit_length].repeat
+
+    var N = bit_lengths[bit_length].N
+
+    var LM1 = HLP.twotothe(bit_length - 1)
+    var bl4 = 4 * bit_length
+    var brk = false
+
+    // go lang http://golang.org/src/pkg/crypto/dsa/dsa.go
+
+    var q, p, rem, counter
+    for (;;) {
+
+      q = BigInt.randBigInt(N, 1)
+      q[0] |= 1
+
+      if (!isProbablePrime(q, repeat)) continue
+      t('q')
+
+      for (counter = 0; counter < bl4; counter++) {
+        p = BigInt.randBigInt(bit_length, 1)
+        p[0] |= 1
+
+        rem = BigInt.mod(p, q)
+        rem = BigInt.sub(rem, ONE)
+        p = BigInt.sub(p, rem)
+
+        if (BigInt.greater(LM1, p)) continue
+        if (!isProbablePrime(p, repeat)) continue
+
+        t('p')
+        primes[bit_length] = { p: p, q: q }
+        brk = true
+        break
+      }
+
+      if (brk) break
+    }
+
+    var h = BigInt.dup(TWO)
+    var pm1 = BigInt.sub(p, ONE)
+    var e = BigInt.multMod(pm1, BigInt.inverseMod(q, p), p)
+
+    var g
+    for (;;) {
+      g = BigInt.powMod(h, e, p)
+      if (BigInt.equals(g, ONE)) {
+        h = BigInt.add(h, ONE)
+        continue
+      }
+      primes[bit_length].g = g
+      t('g')
+      return
+    }
+
+    throw new Error('Unreachable!')
+  }
+
+  function DSA(obj, opts) {
+    if (!(this instanceof DSA)) return new DSA(obj, opts)
+
+    // options
+    opts = opts || {}
 
     // inherit
     if (obj) {
@@ -695,13 +761,16 @@ var OTR = {}, DSA = {}
     }
 
     // default to 1024
-    bit_length = parseInt(bit_length ? bit_length : 1024, 10)
+    var bit_length = parseInt(opts.bit_length ? opts.bit_length : 1024, 10)
 
     if (!bit_lengths[bit_length])
       throw new Error('Unsupported bit length.')
 
     // set primes
-    if (!primes[bit_length]) generatePrimes(bit_length)
+    if (!primes[bit_length]) {
+      if (opts.fips) generatePrimesFIPS(bit_length)
+      else generatePrimesGO(bit_length)
+    }
 
     this.p = primes[bit_length].p
     this.q = primes[bit_length].q
