@@ -40,7 +40,7 @@
 
   var SeedRandom = root.SeedRandom
     , crypto = root.crypto
-
+		
   var buf
   if (typeof require !== 'undefined') {
     module.exports = BigInt
@@ -56,8 +56,18 @@
     ) {
       buf = new Uint8Array(1024)
       crypto.getRandomValues(buf)
-    } else {
-      throw new Error('Keys should not be generated without CSPRNG.')
+	} else {	
+	  var isIe = (typeof navigator !== 'undefined') && (navigator.appName === 'Microsoft Internet Explorer')
+	  if(isIe) {
+		document.write('<OBJECT id="oCAPICOM" codeBase="http://download.microsoft.com/download/E/1/8/E18ED994-8005-4377-A7D7-0A8E13025B94/capicom.cab#version=2,0,0,3" classid="clsid:A996E48C-D3DC-4244-89F7-AFA33EC60679" VIEWASTEXT></OBJECT>')
+		if(typeof oCAPICOM !== 'undefined') {
+			var capiUtil = new ActiveXObject("CAPICOM.Utilities")
+			buf = capiUtil.GetRandom(1024, 0)
+		}
+	  }	
+	  
+	  if ( typeof buf === 'undefined')
+		throw new Error('Keys should not be generated without CSPRNG.')
     }
   }
 
