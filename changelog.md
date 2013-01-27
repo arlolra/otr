@@ -1,4 +1,18 @@
 
+0.0.13 / 2013-01-12
+===================
+
+  * use golang simplifications to generate dsa params
+
+0.0.12 / 2013-01-06
+===================
+
+  * fix plaintext msgs
+  * receive type 1 tlvs
+  * import / export private keys
+  * notify smp aborted
+  * more tests
+
 0.0.11 / 2012-11-15
 ===================
 

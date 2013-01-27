@@ -13,7 +13,7 @@ describe('DSA', function() {
     var start = (new Date()).getTime()
     L = 1024
     N = 160
-    key = new DSA(null, L)
+    key = new DSA(null, { bit_length: L })
     console.log('(' + ((new Date()).getTime() - start) + 'ms)')
   })
 

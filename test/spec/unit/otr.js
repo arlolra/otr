@@ -333,4 +333,41 @@ it('should go through the ake dance, v2', function () {
     userA.sendMsg(m)
   })
 
+  it('should send a plaintext message', function () {
+    var m = 'test some german characters äöüß'
+    var userB = new OTR(keys.userB, function (err, msg) {
+      assert.ifError(err)
+      assert.equal(m, msg, msg)
+    }, function (msg) { userA.receiveMsg(msg) })
+    var userA = new OTR(keys.userA, cb, userB.receiveMsg)
+    userA.sendMsg(m)
+  })
+
+  it('should send an encrypted message when required', function () {
+    var m = 'test some german characters äöüß'
+    var userB = new OTR(keys.userB, function (err, msg) {
+      assert.ifError(err)
+      assert.equal(m, msg, msg)
+    }, function (msg) { userA.receiveMsg(msg) })
+    var userA = new OTR(keys.userA, cb, userB.receiveMsg)
+    userA.REQUIRE_ENCRYPTION = true
+    userA.sendMsg(m)
+  })
+
+  it('disconnect when receiving a type 1 TLV', function () {
+    var userB = new OTR(keys.userB, function (err, msg) {
+      assert.ifError(err)
+      // assert.equal(m, msg, msg)
+    }, function (msg) { userA.receiveMsg(msg) })
+    var userA = new OTR(keys.userA, cb, userB.receiveMsg)
+    assert.equal(userA.msgstate, CONST.MSGSTATE_PLAINTEXT)
+    assert.equal(userB.msgstate, CONST.MSGSTATE_PLAINTEXT)
+    userA.sendQueryMsg()
+    assert.equal(userA.msgstate, CONST.MSGSTATE_ENCRYPTED)
+    assert.equal(userB.msgstate, CONST.MSGSTATE_ENCRYPTED)
+    userA.endOtr()
+    assert.equal(userA.msgstate, CONST.MSGSTATE_PLAINTEXT)
+    assert.equal(userB.msgstate, CONST.MSGSTATE_FINISHED)
+  })
+
 })
