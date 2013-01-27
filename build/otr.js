@@ -1199,7 +1199,6 @@ var OTR = {}, DSA = {}
 
     akeSuccess: function (version) {
       HLP.debug.call(this.otr, 'success')
-      this.otr._status_cb(OTR.Status.AKE_SUCCESS)
 
       if (BigInt.equals(this.their_y, this.our_dh.publicKey))
         return this.otr.error('equal keys - we have a problem.', true)
@@ -1432,7 +1431,6 @@ var OTR = {}, DSA = {}
 
     initiateAKE: function (version) {
       HLP.debug.call(this.otr, 'd-h commit message')
-      this.otr._status_cb(OTR.Status.AKE_INIT)
 
       this.otr.authstate = CONST.AUTHSTATE_AWAITING_DHKEY
 
@@ -1797,7 +1795,6 @@ var OTR = {}, DSA = {}
 
     rcvSecret: function (secret, question) {
       HLP.debug.call(this.otr, 'receive secret')
-      this.otr._status_cb(OTR.Status.SMP_RECEIVE_SECRET)
 
       if (this.otr.msgstate !== CONST.MSGSTATE_ENCRYPTED)
         return this.otr.error('Not ready to send encrypted messages.')
@@ -1816,8 +1813,7 @@ var OTR = {}, DSA = {}
 
     answer: function () {
       HLP.debug.call(this.otr, 'smp answer')
-      this.otr._status_cb(OTR.Status.SMP_ANSWER)
-      
+
       var r4 = HLP.randomExponent()
       this.computePQ(r4)
 
@@ -1851,7 +1847,6 @@ var OTR = {}, DSA = {}
 
     initiate: function (question) {
       HLP.debug.call(this.otr, 'smp initiate')
-      this.otr._status_cb(OTR.Status.SMP_INIT)
 
       if (this.smpstate !== CONST.SMPSTATE_EXPECT1)
         this.abort()  // abort + restart
@@ -1978,12 +1973,6 @@ var OTR = {}, DSA = {}
       options.smcb = function () {}  // no-opt
 
     this._smcb = options.smcb
-    
-    // status callback
-    if (!options.status_cb || typeof options.status_cb !== 'function')
-      options.status_cb = function () {}  // no-opt
-
-    this._status_cb = options.status_cb
 
     // init vals
     this.init()
@@ -1993,16 +1982,6 @@ var OTR = {}, DSA = {}
     ;['sendMsg', 'receiveMsg'].forEach(function (meth) {
       self[meth] = self[meth].bind(self)
     })
-  }
-
-  OTR.Status = {
-    SEND_QUERY: 0,
-    AKE_INIT: 1,
-    AKE_SUCCESS: 2,
-    SMP_INIT: 3,
-    SMP_RECEIVE_SECRET: 4,
-    SMP_ANSWER: 5,
-    END_OTR: 6
   }
 
   OTR.prototype = {
@@ -2354,8 +2333,6 @@ var OTR = {}, DSA = {}
     },
 
     sendQueryMsg: function () {
-      this._status_cb(OTR.Status.SEND_QUERY)  
-        
       var versions = {}
         , msg = CONST.OTR_TAG
 
@@ -2500,7 +2477,6 @@ var OTR = {}, DSA = {}
     },
 
     endOtr: function () {
-      this._status_cb(OTR.Status.END_OTR)
       if (this.msgstate === CONST.MSGSTATE_ENCRYPTED) {
         this.sendMsg('\x00\x00\x01\x00\x00')
         this.sm = null
