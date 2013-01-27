@@ -113,7 +113,10 @@ will return the message state to plaintext and notify the correspondent.
       fragment_size: 140,
 
       // ms delay between sending fragmented msgs, avoid rate limits
-      send_interval: 200
+      send_interval: 200,
+
+      // status callback
+      status_cb: function () {}
 
     }
 
@@ -211,6 +214,36 @@ otherwise a no-opt is fired.
 If the protocol successfully runs to completion,
 
     buddyList.userA.trust === true
+
+---
+
+### Status Callback
+
+    function status_cb(status){
+        switch (status) {
+            case OTR.Status.SEND_QUERY:
+              //Query message send
+              break;
+            case OTR.Status.AKE_INIT:
+              //ake initiated
+              break;
+            case OTR.Status.AKE_SUCCESS:
+              //ake finished
+              break;
+            case OTR.Status.SMP_INIT:
+              //smp initiated
+              break;
+            case OTR.Status.SMP_RECEIVE_SECRET:
+              //secret received
+              break;
+            case OTR.Status.SMP_ANSWER:
+              //got an answer
+              break;
+            case OTR.Status.END_OTR:
+              //otr terminated
+              break;
+        }
+    }   
 
 ---
 
