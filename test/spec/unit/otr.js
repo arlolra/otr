@@ -62,33 +62,44 @@ describe('OTR', function () {
     userA.sendQueryMsg()
   })
 
-  it('should not send the whitespace tags', function () {
-    var userA = new OTR(keys.userA, cb, function (msg) {
+  it('should not send the whitespace tags', function (done) {
+    var userA = new OTR({ priv: keys.userA })
+    userA.on('io', function (msg) {
       assert.ok(!~msg.indexOf(CONST.WHITESPACE_TAG))
       assert.ok(!~msg.indexOf(CONST.WHITESPACE_TAG_V2))
+      done()
     })
     userA.SEND_WHITESPACE_TAG = false
     userA.sendMsg('hi')
   })
 
-  it('should send the whitespace tags', function () {
-    var userA = new OTR(keys.userA, cb, function (msg) {
+  it('should send the whitespace tags', function (done) {
+    var userA = new OTR({ priv: keys.userA })
+    userA.on('io', function (msg) {
       assert.ok(~msg.indexOf(CONST.WHITESPACE_TAG))
       assert.ok(~msg.indexOf(CONST.WHITESPACE_TAG_V2))
       assert.ok(~msg.indexOf(CONST.WHITESPACE_TAG_V3))
+      done()
     })
     userA.SEND_WHITESPACE_TAG = true
     userA.sendMsg('hi')
   })
 
-  it('whitespace start ake', function () {
-    var userB = new OTR(keys.userB, function (err, msg) {
-      assert.ifError(err)
-      assert.equal('hi', msg)
-      assert.equal(userB.msgstate, CONST.MSGSTATE_ENCRYPTED)
-      assert.equal(userA.msgstate, CONST.MSGSTATE_ENCRYPTED)
-    }, function (msg) { userA.receiveMsg(msg) })
-    var userA = new OTR(keys.userA, cb, userB.receiveMsg)
+  it('whitespace start ake', function (done) {
+    var userB = new OTR({ priv: keys.userB })
+    userB.on('error', function (err) { assert.ifError(err) })
+    userB.on('ui', function (msg) { assert.equal('hi', msg) })
+    userB.on('io', function (msg) { userA.receiveMsg(msg) })
+    userB.on('status', function (state) {
+      if (state === CONST.STATUS_AKE_INIT) {
+        assert.equal(userB.msgstate, CONST.MSGSTATE_PLAINTEXT)
+      } else if (state === CONST.STATUS_AKE_SUCCESS) {
+        assert.equal(userB.msgstate, CONST.MSGSTATE_ENCRYPTED)
+        done()
+      }
+    })
+    var userA = new OTR({ priv: keys.userA })
+    userA.on('io', userB.receiveMsg)
     userB.WHITESPACE_START_AKE = true
     userA.SEND_WHITESPACE_TAG = true
     userA.sendMsg('hi')
