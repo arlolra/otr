@@ -11,7 +11,7 @@ describe('OTR', function () {
   var cb = function () {}
 
   it('should initiate a new OTR object', function () {
-    var userA = new OTR(keys.userA, cb, cb)
+    var userA = new OTR({ priv: keys.userA })
   })
 
   it('should generate an instance tag', function () {
@@ -20,36 +20,44 @@ describe('OTR', function () {
     assert.ok(tag <= 0xffffffff)
   })
 
-  it('should initiate AKE', function () {
-    var userB = new OTR(keys.userB, cb, cb)
-    var userA = new OTR(keys.userA, cb, function (msg) {
+  it('should initiate AKE', function (done) {
+    var userB = new OTR({ priv: keys.userB })
+    var userA = new OTR({ priv: keys.userA })
+    userA.on('io', function (msg) {
       msg = Parse.parseMsg(userB, msg)
       assert.equal('\x02', msg.type, 'Message type.')
       assert.equal('\x00\x02', msg.version, 'Message version.')
+      done()
     })
     // query otr
     userA.receiveMsg('?OTR?v2?')
   })
 
-  it('should query with version two', function () {
-    var userA = new OTR(keys.userA, cb, function (msg) {
+  it('should query with version two', function (done) {
+    var userA = new OTR({ priv: keys.userA })
+    userA.on('io', function (msg) {
       assert.equal('?OTRv2?', msg, msg)
+      done()
     })
     userA.ALLOW_V3 = false
     userA.sendQueryMsg()
   })
 
-  it('should query with version three', function () {
-    var userA = new OTR(keys.userA, cb, function (msg) {
+  it('should query with version three', function (done) {
+    var userA = new OTR({ priv: keys.userA })
+    userA.on('io', function (msg) {
       assert.equal('?OTRv3?', msg, msg)
+      done()
     })
     userA.ALLOW_V2 = false
     userA.sendQueryMsg()
   })
 
-  it('should query with versions two and three', function () {
-    var userA = new OTR(keys.userA, cb, function (msg) {
+  it('should query with versions two and three', function (done) {
+    var userA = new OTR({ priv: keys.userA })
+    userA.on('io', function (msg) {
       assert.equal('?OTRv23?', msg, msg)
+      done()
     })
     userA.sendQueryMsg()
   })
