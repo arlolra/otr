@@ -105,12 +105,10 @@ describe('OTR', function () {
     userA.sendMsg('hi')
   })
 
-  it('should go through the ake dance', function () {
+  it('should go through the ake dance', function (done) {
     var userA, userB, counter = 0
-    var ui = function (err, msg) {
-      assert.ifError(err)
-      assert.ok(!msg, msg)
-    }
+    var err = function (err) { assert.ifError(err) }
+    var ui = function (msg) { assert.ok(!msg, msg) }
     var checkstate = function (user) {
       switch (counter) {
         case 0:
@@ -145,11 +143,17 @@ describe('OTR', function () {
       }
       counter++
     }
-    userA = new OTR(keys.userA, ui, function (msg) {
+    userA = new OTR({ priv: keys.userA })
+    userA.on('ui', ui)
+    userA.on('error', err)
+    userA.on('io', function (msg) {
       checkstate(userB)
       userB.receiveMsg(msg)
     })
-    userB = new OTR(keys.userB, ui, function (msg) {
+    userB = new OTR({ priv: keys.userB })
+    userB.on('ui', ui)
+    userB.on('error', err)
+    userB.on('io', function (msg) {
       checkstate(userA)
       userA.receiveMsg(msg)
     })
@@ -159,19 +163,27 @@ describe('OTR', function () {
 
     userA.sendQueryMsg()  // ask to initiate ake
 
-    assert.equal(userB.msgstate, CONST.MSGSTATE_ENCRYPTED, 'Encrypted')
-    assert.equal(userA.msgstate, CONST.MSGSTATE_ENCRYPTED, 'Encrypted')
+    userA.on('status', function (yay) {
+      if (yay === CONST.STATUS_AKE_SUCCESS) {
+        assert.equal(userA.msgstate, CONST.MSGSTATE_ENCRYPTED, 'Encrypted')
+        done()
+      }
+    })
   })
 
-it('should go through the ake dance, v2', function () {
-    var ui = function (err, msg) {
-      assert.ifError(err)
-      assert.ok(!msg, msg)
-    }
-    var userA = new OTR(keys.userA, ui, function (msg) {
+  it('v2, should go through the ake dance', function (done) {
+    var err = function (err) { assert.ifError(err) }
+    var ui = function (msg) { assert.ok(!msg, msg) }
+    var userA = new OTR({ priv: keys.userA })
+    userA.on('ui', ui)
+    userA.on('error', err)
+    userA.on('io', function (msg) {
       userB.receiveMsg(msg)
     })
-    var userB = new OTR(keys.userB, ui, function (msg) {
+    var userB = new OTR({ priv: keys.userB })
+    userB.on('ui', ui)
+    userB.on('error', err)
+    userB.on('io', function (msg) {
       userA.receiveMsg(msg)
     })
     assert.equal(userB.msgstate, CONST.MSGSTATE_PLAINTEXT, 'Plaintext')
@@ -181,19 +193,33 @@ it('should go through the ake dance, v2', function () {
     userA.ALLOW_V2 = true
     userB.ALLOW_V3 = false
     userA.sendQueryMsg()
-    assert.equal(userB.msgstate, CONST.MSGSTATE_ENCRYPTED, 'Encrypted')
-    assert.equal(userA.msgstate, CONST.MSGSTATE_ENCRYPTED, 'Encrypted')
+
+    userA.on('status', function (yay) {
+      if (yay === CONST.STATUS_AKE_SUCCESS) {
+        assert.equal(userA.msgstate, CONST.MSGSTATE_ENCRYPTED, 'Encrypted')
+        done()
+      }
+    })
   })
 
-  it('should not go through the ake dance', function () {
-    var ui = function (err, msg) {
-      assert.ifError(err)
-      assert.ok(!msg, msg)
-    }
-    var userA = new OTR(keys.userA, ui, function (msg) {
+  it('should not go through the ake dance', function (done) {
+    var err = function (err) { assert.ifError(err) }
+    var ui = function (msg) { assert.ok(!msg, msg) }
+    var userA = new OTR({ priv: keys.userA })
+    userA.on('ui', ui)
+    userA.on('error', err)
+    userA.on('io', function (msg) {
       userB.receiveMsg(msg)
     })
-    var userB = new OTR(keys.userB, ui, function (msg) {
+    var userB = new OTR({ priv: keys.userB })
+    userB.on('ui', ui)
+    userB.on('error', function (err) {
+      assert.equal(err, "OTR conversation requested, but no compatible protocol version found.")
+      assert.equal(userB.msgstate, CONST.MSGSTATE_PLAINTEXT, 'Plaintext')
+      assert.equal(userA.msgstate, CONST.MSGSTATE_PLAINTEXT, 'Plaintext')
+      done()
+    })
+    userB.on('io', function (msg) {
       userA.receiveMsg(msg)
     })
     assert.equal(userB.msgstate, CONST.MSGSTATE_PLAINTEXT, 'Plaintext')
@@ -203,41 +229,38 @@ it('should go through the ake dance, v2', function () {
     userB.ALLOW_V2 = true
     userB.ALLOW_V3 = false
     userA.sendQueryMsg()
-    assert.equal(userB.msgstate, CONST.MSGSTATE_PLAINTEXT, 'Plaintext')
-    assert.equal(userA.msgstate, CONST.MSGSTATE_PLAINTEXT, 'Plaintext')
   })
 
-  it('should receive an encrypted message', function () {
-    var msgs = ['Hope this works.', 'Second message.', 'Third!', '4', '5', '6', '7', '8888888888888888888']
+  it('should receive an encrypted message', function (done) {
+    var msgs = [
+      'Hope this works.',
+      'Second message.', 'Third!', '4', '5', '6', '7',
+      '8888888888888888888'
+    ]
     var counter = 0
-
-    var userA, userB
-    var ui = function (err, msg) {
-      assert.ifError(err)
-      assert.equal(userA.msgstate, CONST.MSGSTATE_ENCRYPTED)
-      assert.equal(userB.msgstate, CONST.MSGSTATE_ENCRYPTED)
+    var ui = function (msg) {
       assert.equal(msgs[counter++], msg, 'Encrypted message.')
+      if (counter > 7) done()
+      else this.sendMsg(msgs[counter])
     }
+    var err = function (err) { assert.ifError(err) } 
     var io = function (msg) { userB.receiveMsg(msg) }
-    userA = new OTR(keys.userA, ui, io)
-    userB = new OTR(keys.userB, ui, userA.receiveMsg)
+    var userA = new OTR({ priv: keys.userA })
+    userA.on('ui', ui.bind(userA))
+    userA.on('io', io)
+    userA.on('error', err)
+    var userB = new OTR({ priv: keys.userB })
+    userB.on('ui', ui.bind(userB))
+    userB.on('error', err)
+    userB.on('io', userA.receiveMsg)
     userA.sendQueryMsg()
-    userB.sendMsg(msgs[counter])
-    assert.equal(counter, 1)
-    userB.sendMsg(msgs[counter])
-    assert.equal(counter, 2)
-    userA.sendMsg(msgs[counter])
-    assert.equal(counter, 3)
-    userA.sendMsg(msgs[counter])
-    assert.equal(counter, 4)
-    userA.sendMsg(msgs[counter])
-    assert.equal(counter, 5)
-    userB.sendMsg(msgs[counter])
-    assert.equal(counter, 6)
-    userB.sendMsg(msgs[counter])
-    assert.equal(counter, 7)
-    userA.sendMsg(msgs[counter])
-    assert.equal(counter, 8)
+    userB.on('status', function (yay) {
+      if (yay === CONST.STATUS_AKE_SUCCESS) {
+        assert.equal(userA.msgstate, CONST.MSGSTATE_ENCRYPTED, 'Encrypted')
+        assert.equal(userB.msgstate, CONST.MSGSTATE_ENCRYPTED, 'Encrypted')
+        userB.sendMsg(msgs[counter])
+      }
+    })
   })
 
   it('should send v2 fragments', function (done) {
