@@ -14,6 +14,7 @@
   <script src="../build/dep/seedrandom.js"></script>
   <script src="../build/dep/bigint.js"></script>
   <script src="../build/dep/crypto.js"></script>
+  <script src="../build/dep/eventemitter.js"></script>
 
   <!-- Load otr.js or otr.min.js -->
   <script src="../build/otr.js"></script>
@@ -22,15 +23,22 @@
   <script>
     document.write('loading scripts / seeding random took <strong>' + ((new Date()).getTime() - start) + 'ms</strong>');
     var ui = function (msg) { console.log(msg); };
-    var userA = new OTR(null, ui, function (msg) {
+    var err = function (err) { console.log(err); };
+    var userA = new OTR();
+    userA.on('ui', ui);
+    userA.on('io', function (msg) {
       userB.receiveMsg(msg);
     });
-   document.write('<br />generating OTR object took <strong>' + ((new Date()).getTime() - start) + 'ms</strong>');
-   var userB = new OTR(null, ui, userA.receiveMsg);
-   start = (new Date()).getTime();
-   userA.sendQueryMsg()
-   document.write('<br />ake took <strong>' + ((new Date()).getTime() - start) + 'ms</strong>');
-   document.write('<br />message state is ' + (userA.msgstate ? 'encrypted' : 'plaintext') + '</strong>');
+    userA.on('error', err);
+    document.write('<br />generating OTR object took <strong>' + ((new Date()).getTime() - start) + 'ms</strong>');
+    var userB = new OTR();
+    userB.on('ui', ui);
+    userB.on('io', userA.receiveMsg);
+    userB.on('error', err);
+    start = (new Date()).getTime();
+    userA.sendQueryMsg()
+    document.write('<br />ake took <strong>' + ((new Date()).getTime() - start) + 'ms</strong>');
+    document.write('<br />message state is ' + (userA.msgstate ? 'encrypted' : 'plaintext') + '</strong>');
   </script>
 
 </html>

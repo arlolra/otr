@@ -4,9 +4,12 @@ var xmpp = require('simple-xmpp')
 
 var from = ''
 
-function ui(err, msg) {
-  if (err) console.log('err: ' + err)
-  else console.log('ui: ' + msg)
+function err(err) {
+  console.log('err: ' + err)
+}
+
+function ui(msg) {
+  console.log('ui: ' + msg)
 
   if (~msg.indexOf('hello')) {
     otr.smpSecret('cryptocat')
@@ -17,7 +20,7 @@ function cb(msg) {
   xmpp.send(from, msg)
 }
 
-function smcb(type, data) {
+function smp(type, data) {
   switch (type) {
     case 'question':
       console.log(data)
@@ -33,12 +36,17 @@ function smcb(type, data) {
   }
 }
 
-var otr = new OTR(keys.userA, ui, cb, {
+var otr = new OTR({
     fragment_size: 200
   , send_interval: 200
-  , smcb: smcb
   , debug: true
+  , priv: keys.userA
 })
+
+otr.on('ui', ui)
+otr.on('io', cb)
+otr.on('error', err)
+otr.on('smp', smp)
 
 xmpp.on('online', function() {
   console.log('Yes, I\'m connected!')
