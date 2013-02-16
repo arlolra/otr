@@ -22,6 +22,7 @@ Include the build files on the page,
     <script src="build/dep/seedrandom.js"></script>
     <script src="build/dep/bigint.js"></script>
     <script src="build/dep/crypto.js"></script>
+    <script src="build/dep/eventemitter.js"></script>
 
     <!-- Load otr.js or otr.min.js -->
     <script src="build/otr.min.js"></script>
@@ -49,45 +50,49 @@ expensive and can take several seconds.
 
 For each user you're communicating with, instantiate an OTR object.
 
-    // provide some callbacks to otr
-    var uicb = function (err, msg) {
-      if (err) return console.log("error occurred: " + err)
-      console.log("message to display to the user: " + msg)
-    }
-    var iocb = function (msg) {
-      console.log("message to send to buddy: " + msg)
-    }
-
     // provide options
-    var options = { fragment_size: 140, send_interval: 200 }
-
-    var buddyList = {
-        'userA': new OTR(myKey, uicb, iocb, options)
-      , 'userB': new OTR(myKey, uicb, iocb, options)
+    var options = {
+        fragment_size: 140
+      , send_interval: 200
+      , priv: myKey
     }
 
-**New message from userA received**: Pass the received message to the `receiveMsg`
+    var buddy = new OTR(options)
+
+    buddy.on('ui', function (msg) {
+      console.log("message to display to the user: " + msg)
+    })
+
+    buddy.on('io', function (msg) {
+      console.log("message to send to buddy: " + msg)
+    })
+
+    buddy.on('error', function (err) {
+      console.log("error occurred: " + err)
+    })
+
+**New message from buddy received**: Pass the received message to the `receiveMsg`
 method.
 
-    var rcvmsg = "Message from userA."
-    buddyList.userA.receiveMsg(rcvmsg)
+    var rcvmsg = "Message from buddy."
+    buddy.receiveMsg(rcvmsg)
 
-**Send a message to userA**: Pass the message to the `sendMsg` method.
+**Send a message to buddy**: Pass the message to the `sendMsg` method.
 
     var newmsg = "Message to userA."
-    buddyList.userA.sendMsg(newmsg)
+    buddy.sendMsg(newmsg)
 
 **Going encrypted**: Initially, messages are sent in plaintext. To manually
 initiate the authenticated key exchange.
 
-    buddyList.userA.sendQueryMsg()
+    buddy.sendQueryMsg()
 
 Alternatively, one can set the policy `REQUIRE_ENCRYPTION` and send a plaintext
 message. This will store the message, initiate the authentication and then,
 upon success, send it out.
 
-    buddyList.userA.REQUIRE_ENCRYPTION = true
-    buddyList.userA.sendMsg('My plaintext message to be encrypted.')
+    buddy.REQUIRE_ENCRYPTION = true
+    buddy.sendMsg('My plaintext message to be encrypted.')
 
 Another policy, `SEND_WHITESPACE_TAG`, will append tags to plaintext messages,
 indicating a willingness to speak OTR. If the recipient in turn has set the
@@ -95,13 +100,16 @@ policy `WHITESPACE_START_AKE`, the AKE will be initiated.
 
 **Close private connection**: To end an encrypted communication,
 
-    buddyList.userA.endOtr()
+    buddy.endOtr()
 
 will return the message state to plaintext and notify the correspondent.
 
 **Options**: A dictionary of the current options accepted by the OTR constructor.
 
     var options = {
+
+      // long-lived private key
+      priv: new DSA(),
 
       // turn on some debuggin logs
       debug: false,
@@ -148,8 +156,7 @@ These are intended to be persistent and can be precomputed.
     var myTag = OTR.makeInstanceTag()
     var options = { instance_tag: myTag }
 
-    var userA = new OTR(myKey, uicb, iocb, options)
-    var userB = new OTR(myKey, uicb, iocb, options)
+    var buddy = new OTR(options)
 
 ---
 
@@ -157,16 +164,17 @@ These are intended to be persistent and can be precomputed.
 
 OTR public key fingerprints can be obtained as follows:
 
-    // assume you've gone through the ake with userA
-    var userA = new OTR(myKey, uicb, iocb, options)
+    // assume you've gone through the ake with buddy
+    var buddy = new OTR({ priv: myKey })
+    // buddy.msgstate === CONST.MSGSTATE_ENCRYPTED
 
     // for my key, either one of the following
     myKey.fingerprint()
     // or,
-    userA.priv.fingerprint()
+    buddy.priv.fingerprint()
 
     // for their key
-    userA.their_priv_pk.fingerprint()
+    buddy.their_priv_pk.fingerprint()
 
 ---
 
@@ -178,18 +186,20 @@ exchanged through an out-of-band channel prior to starting the conversation,
 is required.
 
     var secret = "ghostbusters"
-    buddyList.userA.smpSecret(secret)
+    buddy.smpSecret(secret)
 
 A question can be supplied, as a reminder of the shared secret.
 
     var question = "who are you going to call?"
-    buddylist.userA.smpSecret(secret, question)
+    buddy.smpSecret(secret, question)
 
 If you plan on using SMP, as opposed to just allowing fingerprints for
 verification, provide on optional callback when initiating OTR,
 otherwise a no-opt is fired.
 
-    function smcb(type, data) {
+    var buddy = new OTR()
+
+    buddy.on('smp', function (type, data) {
       switch (type) {
         case 'question':
           // call(data) some function with question?
@@ -203,14 +213,11 @@ otherwise a no-opt is fired.
         default:
           throw new Error('Unknown type.')
       }
-    }
-
-    var options = { smcb: smcb }
-    var userA = new OTR(myKey, uicb, iocb, options)
+    })
 
 If the protocol successfully runs to completion,
 
-    buddyList.userA.trust === true
+    buddy.trust === true
 
 ---
 
@@ -241,6 +248,7 @@ Using:
 - [crypto-js](http://code.google.com/p/crypto-js/)
 - [bigint.js](http://leemon.com/crypto/BigInt.html)
 - [seedrandom.js](http://davidbau.com/archives/2010/01/30/random_seeds_coded_hints_and_quintillions.html)
+- [eventemitter.js](https://github.com/Wolfy87/EventEmitter)
 
 ---
 
