@@ -277,18 +277,30 @@ describe('OTR', function () {
 
     var userA, userB
     var ui = function (ind) {
-      return function (err, msg) {
-        assert.ifError(err)
+      return function (msg) {
         var u = users[ind]
         assert.equal(u.u.msgstate, CONST.MSGSTATE_ENCRYPTED, 'Message state unencrypted. Msg: ' + msg)
         assert.equal(u.m[u.c++], msg, 'Encrypted message: ' + msg)
         if (++counter === msgs.length) done()
       }
     }
-    var io = function (msg) { userB.receiveMsg(msg) }
 
-    userA = new OTR(keys.userA, ui(0), io, { fragment_size: 200, send_interval: 40 })
-    userB = new OTR(keys.userB, ui(1), userA.receiveMsg, { send_interval: 20 })
+    userA = new OTR({
+        priv: keys.userA
+      , fragment_size: 200
+      , send_interval: 40
+    })
+    userA.on('io', function (msg) { userB.receiveMsg(msg) })
+    userA.on('ui', ui(0))
+    userA.on('error', function (err) { assert.ifError(err) })
+
+    userB = new OTR({
+        priv: keys.userB
+      , send_interval: 20
+    })
+    userB.on('io', function (msg) { userA.receiveMsg(msg) })
+    userB.on('ui', ui(1))
+    userB.on('error', function (err) { assert.ifError(err) })
 
     userA.ALLOW_V2 = true
     userA.ALLOW_V3 = false
@@ -322,18 +334,30 @@ describe('OTR', function () {
 
     var userA, userB
     var ui = function (ind) {
-      return function (err, msg) {
-        assert.ifError(err)
+      return function (msg) {
         var u = users[ind]
         assert.equal(u.u.msgstate, CONST.MSGSTATE_ENCRYPTED, 'Message state unencrypted. Msg: ' + msg)
         assert.equal(u.m[u.c++], msg, 'Encrypted message: ' + msg)
         if (++counter === msgs.length) done()
       }
     }
-    var io = function (msg) { userB.receiveMsg(msg) }
 
-    userA = new OTR(keys.userA, ui(0), io, { fragment_size: 200, send_interval: 40 })
-    userB = new OTR(keys.userB, ui(1), userA.receiveMsg, { send_interval: 20 })
+    userA = new OTR({
+        fragment_size: 200
+      , send_interval: 40
+      , priv: keys.userA
+    })
+    userA.on('io', function (msg) { userB.receiveMsg(msg) })
+    userA.on('ui', ui(0))
+    userA.on('error', function (err) { assert.ifError(err) })
+
+    userB = new OTR({
+        send_interval: 20
+      , priv: keys.userB
+    })
+    userB.on('io', function (msg) { userA.receiveMsg(msg) })
+    userB.on('ui', ui(1))
+    userB.on('error', function (err) { assert.ifError(err) })
 
     userA.ALLOW_V2 = false
     userA.ALLOW_V3 = true
@@ -353,63 +377,95 @@ describe('OTR', function () {
     })
   })
 
-  it('should ignore messages with diff instance tags', function () {
-    var userB = new OTR(keys.userB, function (err, msg) {
-      assert.ifError(err)
-      assert.ok(!msg, msg)
-    }, function (msg) { userA.receiveMsg(msg) })
-    var userA = new OTR(keys.userA, cb, userB.receiveMsg)
+  it('should ignore messages with diff instance tags', function (done) {
+    var userB = new OTR({ priv: keys.userB })
+    userB.on('ui', function (msg) { assert.ok(!msg, msg) })
+    userB.on('error', function (err) { assert.ifError(err) })
+    userB.on('io', function (msg) { userA.receiveMsg(msg) })
+    var userA = new OTR({ priv: keys.userA })
+    userA.on('io', userB.receiveMsg)
     userA.sendQueryMsg()
-    userA.their_instance_tag = OTR.makeInstanceTag()
-    userA.sendMsg('hi')
+    userA.on('status', function (state) {
+      if (state === CONST.STATUS_AKE_SUCCESS) {
+        userA.their_instance_tag = OTR.makeInstanceTag()
+        userA.sendMsg('hi')
+        // not great ... assume 'hi' should be ignored in less that 200ms
+        setTimeout(function () { done() }, 200)
+      }
+    })
   })
 
-  it('should send utf8 data', function () {
+  it('should send utf8 data', function (done) {
     var m = 'hello يا هلا يا حبيبي خذني إلى القمر'
-    var userB = new OTR(keys.userB, function (err, msg) {
-      assert.ifError(err)
+    var userB = new OTR({ priv: keys.userB })
+    userB.on('ui', function (msg) {
       assert.equal(m, msg, msg)
-    }, function (msg) { userA.receiveMsg(msg) })
-    var userA = new OTR(keys.userA, cb, userB.receiveMsg)
+      done()
+    })
+    userB.on('error', function (err) { assert.ifError(err) })
+    userB.on('io', function (msg) { userA.receiveMsg(msg) })
+    var userA = new OTR({ priv: keys.userA })
+    userA.on('io', userB.receiveMsg)
     userA.sendQueryMsg()
+    userA.on('status', function (state) {
+      if (state === CONST.STATUS_AKE_SUCCESS) {
+        userA.sendMsg(m)
+      }
+    })
+  })
+
+  it('should send a plaintext message', function (done) {
+    var m = 'test some german characters äöüß'
+    var userB = new OTR({ priv: keys.userB })
+    userB.on('ui', function (msg) {
+      assert.equal(m, msg, msg)
+      done()
+    })
+    userB.on('io', function (msg) { userA.receiveMsg(msg) })
+    userB.on('error', function (err) { assert.ifError(err) })
+    var userA = new OTR({ priv: keys.userA })
+    userA.on('io', userB.receiveMsg)
     userA.sendMsg(m)
   })
 
-  it('should send a plaintext message', function () {
+  it('should send an encrypted message when required', function (done) {
     var m = 'test some german characters äöüß'
-    var userB = new OTR(keys.userB, function (err, msg) {
-      assert.ifError(err)
+    var userB = new OTR({ priv: keys.userB })
+    userB.on('ui', function (msg) {
+      assert.equal(userA.msgstate, CONST.MSGSTATE_ENCRYPTED)
+      assert.equal(userB.msgstate, CONST.MSGSTATE_ENCRYPTED)
       assert.equal(m, msg, msg)
-    }, function (msg) { userA.receiveMsg(msg) })
-    var userA = new OTR(keys.userA, cb, userB.receiveMsg)
-    userA.sendMsg(m)
-  })
-
-  it('should send an encrypted message when required', function () {
-    var m = 'test some german characters äöüß'
-    var userB = new OTR(keys.userB, function (err, msg) {
-      assert.ifError(err)
-      assert.equal(m, msg, msg)
-    }, function (msg) { userA.receiveMsg(msg) })
-    var userA = new OTR(keys.userA, cb, userB.receiveMsg)
+      done()
+    })
+    userB.on('error', function (err) { assert.ifError(err) })
+    userB.on('io', function (msg) { userA.receiveMsg(msg) })
+    var userA = new OTR({ priv: keys.userA })
+    userA.on('io', userB.receiveMsg)
     userA.REQUIRE_ENCRYPTION = true
     userA.sendMsg(m)
   })
 
-  it('disconnect when receiving a type 1 TLV', function () {
-    var userB = new OTR(keys.userB, function (err, msg) {
-      assert.ifError(err)
-      // assert.equal(m, msg, msg)
-    }, function (msg) { userA.receiveMsg(msg) })
-    var userA = new OTR(keys.userA, cb, userB.receiveMsg)
+  it('disconnect when receiving a type 1 TLV', function (done) {
+    var userB = new OTR({ priv: keys.userB })
+    userB.on('io', function (msg) { userA.receiveMsg(msg) })
+    userB.on('error', function (err) { assert.ifError(err) })
+    userB.on('status', function (state) {
+      if (state === CONST.STATUS_AKE_SUCCESS) {
+        assert.equal(userA.msgstate, CONST.MSGSTATE_ENCRYPTED)
+        assert.equal(userB.msgstate, CONST.MSGSTATE_ENCRYPTED)
+        userA.endOtr()
+      } else if (state === CONST.STATUS_END_OTR) {
+        assert.equal(userA.msgstate, CONST.MSGSTATE_PLAINTEXT)
+        assert.equal(userB.msgstate, CONST.MSGSTATE_FINISHED)
+        done()
+      }
+    })
+
+    var userA = new OTR({ priv: keys.userA })
+    userA.on('io', userB.receiveMsg)
     assert.equal(userA.msgstate, CONST.MSGSTATE_PLAINTEXT)
     assert.equal(userB.msgstate, CONST.MSGSTATE_PLAINTEXT)
     userA.sendQueryMsg()
-    assert.equal(userA.msgstate, CONST.MSGSTATE_ENCRYPTED)
-    assert.equal(userB.msgstate, CONST.MSGSTATE_ENCRYPTED)
-    userA.endOtr()
-    assert.equal(userA.msgstate, CONST.MSGSTATE_PLAINTEXT)
-    assert.equal(userB.msgstate, CONST.MSGSTATE_FINISHED)
   })
 
 })
