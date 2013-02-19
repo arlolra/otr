@@ -232,6 +232,8 @@ describe('OTR', function () {
   })
 
   it('should receive an encrypted message', function (done) {
+    this.timeout(5000)
+
     var msgs = [
       'Hope this works.',
       'Second message.', 'Third!', '4', '5', '6', '7',

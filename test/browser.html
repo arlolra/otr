@@ -21,7 +21,12 @@
 
   <!-- Ready to go! -->
   <script>
-    document.write('loading scripts / seeding random took <strong>' + ((new Date()).getTime() - start) + 'ms</strong>');
+    function append(html) {
+      var p = document.createElement('span');
+      p.innerHTML = html;
+      document.body.appendChild(p);
+    }
+    append('loading scripts / seeding random took <strong>' + ((new Date()).getTime() - start) + 'ms</strong>');
     var ui = function (msg) { console.log(msg); };
     var err = function (err) { console.log(err); };
     var userA = new OTR();
@@ -30,15 +35,19 @@
       userB.receiveMsg(msg);
     });
     userA.on('error', err);
-    document.write('<br />generating OTR object took <strong>' + ((new Date()).getTime() - start) + 'ms</strong>');
+    append('<br />generating OTR object took <strong>' + ((new Date()).getTime() - start) + 'ms</strong>');
     var userB = new OTR();
     userB.on('ui', ui);
     userB.on('io', userA.receiveMsg);
     userB.on('error', err);
     start = (new Date()).getTime();
     userA.sendQueryMsg()
-    document.write('<br />ake took <strong>' + ((new Date()).getTime() - start) + 'ms</strong>');
-    document.write('<br />message state is ' + (userA.msgstate ? 'encrypted' : 'plaintext') + '</strong>');
+    userA.on('status', function (state) {
+      if (state === OTR.CONST.STATUS_AKE_SUCCESS) {
+        append('<br />ake took <strong>' + ((new Date()).getTime() - start) + 'ms</strong>');
+        append('<br />message state is ' + (userA.msgstate ? 'encrypted' : 'plaintext') + '</strong>');
+      }
+    })
   </script>
 
 </html>
