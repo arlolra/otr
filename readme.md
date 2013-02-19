@@ -127,6 +127,20 @@ will return the message state to plaintext and notify the correspondent.
 
 ---
 
+###Status
+
+A listener can be attached for status changes. These are non-standard codes,
+specific to this OTR library, indicating various things like the AKE success.
+
+    buddy.on('status', function (state) {
+      if (state === CONST.STATUS_AKE_SUCCESS) {
+        // sucessfully ake'd with buddy
+        // check if buddy.msgstate === CONST.MSGSTATE_ENCRYPTED
+      }
+    })
+
+---
+
 ###Policies
 
 To be set on a per-correspondent basis. The defaults are as follows:
