@@ -133,9 +133,9 @@ A listener can be attached for status changes. These are non-standard codes,
 specific to this OTR library, indicating various things like the AKE success.
 
     buddy.on('status', function (state) {
-      if (state === CONST.STATUS_AKE_SUCCESS) {
+      if (state === OTR.CONST.STATUS_AKE_SUCCESS) {
         // sucessfully ake'd with buddy
-        // check if buddy.msgstate === CONST.MSGSTATE_ENCRYPTED
+        // check if buddy.msgstate === OTR.CONST.MSGSTATE_ENCRYPTED
       }
     })
 
@@ -180,7 +180,7 @@ OTR public key fingerprints can be obtained as follows:
 
     // assume you've gone through the ake with buddy
     var buddy = new OTR({ priv: myKey })
-    // buddy.msgstate === CONST.MSGSTATE_ENCRYPTED
+    // buddy.msgstate === OTR.CONST.MSGSTATE_ENCRYPTED
 
     // for my key, either one of the following
     myKey.fingerprint()
