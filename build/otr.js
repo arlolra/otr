@@ -1,6 +1,6 @@
 /*!
 
-  otr.js v0.0.13-next - 2013-02-19
+  otr.js v0.1.0 - 2013-03-02
   (c) 2013 - Arlo Breault <arlolra@gmail.com>
   Freely distributed under the MPL v2.0 license.
 
@@ -1826,6 +1826,8 @@ var OTR = {}, DSA = {}
     rcvSecret: function (secret, question) {
       HLP.debug.call(this.otr, 'receive secret')
 
+      this.otr.trigger('status', [CONST.STATUS_SMP_SECRET])
+
       if (this.otr.msgstate !== CONST.MSGSTATE_ENCRYPTED)
         return this.otr.error('Not ready to send encrypted messages.')
 
@@ -1843,6 +1845,8 @@ var OTR = {}, DSA = {}
 
     answer: function () {
       HLP.debug.call(this.otr, 'smp answer')
+
+      this.otr.trigger('status', [CONST.STATUS_SMP_ANSWER])
 
       var r4 = HLP.randomExponent()
       this.computePQ(r4)
@@ -1877,6 +1881,8 @@ var OTR = {}, DSA = {}
 
     initiate: function (question) {
       HLP.debug.call(this.otr, 'smp initiate')
+
+      this.otr.trigger('status', [CONST.STATUS_SMP_INIT])
 
       if (this.smpstate !== CONST.SMPSTATE_EXPECT1)
         this.abort()  // abort + restart

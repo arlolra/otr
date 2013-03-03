@@ -1,4 +1,11 @@
 
+0.1.0 / 2013-03-02
+==================
+
+  * trigger statuses
+  * use strict
+  * inherit from eventemitter
+
 0.0.13 / 2013-01-12
 ===================
 
