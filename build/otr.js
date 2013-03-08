@@ -1,6 +1,6 @@
 /*!
 
-  otr.js v0.1.0 - 2013-03-02
+  otr.js v0.1.1 - 2013-03-08
   (c) 2013 - Arlo Breault <arlolra@gmail.com>
   Freely distributed under the MPL v2.0 license.
 
@@ -867,10 +867,87 @@ var OTR = {}, DSA = {}
     return new DSA(obj)
   }
 
-  DSA.parsePrivate = function (str) {
-    str = CryptoJS.enc.Base64.parse(str)
-    str = str.toString(CryptoJS.enc.Latin1)
-    return DSA.parsePublic(str, true)
+  function tokenizeStr(str) {
+    var start, end
+
+    start = str.indexOf("(")
+    end = str.lastIndexOf(")")
+
+    if (start < 0 || end < 0)
+      throw new Error("Malformed S-Expression")
+
+    str = str.substring(start + 1, end)
+
+    var splt = str.indexOf(" ")
+    var obj = {
+        type: str.substring(0, splt)
+      , val: []
+    }
+
+    str = str.substring(splt + 1, end)
+    start = str.indexOf("(")
+
+    if (start < 0) obj.val.push(str)
+    else {
+
+      var i, len, ss, es
+      while (start > -1) {
+        i = start + 1
+        len = str.length
+        for (ss = 1, es = 0; i < len && es < ss; i++) {
+          if (str[i] === "(") ss++
+          if (str[i] === ")") es++
+        }
+        obj.val.push(tokenizeStr(str.substring(start, ++i)))
+        str = str.substring(++i)
+        start = str.indexOf("(")
+      }
+
+    }
+    return obj
+  }
+
+  function parseLibotr(obj) {
+    if (!obj.type) throw new Error("Parse error.")
+
+    var o, val
+    if (obj.type === "privkeys") {
+      o = []
+      obj.val.forEach(function (i) {
+        o.push(parseLibotr(i))
+      })
+      return o
+    }
+
+    o = {}
+    obj.val.forEach(function (i) {
+
+      val = i.val[0]
+      if (typeof val === "string") {
+
+        if (val.indexOf("#") === 0) {
+          val = val.substring(1, val.lastIndexOf("#"))
+          val = BigInt.str2bigInt(val, 16)
+        }
+
+      } else {
+        val = parseLibotr(i)
+      }
+
+      o[i.type] = val
+    })
+
+    return o
+  }
+
+  DSA.parsePrivate = function (str, libotr) {
+    if (!libotr) {
+      str = CryptoJS.enc.Base64.parse(str)
+      str = str.toString(CryptoJS.enc.Latin1)
+      return DSA.parsePublic(str, true)
+    }
+    // only returning the first key found
+    return parseLibotr(tokenizeStr(str))[0]["private-key"]
   }
 
   DSA.verify = function (key, m, r, s) {

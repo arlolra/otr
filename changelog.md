@@ -1,4 +1,10 @@
 
+0.1.1 / 2013-03-08
+==================
+
+  * test against libotr
+  * import long-lived keys from adium / pidgin
+
 0.1.0 / 2013-03-02
 ==================
 
