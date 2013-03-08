@@ -244,8 +244,32 @@ To export a private, long-lived key:
 
 It can then be imported as follows,
 
-    // string = "AAAAAACA4COdKHpU/np9F8EDdnGiJJmc89p ... I9BzTkQduFA7ovXAMY="
-    var myKey = DSA.parsePrivate(string)
+    string = "AAAAAACA4COdKHpU/np9F8EDdnGiJJmc89p ... I9BzTkQduFA7ovXAMY="
+    myKey = DSA.parsePrivate(string)
+
+Importing the (somewhat) standard libotr s-expression format works as well,
+
+    // in node.js
+    var fs = require('fs')
+    string = fs.readFileSync("~/.purple/otr.private_key", 'utf8')
+
+    // leaving out the terminal backslashes needed for multiline strings in js
+    string = "(privkeys
+      (account
+        (name "foo@example.com")
+        (protocol prpl-jabber)
+        (private-key
+          (dsa
+            (p #00FC07 ... 2AEFD07A2081#)
+            (g #535E3E ... 1E3BC1FC6F26#)
+            (y #0AC867 ... 8969009B6ECF#)
+            (x #14D034 ... F72D79043216#)
+          )
+        )
+      )
+    )"
+
+    myKey = DSA.parsePrivate(string, true)
 
 ---
 

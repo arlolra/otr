@@ -3,6 +3,7 @@ var assert = require('assert')
   , HLP = require('../../../lib/helpers.js')
   , DSA = require('../../../lib/dsa.js')
   , BigInt = require('../../../vendor/bigint.js')
+  , prekeys = require('./data/keys.js')
 
 describe('DSA', function() {
 
@@ -58,6 +59,29 @@ describe('DSA', function() {
     assert.ok(BigInt.equals(key.g, par.g), 'Gs.')
     assert.ok(BigInt.equals(key.y, par.y), 'Ys.')
     assert.ok(BigInt.equals(key.x, par.x), 'Xs.')
+  })
+
+  it('should parse a private key from the standard libotr format', function () {
+    var str = "(privkeys \
+      (account \
+        (name \"foo@example.com\") \
+        (protocol prpl-jabber) \
+        (private-key \
+          (q #AA6B0EFC9135D7DBBC44254C63DA1A941E818BD1#) \
+          (p #C183E9B1029099FE5BECD19610178B943CC62A49D45B1F19BC62E8783334C4A384DD3EE13553CC27118E32786BBD1D82EAED9AA3238C9BC9769703A6000FFD2A415817D97C919FF9BDD13AA82DC16D598881785178BD3D5087F6FAAE1D9415427B85A3CA0EB46E5C8FFA786A8841592644A332E915A5301D624CA80FE54DE0D9#) \
+          (g #3B7158464B65769BB847C8107A4CAFA722400DCB300810C02795F7CB1728C9846A8A2B97156C0D22C9B81AA71348ECD27EC42E2BCABF131B4273D24CDD2E81E0DD0F01F1A567448C775094772CEBD8BEE3DF783A20F5E788E660F771EB26A70E615C204B1FFB70DB0FC6BA459D2AB0CDBCB64A93D41F7268A5F767BB851E5BB0#) \
+          (x #A992943DEA115032153A4B1687152D4CC64100E1#) \
+          (y #A92BCA0D2489AEEE94441B6858884A79E7FB1F2E2F699753A76EDDD08C4C94A40D569A426DE23EA2DE11FF73D094879D6D13191C21FEBF6C65ACE518C271EC9D258672CC46EA0BFE354E8B8AD6F6BC6F1E736CE53B1C47F7F5D9EBD9937A7F9D4FE1041B2C235C3B36233187C0FA0A88DFA3970DC1AC70BF3A3989B622F2F454#) \
+        ) \
+      ) \
+    )"
+
+    var par = DSA.parsePrivate(str, true)
+    assert.ok(BigInt.equals(prekeys.userA.p, par.p), 'Pees are good.')
+    assert.ok(BigInt.equals(prekeys.userA.q, par.q), 'Qs.')
+    assert.ok(BigInt.equals(prekeys.userA.g, par.g), 'Gs.')
+    assert.ok(BigInt.equals(prekeys.userA.y, par.y), 'Ys.')
+    assert.ok(BigInt.equals(prekeys.userA.x, par.x), 'Xs.')
   })
 
 })
