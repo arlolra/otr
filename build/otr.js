@@ -1,6 +1,6 @@
 /*!
 
-  otr.js v0.1.1 - 2013-03-08
+  otr.js v0.1.2 - 2013-03-08
   (c) 2013 - Arlo Breault <arlolra@gmail.com>
   Freely distributed under the MPL v2.0 license.
 
@@ -878,7 +878,7 @@ var OTR = {}, DSA = {}
 
     str = str.substring(start + 1, end)
 
-    var splt = str.indexOf(" ")
+    var splt = str.search(/\s/)
     var obj = {
         type: str.substring(0, splt)
       , val: []
@@ -947,7 +947,7 @@ var OTR = {}, DSA = {}
       return DSA.parsePublic(str, true)
     }
     // only returning the first key found
-    return parseLibotr(tokenizeStr(str))[0]["private-key"]
+    return parseLibotr(tokenizeStr(str))[0]["private-key"].dsa
   }
 
   DSA.verify = function (key, m, r, s) {
