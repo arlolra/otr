@@ -114,9 +114,6 @@ will return the message state to plaintext and notify the correspondent.
       // turn on some debuggin logs
       debug: false,
 
-      // socialist millionaire callback
-      smcb: function () {},
-
       // fragment the message in case of char limits
       fragment_size: 140,
 
