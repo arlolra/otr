@@ -261,6 +261,7 @@ Importing the (somewhat) standard libotr s-expression format works as well,
         (private-key
           (dsa
             (p #00FC07 ... 2AEFD07A2081#)
+            (q #ASD5FF ... LKJDF898DK12#)
             (g #535E3E ... 1E3BC1FC6F26#)
             (y #0AC867 ... 8969009B6ECF#)
             (x #14D034 ... F72D79043216#)
