@@ -130,9 +130,16 @@ A listener can be attached for status changes. These are non-standard codes,
 specific to this OTR library, indicating various things like the AKE success.
 
     buddy.on('status', function (state) {
-      if (state === OTR.CONST.STATUS_AKE_SUCCESS) {
-        // sucessfully ake'd with buddy
-        // check if buddy.msgstate === OTR.CONST.MSGSTATE_ENCRYPTED
+      switch (state) {
+        case OTR.CONST.STATUS_AKE_SUCCESS:
+          // sucessfully ake'd with buddy
+          // check if buddy.msgstate === OTR.CONST.MSGSTATE_ENCRYPTED
+          break
+        case OTR.CONST.STATUS_END_OTR:
+          // if buddy.msgstate === OTR.CONST.MSGSTATE_FINISHED
+          // inform the user that his correspondent has closed his end
+          // of the private connection and the user should do the same
+          break
       }
     })
 
