@@ -1,4 +1,9 @@
 
+0.1.3 / 2013-03-10
+==================
+
+  * remove ui trigger when buddy closes private connection
+
 0.1.2 / 2013-03-08
 ==================
 

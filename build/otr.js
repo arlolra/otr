@@ -1,6 +1,6 @@
 /*!
 
-  otr.js v0.1.2 - 2013-03-08
+  otr.js v0.1.3 - 2013-03-10
   (c) 2013 - Arlo Breault <arlolra@gmail.com>
   Freely distributed under the MPL v2.0 license.
 
@@ -2026,6 +2026,8 @@ var OTR = {}, DSA = {}
     AKE = require('./ake.js')
     SM = require('./sm.js')
     DSA = require('./dsa.js')
+    // expose CONST for consistency with docs
+    OTR.CONST = CONST
   } else {
     // copy over and expose internals
     Object.keys(root.OTR).forEach(function (k) {
@@ -2398,8 +2400,6 @@ var OTR = {}, DSA = {}
           // Disconnected
           this.msgstate = CONST.MSGSTATE_FINISHED
           this.trigger('status', [CONST.STATUS_END_OTR])
-          this.trigger('ui', ['Your buddy closed the private connection! ' +
-            'You should do the same.'])
           break
         case 2: case 3: case 4:
         case 5: case 6: case 7:
