@@ -65,7 +65,7 @@ module.exports = function (grunt) {
   })
 
   grunt.registerTask('copy_dep', function () {
-    var files = ['seedrandom.js', 'bigint.js', 'eventemitter.js']
+    var files = ['salsa20.js', 'bigint.js', 'eventemitter.js']
       , src = 'vendor/'
       , dest = 'build/dep/'
     files.forEach(function (f) {

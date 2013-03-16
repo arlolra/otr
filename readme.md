@@ -10,7 +10,7 @@
 This library hasn't been properly vetted by security researchers. Do not use
 in life and death situations!
 
-`Math.random()` is replaced by `seedrandom.js`, seeded with either `window.crypto.getRandomValues()` in the [browser](https://developer.mozilla.org/en-US/docs/DOM/window.crypto.getRandomValues), or `crypto.randomBytes()` in [node.js](http://nodejs.org/api/crypto.html#crypto_crypto_randombytes_size_callback).
+`Math.random()` is replaced by `salsa20.js`, seeded with either `window.crypto.getRandomValues()` in the [browser](https://developer.mozilla.org/en-US/docs/DOM/window.crypto.getRandomValues), or `crypto.randomBytes()` in [node.js](http://nodejs.org/api/crypto.html#crypto_crypto_randombytes_size_callback).
 
 ---
 
@@ -19,7 +19,7 @@ in life and death situations!
 Include the build files on the page,
 
     <!-- Load dependencies -->
-    <script src="build/dep/seedrandom.js"></script>
+    <script src="build/dep/salsa20.js"></script>
     <script src="build/dep/bigint.js"></script>
     <script src="build/dep/crypto.js"></script>
     <script src="build/dep/eventemitter.js"></script>
@@ -290,7 +290,7 @@ Using:
 
 - [crypto-js](http://code.google.com/p/crypto-js/)
 - [bigint.js](http://leemon.com/crypto/BigInt.html)
-- [seedrandom.js](http://davidbau.com/archives/2010/01/30/random_seeds_coded_hints_and_quintillions.html)
+- [salsa20.js](https://gist.github.com/dchest/4582374)
 - [eventemitter.js](https://github.com/Wolfy87/EventEmitter)
 
 ---

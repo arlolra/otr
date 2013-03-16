@@ -38,38 +38,59 @@
     , bpe           : bpe
   }
 
-  var SeedRandom = root.SeedRandom
-    , crypto = root.crypto
-
-  var buf
+  var Salsa20, crypto
   if (typeof require !== 'undefined') {
     module.exports = BigInt
-    SeedRandom || (SeedRandom = require('./seedrandom.js'))
+    Salsa20 = require('./salsa20.js')
     crypto = require('crypto')
-    try {
-      buf = crypto.randomBytes(1024)
-    } catch (e) { throw e }
   } else {
     root.BigInt = BigInt
-    if ( (typeof crypto !== 'undefined') &&
-         (typeof crypto.getRandomValues === 'function')
+    Salsa20 = root.Salsa20
+    crypto = root.crypto
+  }
+
+  function seedRand(state) {
+    return function () {
+      var x, o = ''
+      while (o.length < 16) {
+        x = state.getBytes(1)
+        if (x[0] <= 250) o += x[0] % 10
+      }
+      return parseFloat('0.' + o)
+    }
+  }
+
+  ;(function seed() {
+
+    var buf
+    if (typeof require !== 'undefined') {
+      try {
+        buf = crypto.randomBytes(40)
+      } catch (e) { throw e }
+    } else if ( (typeof crypto !== 'undefined') &&
+                (typeof crypto.getRandomValues === 'function')
     ) {
-      buf = new Uint8Array(1024)
+      buf = new Uint8Array(40)
       crypto.getRandomValues(buf)
     } else {
       throw new Error('Keys should not be generated without CSPRNG.')
     }
-  }
 
-  var i, len, seed = ''
-  for (i = 0, len = buf.length; i < len; i++) {
-    seed += String.fromCharCode(buf[i])
-  }
+    var state = new Salsa20([
+      buf[00], buf[01], buf[02], buf[03], buf[04], buf[05], buf[06], buf[07],
+      buf[08], buf[09], buf[10], buf[11], buf[12], buf[13], buf[14], buf[15],
+      buf[16], buf[17], buf[18], buf[19], buf[20], buf[21], buf[22], buf[23],
+      buf[24], buf[25], buf[26], buf[27], buf[28], buf[29], buf[30], buf[31]
+    ],[
+      buf[32], buf[33], buf[34], buf[35], buf[36], buf[37], buf[38], buf[39]
+    ])
 
-  SeedRandom(Math)
-  Math.seedrandom(seed)
-  seed = null
+    Math.random = seedRand(state)
 
+    // reseed every 5 mins
+    setTimeout(seed, 5 * 60 * 1000)
+
+  }())
   ////////////////////////////////////////////////////////////////////////////////////////
   // Big Integer Library v. 5.4
   // Created 2000, last modified 2009
