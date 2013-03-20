@@ -1,6 +1,6 @@
 /*!
 
-  otr.js v0.1.3 - 2013-03-10
+  otr.js v0.1.4 - 2013-03-20
   (c) 2013 - Arlo Breault <arlolra@gmail.com>
   Freely distributed under the MPL v2.0 license.
 
@@ -12,7 +12,7 @@
 var OTR = {}, DSA = {}
 
 ;(function () {
-  "use strict"
+  "use strict";
 
   var root = this
 
@@ -70,7 +70,7 @@ var OTR = {}, DSA = {}
 
 }).call(this)
 ;(function () {
-  "use strict"
+  "use strict";
 
   var root = this
 
@@ -114,9 +114,9 @@ var OTR = {}, DSA = {}
       if (Object.hasOwnProperty.call(parent, key))
         child[key] = parent[key]
     }
-    function ctor() { this.constructor = child }
-    ctor.prototype = parent.prototype
-    child.prototype = new ctor()
+    function Ctor() { this.constructor = child }
+    Ctor.prototype = parent.prototype
+    child.prototype = new Ctor()
     child.__super__ = parent.prototype
   }
 
@@ -407,7 +407,7 @@ var OTR = {}, DSA = {}
   HLP.splitype = function splitype(arr, msg) {
     var data = []
     arr.forEach(function (a) {
-      var len, str
+      var str
       switch (a) {
         case 'PUBKEY':
           str = splitype(['SHORT', 'MPI', 'MPI', 'MPI', 'MPI'], msg).join('')
@@ -422,7 +422,6 @@ var OTR = {}, DSA = {}
       data.push(str)
       msg = msg.substring(str.length)
     })
-
     return data
   }
 
@@ -430,7 +429,6 @@ var OTR = {}, DSA = {}
 
   var _bin2num = {}
     , _num2bin = {}
-    , _b642bin = {}
     , _toString = String.fromCharCode
 
   var i = 0, v
@@ -473,7 +471,7 @@ var OTR = {}, DSA = {}
 // http://www.itl.nist.gov/fipspubs/fip186.htm
 
 ;(function () {
-  "use strict"
+  "use strict";
 
   var root = this
 
@@ -607,7 +605,7 @@ var OTR = {}, DSA = {}
 
   var primes = {}
 
-  function SHAbigInt(bi) {
+  function shaBigInt(bi) {
     bi = CryptoJS.enc.Latin1.parse(HLP.bigInt2bits(bi))
     bi = CryptoJS.SHA1(bi)
     return HLP.bits2bigInt(bi.toString(CryptoJS.enc.Latin1))
@@ -641,9 +639,9 @@ var OTR = {}, DSA = {}
 
       tmp = BigInt.dup(seed)
       inc_(tmp, TN)
-      tmp = SHAbigInt(tmp)
+      tmp = shaBigInt(tmp)
 
-      u = SHAbigInt(seed)
+      u = shaBigInt(seed)
       u = HLP.bigBitWise('XOR', u, tmp)
 
       q = HLP.bigBitWise('OR', u, HLP.twotothe(N - 1))
@@ -661,7 +659,7 @@ var OTR = {}, DSA = {}
 
         for (k = 0; k < (n + 1); k ++) {
           inc_(offset, TN)
-          V = SHAbigInt(offset)
+          V = shaBigInt(offset)
           if (k === n) V = BigInt.mod(V, HLP.twotothe(b))
           V = BigInt.mult(V, HLP.twotothe(N * k))
           W = BigInt.add(W, V)
@@ -969,15 +967,9 @@ var OTR = {}, DSA = {}
     return BigInt.equals(v, r)
   }
 
-  DSA.inherit = function (key) {
-    key.__proto__ = DSA.prototype
-    key.constructor = DSA
-    key.type = KEY_TYPE
-  }
-
 }).call(this)
 ;(function () {
-  "use strict"
+  "use strict";
 
   var root = this
 
@@ -1182,7 +1174,7 @@ var OTR = {}, DSA = {}
 
 }).call(this)
 ;(function () {
-  "use strict"
+  "use strict";
 
   var root = this
 
@@ -1203,9 +1195,8 @@ var OTR = {}, DSA = {}
     DSA = root.DSA
   }
 
-  // diffie-hellman modulus and generator
+  // diffie-hellman modulus
   // see group 5, RFC 3526
-  var G = BigInt.str2bigInt(CONST.G, 10)
   var N = BigInt.str2bigInt(CONST.N, 16)
 
   function hMac(gx, gy, pk, kid, m) {
@@ -1318,11 +1309,11 @@ var OTR = {}, DSA = {}
         this.otr.their_priv_pk = this.their_priv_pk
 
         // rotate keys
-        this.otr.sessKeys[0] = [ new this.otr.dhSession(
+        this.otr.sessKeys[0] = [ new this.otr.DHSession(
             this.otr.our_dh
           , this.otr.their_y
         ), null ]
-        this.otr.sessKeys[1] = [ new this.otr.dhSession(
+        this.otr.sessKeys[1] = [ new this.otr.DHSession(
             this.otr.our_old_dh
           , this.otr.their_y
         ), null ]
@@ -1560,7 +1551,7 @@ var OTR = {}, DSA = {}
 
 }).call(this)
 ;(function () {
-  "use strict"
+  "use strict";
 
   var root = this
 
@@ -2010,7 +2001,7 @@ var OTR = {}, DSA = {}
 
 }).call(this)
 ;(function () {
-  "use strict"
+  "use strict";
 
   var root = this
 
@@ -2165,7 +2156,7 @@ var OTR = {}, DSA = {}
         var msg = self.outgoing.shift()
         self.trigger('io', [msg])
       }
-      setTimeout(send, self.send_interval)
+      setTimeout(send, first ? 0 : self.send_interval)
     }(true))
 
   }
@@ -2177,8 +2168,8 @@ var OTR = {}, DSA = {}
   }
 
   // session constructor
-  OTR.prototype.dhSession = function dhSession(our_dh, their_y) {
-    if (!(this instanceof dhSession)) return new dhSession(our_dh, their_y)
+  OTR.prototype.DHSession = function DHSession(our_dh, their_y) {
+    if (!(this instanceof DHSession)) return new DHSession(our_dh, their_y)
 
     // shared secret
     var s = BigInt.powMod(their_y, our_dh.privateKey, N)
@@ -2228,9 +2219,9 @@ var OTR = {}, DSA = {}
     this.sessKeys[1][1] = this.sessKeys[0][1]
     this.sessKeys[0] = [
         this.their_y ?
-            new this.dhSession(this.our_dh, this.their_y) : null
+            new this.DHSession(this.our_dh, this.their_y) : null
       , this.their_old_y ?
-            new this.dhSession(this.our_dh, this.their_old_y) : null
+            new this.DHSession(this.our_dh, this.their_old_y) : null
     ]
 
   }
@@ -2254,12 +2245,12 @@ var OTR = {}, DSA = {}
 
     // new keys / sessions
     this.their_y = their_y
-    this.sessKeys[0][0] = new this.dhSession(this.our_dh, this.their_y)
-    this.sessKeys[1][0] = new this.dhSession(this.our_old_dh, this.their_y)
+    this.sessKeys[0][0] = new this.DHSession(this.our_dh, this.their_y)
+    this.sessKeys[1][0] = new this.DHSession(this.our_old_dh, this.their_y)
 
   }
 
-  OTR.prototype.prepareMsg = function (msg) {
+  OTR.prototype.prepareMsg = function (msg, esk) {
     if (this.msgstate !== CONST.MSGSTATE_ENCRYPTED || this.their_keyid === 0)
       return this.error('Not ready to encrypt.')
 
@@ -2302,6 +2293,10 @@ var OTR = {}, DSA = {}
       , this.their_instance_tag
     )
     if (send[0]) return this.error(send[0])
+
+    // emit extra symmetric key
+    if (esk) this.trigger('file', ['send', sessKeys.extra_symkey, esk])
+
     return send[1]
   }
 
@@ -2329,8 +2324,6 @@ var OTR = {}, DSA = {}
       if (!ign) this.error('Not of our latest keys.', true)
       return
     }
-
-    var our_dh =  our_keyid ? this.our_old_dh : this.our_dh
 
     if (their_keyid < 0 || their_keyid > 1) {
       if (!ign) this.error('Not of your latest keys.', true)
@@ -2408,7 +2401,11 @@ var OTR = {}, DSA = {}
           break
         case 8:
           // Extra Symkey
-          // sessKeys.extra_symkey
+          this.trigger('file', [
+              'receive'
+            , sessKeys.extra_symkey
+            , msg.substring(4)  // remove 4-byte indication
+          ])
           break
       }
 
@@ -2573,6 +2570,29 @@ var OTR = {}, DSA = {}
     ;(this.storedMgs.splice(0)).forEach(function (msg) {
       self._sendMsg(msg)
     })
+  }
+
+  OTR.prototype.sendFile = function (filename) {
+    if (this.msgstate !== CONST.MSGSTATE_ENCRYPTED)
+      return this.error('Not ready to encrypt.')
+
+    if (this.ake.otr_version !== CONST.OTR_VERSION_3)
+      return this.error('Protocol v3 required.')
+
+    if (!filename) return this.error('Please specify a filename.')
+
+    var msg = '\x00'  // null byte
+    msg += '\x00\x08'  // type 8 tlv
+    msg += HLP.packSHORT(4 + filename.length)  // length of value
+    msg += '\x00\x00\x00\x01'  // four bytes indicating file
+    msg += filename
+
+    // utf8 filenames
+    msg = CryptoJS.enc.Utf8.parse(msg)
+    msg = msg.toString(CryptoJS.enc.Latin1)
+
+    msg = this.prepareMsg(msg, filename)
+    this._sendMsg(msg, true)
   }
 
   OTR.prototype.endOtr = function () {

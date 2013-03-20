@@ -1,4 +1,11 @@
 
+0.1.4 / 2013-03-20
+==================
+
+  * api for extra symmetric key
+  * switch to salsa20
+  * only send_interval on fragments
+
 0.1.3 / 2013-03-10
 ==================
 
