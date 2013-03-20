@@ -278,6 +278,29 @@ Importing the (somewhat) standard libotr s-expression format works as well,
 
 ---
 
+### Extra Symmetric Key
+
+In version 3 of the protocol, an extra symmetric key is derived during the AKE. This may be used for secure communication over a different channel (e.g., file transfer, voice chat).
+
+    var filename = "test.zip"
+    var buddy = new OTR()
+    buddy.sendFile(filename)
+    buddy.on('file', function (type, key, filename) {
+      // type === 'send'
+      // key should be used to encrypt filename
+      // and sent through a different channel
+    })
+
+On the other end,
+
+    var friend = new OTR()
+    friend.on('file', function (type, key, filename) {
+      // type === 'receive'
+      // decrypt filename with key, once received
+    })
+
+---
+
 ###Links
 
 Spec:

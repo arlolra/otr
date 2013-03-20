@@ -470,4 +470,36 @@ describe('OTR', function () {
     userA.sendQueryMsg()
   })
 
+  it.only('should confirm extra symmetric keys', function (done) {
+    var key, filename = 'testfile!@#$.zip'
+
+    var userB = new OTR({ priv: keys.userB })
+    userB.on('io', function (msg) { userA.receiveMsg(msg) })
+    userB.on('error', function (err) { assert.ifError(err) })
+    userB.on('status', function (state) {
+      if (state === CONST.STATUS_AKE_SUCCESS) {
+        assert.equal(userA.msgstate, CONST.MSGSTATE_ENCRYPTED)
+        assert.equal(userB.msgstate, CONST.MSGSTATE_ENCRYPTED)
+        userB.sendFile(filename)
+      }
+    })
+    userB.on('file', function (type, keyB, fn) {
+      assert.equal(type, 'send')
+      assert.equal(filename, fn)
+      key = keyB
+    })
+
+    var userA = new OTR({ priv: keys.userA })
+    userA.on('io', userB.receiveMsg)
+    userA.on('file', function (type, keyA, fn) {
+      assert.equal(type, 'receive')
+      assert.equal(filename, fn)
+      assert.equal(key, keyA)
+      done()
+    })
+    assert.equal(userA.msgstate, CONST.MSGSTATE_PLAINTEXT)
+    assert.equal(userB.msgstate, CONST.MSGSTATE_PLAINTEXT)
+    userA.sendQueryMsg()
+  })
+
 })
