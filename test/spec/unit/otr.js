@@ -1,4 +1,4 @@
-/*global describe before it */
+/*global describe it */
 var assert = require('assert')
   , keys = require('./data/keys.js')
   , CONST = require('../../../lib/const.js')
@@ -8,10 +8,8 @@ var assert = require('assert')
 
 describe('OTR', function () {
 
-  var cb = function () {}
-
   it('should initiate a new OTR object', function () {
-    var userA = new OTR({ priv: keys.userA })
+    new OTR({ priv: keys.userA })
   })
 
   it('should generate an instance tag', function () {
@@ -315,7 +313,7 @@ describe('OTR', function () {
         { u: userA, m: [], c: 0 }
       , { u: userB, m: [], c: 0 }
     ]
-    msgs.forEach(function (m, i) {
+    msgs.forEach(function (m) {
       ind = Math.floor(Math.random() * 2)  // assign the messages randomly
       users[ind ? 0 : 1].m.push(m)  // expect the other user to receive it
       users[ind].u.sendMsg(m)
@@ -372,7 +370,7 @@ describe('OTR', function () {
         { u: userA, m: [], c: 0 }
       , { u: userB, m: [], c: 0 }
     ]
-    msgs.forEach(function (m, i) {
+    msgs.forEach(function (m) {
       ind = Math.floor(Math.random() * 2)  // assign the messages randomly
       users[ind ? 0 : 1].m.push(m)  // expect the other user to receive it
       users[ind].u.sendMsg(m)

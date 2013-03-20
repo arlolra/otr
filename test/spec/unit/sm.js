@@ -2,7 +2,6 @@
 var assert = require('assert')
   , keys = require('./data/keys.js')
   , CONST = require('../../../lib/const.js')
-  , SM = require('../../../lib/sm.js')
   , OTR = require('../../../lib/otr.js')
 
 describe('SM', function () {

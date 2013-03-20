@@ -1,6 +1,5 @@
 /*global describe it before */
-var assert = require('assert')
-  , spawn = require('child_process').spawn
+var spawn = require('child_process').spawn
   , keys = require('./data/keys.js')
   , OTR = require('../../../lib/otr.js')
   , CONST = require('../../../lib/const.js')

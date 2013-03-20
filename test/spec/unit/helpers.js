@@ -1,4 +1,4 @@
-/*global describe before it */
+/*global describe it */
 var assert = require('assert')
   , BigInt = require('../../../vendor/bigint.js')
   , HLP = require('../../../lib/helpers.js')

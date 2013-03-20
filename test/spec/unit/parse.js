@@ -1,4 +1,4 @@
-/*global describe before it beforeEach */
+/*global describe it beforeEach */
 var assert = require('assert')
   , CryptoJS = require('../../../vendor/crypto.js')
   , CONST = require('../../../lib/const.js')
