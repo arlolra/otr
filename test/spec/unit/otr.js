@@ -470,7 +470,7 @@ describe('OTR', function () {
     userA.sendQueryMsg()
   })
 
-  it.only('should confirm extra symmetric keys', function (done) {
+  it('should confirm extra symmetric keys', function (done) {
     var key, filename = 'testfile!@#$.zip'
 
     var userB = new OTR({ priv: keys.userB })
