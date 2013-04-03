@@ -92,12 +92,15 @@
 
   }())
   ////////////////////////////////////////////////////////////////////////////////////////
-  // Big Integer Library v. 5.4
-  // Created 2000, last modified 2009
+  // Big Integer Library v. 5.5
+  // Created 2000, last modified 2013
   // Leemon Baird
   // www.leemon.com
   //
   // Version history:
+  // v 5.5  17 Mar 2013
+  //   - two lines of a form like "if (x<0) x+=n" had the "if" changed to "while" to
+  //     handle the case when x<-n. (Thanks to James Ansell for finding that bug)
   // v 5.4  3 Oct 2009
   //   - added "var i" to greaterShift() so i is not global. (Thanks to Péter Szabó for finding that bug)
   //
@@ -818,9 +821,9 @@
         sub_(eg_C,eg_A);
         sub_(eg_D,eg_B);
       }
-    
+
       if (equalsInt(eg_u,0)) {
-        if (negative(eg_C)) //make sure answer is nonnegative
+        while (negative(eg_C)) //make sure answer is nonnegative
           add_(eg_C,n);
         copy_(x,eg_C);
 
@@ -912,7 +915,7 @@
         sub_(eg_D,eg_B);
       }
       if (equalsInt(eg_u,0)) {
-        if (negative(eg_C)) {   //make sure a (C)is nonnegative
+        while (negative(eg_C)) {   //make sure a (C) is nonnegative
           add_(eg_C,y);
           sub_(eg_D,x);
         }
