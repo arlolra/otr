@@ -324,6 +324,7 @@ A sampling of projects that use this library:
 
 - [Cryptocat](https://github.com/cryptocat/cryptocat)
 - [Yabasta](https://github.com/jonkri/yabasta)
+- [Diaspora](https://github.com/sualko/diaspora)
 
 ---
 
