@@ -131,12 +131,13 @@ describe('OTR', function () {
           // Same, fails (191 == 192).
           // assert.equal(user.ake.their_y.length, 192)
           assert.equal(user.ake.ssid.length, 64 / 8)
-          assert.equal(user.ake.c.length, 128 / 8)
           assert.equal(user.ake.c_prime.length, 128 / 8)
-          assert.equal(user.ake.m1.length, 256 / 8)
-          assert.equal(user.ake.m2.length, 256 / 8)
           assert.equal(user.ake.m1_prime.length, 256 / 8)
           assert.equal(user.ake.m2_prime.length, 256 / 8)
+          // These are nulled out.
+          // assert.equal(user.ake.c.length, 128 / 8)
+          // assert.equal(user.ake.m1.length, 256 / 8)
+          // assert.equal(user.ake.m2.length, 256 / 8)
           break
       }
       counter++

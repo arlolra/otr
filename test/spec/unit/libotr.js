@@ -9,6 +9,7 @@ var spawn = require('child_process').spawn
 
 // compile test/libotr_test_helper.c against libotr-3.2.0
 // output as /tmp/a.out
+// see the Makefile
 
 describe('Libotr', function () {
 
