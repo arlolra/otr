@@ -1,3 +1,5 @@
 node_modules
 *.swp
 npm-debug.log
+test/data.csv
+test/hist.png
