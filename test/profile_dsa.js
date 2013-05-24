@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 "use strict";
 
 var fs = require('fs'),
@@ -7,7 +8,7 @@ var fs = require('fs'),
 var ws = fs.createWriteStream(path.join(__dirname, './data.csv'))
 
 function main() {
-  var i, start, key, end, times = [], count = 100;
+  var i, start, key, end, times = [], count = 1000;
   for (i = 0; i < count; i++) {
     start = (new Date()).getTime()
     key = new DSA(null, { bit_length: 1024, nocache: true });
