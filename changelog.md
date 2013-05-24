@@ -1,4 +1,14 @@
 
+0.1.5 / 2013-05-23
+==================
+
+ * fix utf8 filenames
+ * some checks and guards in otr
+ * option to remove DSA parameter caching
+ * nulled out some values in the AKE
+ * don't repeat bases in Miller Rabin
+ * update bigint.js to v5.5
+
 0.1.4 / 2013-03-20
 ==================
 

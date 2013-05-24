@@ -1,6 +1,6 @@
 /*!
 
-  otr.js v0.1.4 - 2013-03-20
+  otr.js v0.1.5 - 2013-05-23
   (c) 2013 - Arlo Breault <arlolra@gmail.com>
   Freely distributed under the MPL v2.0 license.
 
@@ -524,7 +524,7 @@ var OTR = {}, DSA = {}
     for (; t >= 0 && x[t] === 0; t--) ;
 
     var i
-    if(t == 1 && x[0] <= lowprimes[lowprimes.length - 1]) {
+    if (t == 1 && x[0] <= lowprimes[lowprimes.length - 1]) {
       for (i = 0; i < lowprimes.length; ++i)
         if (x[0] == lowprimes[i]) return true
       return false
@@ -571,26 +571,29 @@ var OTR = {}, DSA = {}
     var r = BigInt.dup(n1)
     BigInt.rightShift_(r, k)
 
-    repeat = (repeat + 1) >> 1
     if (repeat > lowprimes.length) repeat = lowprimes.length;
 
-    var a, i, y, j
+    var a, i, y, j, w, bases = []
     for (i = 0; i < repeat; i++) {
 
-      // Pick bases at random, instead of starting at 2
-      a = lowprimes[Math.floor(Math.random() * lowprimes.length)]
-      a = BigInt.int2bigInt(a, 0)
+      // Pick bases at random from low primes, instead of starting at 2
+      while (!a || ~bases.indexOf(a))
+        a = lowprimes[Math.floor(Math.random() * lowprimes.length)]
 
-      y = BigInt.powMod(a, r, x)
+      bases.push(a)
+      y = BigInt.powMod(BigInt.int2bigInt(a, 0), r, x)
 
-      if (!BigInt.equals(y, ONE) && !BigInt.equals(y, n1)) {
-        j = 1
-        while (j++ < k && !BigInt.equals(y, n1)) {
-          y = BigInt.powMod(y, TWO, x)
-          if (BigInt.equals(y, ONE)) return false
+      if (BigInt.equals(y, ONE) || BigInt.equals(y, n1)) continue
+
+      for (j = 1, w = false; j < k; j++) {
+        y = BigInt.powMod(y, TWO, x)
+        if (BigInt.equals(y, ONE)) return false
+        if (BigInt.equals(y, n1)) {
+          w = true
+          break
         }
-        if (!BigInt.equals(y, n1)) return false
       }
+      if (!w) return false
 
     }
 
@@ -805,6 +808,9 @@ var OTR = {}, DSA = {}
 
     // public keys (p, q, g, y)
     this.y = BigInt.powMod(this.g, this.x, this.p)
+
+    // nocache?
+    if (opts.nocache) primes[bit_length] = null
   }
 
   DSA.prototype = {
@@ -1330,6 +1336,13 @@ var OTR = {}, DSA = {}
       this.otr.authstate = CONST.AUTHSTATE_NONE
       this.otr.msgstate = CONST.MSGSTATE_ENCRYPTED
 
+      // null out values
+      this.r = null
+      this.myhashed = null
+      this.dhcommit = null
+      this.encrypted = null
+      this.hashed = null
+
       this.otr.trigger('status', [CONST.STATUS_AKE_SUCCESS])
 
       // send stored msgs
@@ -1400,6 +1413,10 @@ var OTR = {}, DSA = {}
           type = '\x11'
           send = HLP.packMPI(this.r)
           send += this.makeM(this.their_y, this.m1, this.c, this.m2)
+
+          this.m1 = null
+          this.m2 = null
+          this.c = null
           break
 
         case '\x11':
@@ -1456,9 +1473,14 @@ var OTR = {}, DSA = {}
             , this.m2_prime
           )
 
-          // send before success cause of sync?
-          this.sendMsg(version, '\x12', send)
+          this.m1 = null
+          this.m2 = null
+          this.m1_prime = null
+          this.m2_prime = null
+          this.c = null
+          this.c_prime = null
 
+          this.sendMsg(version, '\x12', send)
           this.akeSuccess(version)
           return
 
@@ -1485,6 +1507,10 @@ var OTR = {}, DSA = {}
           // store their key
           this.their_keyid = vsm[1]
           this.their_priv_pk = vsm[2]
+
+          this.m1_prime = null
+          this.m2_prime = null
+          this.c_prime = null
 
           this.transmittedRS = true
           this.akeSuccess(version)
@@ -2041,6 +2067,10 @@ var OTR = {}, DSA = {}
   var G = BigInt.str2bigInt(CONST.G, 10)
   var N = BigInt.str2bigInt(CONST.N, 16)
 
+  // JavaScript integers
+  var MAX_INT = Math.pow(2, 53) - 1  // doubles
+  var MAX_UINT = Math.pow(2, 31) - 1  // bitwise operators
+
   // OTR contructor
   function OTR(options) {
     if (!(this instanceof OTR)) return new OTR(options)
@@ -2255,6 +2285,10 @@ var OTR = {}, DSA = {}
       return this.error('Not ready to encrypt.')
 
     var sessKeys = this.sessKeys[1][0]
+
+    if (sessKeys.send_counter >= MAX_INT)
+      return this.error('Should have rekeyed by now.')
+
     sessKeys.send_counter += 1
 
     var ctr = HLP.packCtr(sessKeys.send_counter)
@@ -2272,6 +2306,9 @@ var OTR = {}, DSA = {}
     send += HLP.packINT(this.their_keyid)
     send += HLP.packMPI(this.our_dh.publicKey)
     send += ctr.substring(0, 8)
+
+    if (Math.ceil(msg.length / 8) >= MAX_UINT)  // * 16 / 128
+      return this.error('Message is too long.')
 
     var aes = HLP.encryptAes(
         CryptoJS.enc.Latin1.parse(msg)
@@ -2400,12 +2437,13 @@ var OTR = {}, DSA = {}
           this.sm.handleSM({ msg: msg, type: type })
           break
         case 8:
+          // utf8 filenames
+          msg = msg.substring(4) // remove 4-byte indication
+          msg = CryptoJS.enc.Latin1.parse(msg)
+          msg = msg.toString(CryptoJS.enc.Utf8)
+
           // Extra Symkey
-          this.trigger('file', [
-              'receive'
-            , sessKeys.extra_symkey
-            , msg.substring(4)  // remove 4-byte indication
-          ])
+          this.trigger('file', ['receive', sessKeys.extra_symkey, msg])
           break
       }
 
@@ -2581,18 +2619,20 @@ var OTR = {}, DSA = {}
 
     if (!filename) return this.error('Please specify a filename.')
 
+    // utf8 filenames
+    var l1name = CryptoJS.enc.Utf8.parse(filename)
+    l1name = l1name.toString(CryptoJS.enc.Latin1)
+
+    if (l1name.length >= 65532) return this.error('filename is too long.')
+
     var msg = '\x00'  // null byte
     msg += '\x00\x08'  // type 8 tlv
-    msg += HLP.packSHORT(4 + filename.length)  // length of value
+    msg += HLP.packSHORT(4 + l1name.length)  // length of value
     msg += '\x00\x00\x00\x01'  // four bytes indicating file
-    msg += filename
-
-    // utf8 filenames
-    msg = CryptoJS.enc.Utf8.parse(msg)
-    msg = msg.toString(CryptoJS.enc.Latin1)
+    msg += l1name
 
     msg = this.prepareMsg(msg, filename)
-    this._sendMsg(msg, true)
+    if (msg) this._sendMsg(msg, true)
   }
 
   OTR.prototype.endOtr = function () {
