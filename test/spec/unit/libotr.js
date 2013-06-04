@@ -12,6 +12,7 @@ var spawn = require('child_process').spawn
 // see the Makefile
 
 describe('Libotr', function () {
+  "use strict";
 
   var buddy
   before(function () {

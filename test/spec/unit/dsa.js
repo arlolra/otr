@@ -8,6 +8,7 @@ var assert = require('assert')
   , prekeys = require('./data/keys.js')
 
 describe('DSA', function() {
+  "use strict";
 
   var key, L, N
   before(function () {

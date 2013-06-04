@@ -7,6 +7,7 @@ var assert = require('assert')
   , OTR = function () {}  // just a constructor
 
 describe('Parse', function () {
+  "use strict";
 
   var otr
   beforeEach(function () {

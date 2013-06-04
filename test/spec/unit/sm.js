@@ -5,6 +5,7 @@ var assert = require('assert')
   , OTR = require('../../../lib/otr.js')
 
 describe('SM', function () {
+  "use strict";
 
   var userA, userB
   beforeEach(function () {
@@ -53,7 +54,7 @@ describe('SM', function () {
       }
     })
 
-    userA.on('smp', function (type, data) {
+    userA.on('smp', function (type) {
       if (type === 'trust') {
         assert.ok(userA.trust, 'Trust B? false')
         if (both) done()
@@ -63,7 +64,7 @@ describe('SM', function () {
 
     userB.sendQueryMsg()  // must have AKEd for SM
 
-    userB.on('smp', function (type, data) {
+    userB.on('smp', function (type) {
       switch (type) {
         case 'question':
           userB.smpSecret('applesAndOranges')
@@ -88,7 +89,7 @@ describe('SM', function () {
     userA.on('ui', function (msg) { assert.equal(false, !!msg, msg) })
     userA.on('error', function (err) { assert.equal(false, !!err, err) })
 
-    userA.on('smp', function (type, data) {
+    userA.on('smp', function (type) {
       if (type === 'trust') {
         assert.ok(!userA.trust)
         if (both) done()
@@ -108,7 +109,7 @@ describe('SM', function () {
 
     userB.sendQueryMsg()  // must have AKEd for SM
 
-    userB.on('smp', function (type, data) {
+    userB.on('smp', function (type) {
       switch (type) {
         case 'question':
           userB.smpSecret('bananasAndPears')
@@ -131,7 +132,7 @@ describe('SM', function () {
     userA.on('ui', function (msg) { assert.equal(false, !!msg, msg) })
     userA.on('error', function (err) { assert.equal(false, !!err, err) })
 
-    userA.on('smp', function (type, data) {
+    userA.on('smp', function (type) {
       if (type === 'trust') {
         assert.ok(userA.trust)
         if (both) done()

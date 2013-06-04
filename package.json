@@ -21,10 +21,14 @@
     "dsa"
   ],
   "devDependencies": {
-    "mocha": "*",
-    "grunt": "0.3.x",
-    "grunt-clean": "0.3.x",
-    "simple-xmpp": "0.1.x"
+    "mocha": "1.10.x",
+    "simple-xmpp": "0.1.x",
+    "grunt": "0.4.x",
+    "grunt-cli": "0.1.x",
+    "grunt-contrib-clean": "0.4.x",
+    "grunt-contrib-concat": "0.3.x",
+    "grunt-contrib-jshint": "0.6.x",
+    "grunt-contrib-uglify": "0.2.x"
   },
   "author": "Arlo Breault <arlolra@gmail.com>",
   "contributors": [

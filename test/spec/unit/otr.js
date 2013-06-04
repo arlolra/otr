@@ -7,6 +7,7 @@ var assert = require('assert')
   , OTR = require('../../../lib/otr.js')
 
 describe('OTR', function () {
+  "use strict";
 
   it('should initiate a new OTR object', function () {
     new OTR({ priv: keys.userA })

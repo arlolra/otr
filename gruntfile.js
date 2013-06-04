@@ -1,4 +1,5 @@
 module.exports = function (grunt) {
+  "use strict";
 
   var cryptojs = [
       'vendor/cryptojs/core.js'
@@ -12,29 +13,33 @@ module.exports = function (grunt) {
     , 'vendor/cryptojs/mode-ctr.js'
   ]
 
-  grunt.loadNpmTasks('grunt-clean')
+  grunt.loadNpmTasks('grunt-contrib-clean')
+  grunt.loadNpmTasks('grunt-contrib-concat')
+  grunt.loadNpmTasks('grunt-contrib-jshint')
+  grunt.loadNpmTasks('grunt-contrib-uglify')
 
   grunt.initConfig({
 
-      pkg: '<json:package.json>'
+      pkg: grunt.file.readJSON('package.json')
     , meta: {
-        banner: 
+          banner: 
             '/*!\n\n  <%= pkg.name %>.js v<%= pkg.version %> - ' +
             '<%= grunt.template.today("yyyy-mm-dd") %>\n' +
             '  (c) <%= grunt.template.today("yyyy") %> - <%= pkg.author %>\n' +
             '  Freely distributed under the <%= pkg.license %> license.\n\n' +
             '  This file is concatenated for the browser.\n' +
             '  Please see: <%= pkg.homepage %>' +
-            '\n\n*/'
+            '\n\n*/\n\n'
         , cryptojs: 'module.exports = CryptoJS'
-        , globals: 'var OTR = {}, DSA = {}'
+        , globals: 'var OTR = {}, DSA = {}\n\n'
       }
     , concat: {
           otr: {
-              src: [
-                  '<banner:meta.banner>'
-                , '<banner:meta.globals>'
-                , 'lib/const.js'
+              options: {
+                banner: '<%= meta.banner %><%= meta.globals %>'
+              }
+            , src: [
+                  'lib/const.js'
                 , 'lib/helpers.js'
                 , 'lib/dsa.js'
                 , 'lib/parse.js'
@@ -53,15 +58,45 @@ module.exports = function (grunt) {
             , dest: 'build/dep/crypto.js'
           }
       }
-    , min: {
+    , uglify: {
         otr: {
-            src: ['<banner:meta.banner>', 'build/otr.js']
-          , dest: 'build/otr.min.js'
+          options: {
+              banner: '<%= meta.banner %>'
+            , mangle: false
+          },
+          files: {
+              'build/otr.min.js': ['build/otr.js']
+          }
         }
       }
     , clean: {
         folder: 'build/'
       }
+    , jshint: {
+          options: {
+              "-W015"    : true
+            , "-W018"    : true
+            , "browser"  : true
+            , "devel"    : true
+            , "node"     : true
+            , "bitwise"  : false
+            , "indent"   : 2
+            , "laxcomma" : true
+            , "asi"      : true
+            , "undef"    : true
+            , "strict"   : true
+            , "expr"     : true
+            , "white"    : false
+            , "multistr" : true
+            , "globals"  : {
+                  "it"         : true
+                , "beforeEach" : true
+                , "before"     : true
+                , "describe"   : true
+              }
+          }
+        , all: ['*.js', 'lib/*.js', 'test/spec/unit/*.js']
+    }
   })
 
   grunt.registerTask('copy_dep', function () {
@@ -73,9 +108,9 @@ module.exports = function (grunt) {
     })
   })
 
-  grunt.registerTask('cryptojs', 'concat:cryptojs')
-  grunt.registerTask('otr', 'concat:otr min:otr')
-  grunt.registerTask('dep', 'concat:crypto_dep copy_dep')
-  grunt.registerTask('default', 'clean otr dep')
+  grunt.registerTask('cryptojs', ['concat:cryptojs'])
+  grunt.registerTask('otr', ['concat:otr', 'uglify:otr'])
+  grunt.registerTask('dep', ['concat:crypto_dep', 'copy_dep'])
+  grunt.registerTask('default', ['clean', 'otr', 'dep'])
 
 }

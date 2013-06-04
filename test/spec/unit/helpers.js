@@ -4,6 +4,7 @@ var assert = require('assert')
   , HLP = require('../../../lib/helpers.js')
 
 describe('Helpers', function () {
+  "use strict";
 
   var two55, str
 
