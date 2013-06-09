@@ -1,0 +1,385 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <title>OTR.js by arlolra</title>
+
+    <link rel="stylesheet" href="stylesheets/styles.css">
+    <link rel="stylesheet" href="stylesheets/pygment_trac.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+  </head>
+  <body>
+    <div class="wrapper">
+      <header>
+        <h1>OTR.js</h1>
+        <p>Off-the-Record Messaging Protocol implemented in JavaScript</p>
+
+        <p class="view"><a href="https://github.com/arlolra/otr">View the Project on GitHub <small>arlolra/otr</small></a></p>
+
+
+        <ul>
+          <li><a href="https://github.com/arlolra/otr/zipball/master">Download <strong>ZIP File</strong></a></li>
+          <li><a href="https://github.com/arlolra/otr/tarball/master">Download <strong>TAR Ball</strong></a></li>
+          <li><a href="https://github.com/arlolra/otr">View On <strong>GitHub</strong></a></li>
+        </ul>
+      </header>
+      <section>
+        <h1>
+<a name="off-the-record-messaging-protocol-in-javascript" class="anchor" href="#off-the-record-messaging-protocol-in-javascript"><span class="octicon octicon-link"></span></a><a href="http://www.cypherpunks.ca/otr/">Off-the Record Messaging Protocol</a> in JavaScript</h1>
+
+<p><a href="http://travis-ci.org/arlolra/otr"><img src="https://secure.travis-ci.org/arlolra/otr.png?branch=master" alt="Build Status"></a></p>
+
+<hr><h3>
+<a name="warning" class="anchor" href="#warning"><span class="octicon octicon-link"></span></a>Warning</h3>
+
+<p>This library hasn't been properly vetted by security researchers. Do not use
+in life and death situations!</p>
+
+<p><code>Math.random()</code> is replaced by <code>salsa20.js</code>, seeded with either <code>window.crypto.getRandomValues()</code> in the <a href="https://developer.mozilla.org/en-US/docs/DOM/window.crypto.getRandomValues">browser</a>, or <code>crypto.randomBytes()</code> in <a href="http://nodejs.org/api/crypto.html#crypto_crypto_randombytes_size_callback">node.js</a>.</p>
+
+<hr><h3>
+<a name="install" class="anchor" href="#install"><span class="octicon octicon-link"></span></a>Install</h3>
+
+<p>Include the build files on the page,</p>
+
+<pre><code>&lt;!-- Load dependencies --&gt;
+&lt;script src="build/dep/salsa20.js"&gt;&lt;/script&gt;
+&lt;script src="build/dep/bigint.js"&gt;&lt;/script&gt;
+&lt;script src="build/dep/crypto.js"&gt;&lt;/script&gt;
+&lt;script src="build/dep/eventemitter.js"&gt;&lt;/script&gt;
+
+&lt;!-- Load otr.js or otr.min.js --&gt;
+&lt;script src="build/otr.min.js"&gt;&lt;/script&gt;
+</code></pre>
+
+<p>Here's an <a href="https://github.com/arlolra/otr/blob/master/test/browser.html">example</a> use in the browser.</p>
+
+<p>Although this is a client library, it can be used <a href="https://github.com/arlolra/otr/blob/master/test/xmpp.js">on the server</a>.</p>
+
+<pre><code>npm install otr
+</code></pre>
+
+<p>And then,</p>
+
+<pre><code>var DSA = require('otr').DSA
+var OTR = require('otr').OTR
+</code></pre>
+
+<hr><h3>
+<a name="usage" class="anchor" href="#usage"><span class="octicon octicon-link"></span></a>Usage</h3>
+
+<p><strong>Initial setup</strong>: Compute your long-lived key beforehand. Currently this is
+expensive and can take several seconds.</p>
+
+<pre><code>// precompute your DSA key
+var myKey = new DSA()
+</code></pre>
+
+<p>For each user you're communicating with, instantiate an OTR object.</p>
+
+<pre><code>// provide options
+var options = {
+    fragment_size: 140
+  , send_interval: 200
+  , priv: myKey
+}
+
+var buddy = new OTR(options)
+
+buddy.on('ui', function (msg) {
+  console.log("message to display to the user: " + msg)
+})
+
+buddy.on('io', function (msg) {
+  console.log("message to send to buddy: " + msg)
+})
+
+buddy.on('error', function (err) {
+  console.log("error occurred: " + err)
+})
+</code></pre>
+
+<p><strong>New message from buddy received</strong>: Pass the received message to the <code>receiveMsg</code>
+method.</p>
+
+<pre><code>var rcvmsg = "Message from buddy."
+buddy.receiveMsg(rcvmsg)
+</code></pre>
+
+<p><strong>Send a message to buddy</strong>: Pass the message to the <code>sendMsg</code> method.</p>
+
+<pre><code>var newmsg = "Message to userA."
+buddy.sendMsg(newmsg)
+</code></pre>
+
+<p><strong>Going encrypted</strong>: Initially, messages are sent in plaintext. To manually
+initiate the authenticated key exchange.</p>
+
+<pre><code>buddy.sendQueryMsg()
+</code></pre>
+
+<p>Alternatively, one can set the policy <code>REQUIRE_ENCRYPTION</code> and send a plaintext
+message. This will store the message, initiate the authentication and then,
+upon success, send it out.</p>
+
+<pre><code>buddy.REQUIRE_ENCRYPTION = true
+buddy.sendMsg('My plaintext message to be encrypted.')
+</code></pre>
+
+<p>Another policy, <code>SEND_WHITESPACE_TAG</code>, will append tags to plaintext messages,
+indicating a willingness to speak OTR. If the recipient in turn has set the
+policy <code>WHITESPACE_START_AKE</code>, the AKE will be initiated.</p>
+
+<p><strong>Close private connection</strong>: To end an encrypted communication,</p>
+
+<pre><code>buddy.endOtr()
+</code></pre>
+
+<p>will return the message state to plaintext and notify the correspondent.</p>
+
+<p><strong>Options</strong>: A dictionary of the current options accepted by the OTR constructor.</p>
+
+<pre><code>var options = {
+
+  // long-lived private key
+  priv: new DSA(),
+
+  // turn on some debuggin logs
+  debug: false,
+
+  // fragment the message in case of char limits
+  fragment_size: 140,
+
+  // ms delay between sending fragmented msgs, avoid rate limits
+  send_interval: 200
+
+}
+</code></pre>
+
+<hr><h3>
+<a name="status" class="anchor" href="#status"><span class="octicon octicon-link"></span></a>Status</h3>
+
+<p>A listener can be attached for status changes. These are non-standard codes,
+specific to this OTR library, indicating various things like the AKE success.</p>
+
+<pre><code>buddy.on('status', function (state) {
+  switch (state) {
+    case OTR.CONST.STATUS_AKE_SUCCESS:
+      // sucessfully ake'd with buddy
+      // check if buddy.msgstate === OTR.CONST.MSGSTATE_ENCRYPTED
+      break
+    case OTR.CONST.STATUS_END_OTR:
+      // if buddy.msgstate === OTR.CONST.MSGSTATE_FINISHED
+      // inform the user that his correspondent has closed his end
+      // of the private connection and the user should do the same
+      break
+  }
+})
+</code></pre>
+
+<hr><h3>
+<a name="policies" class="anchor" href="#policies"><span class="octicon octicon-link"></span></a>Policies</h3>
+
+<p>To be set on a per-correspondent basis. The defaults are as follows:</p>
+
+<pre><code>// Allow version 2 or 3 of the OTR protocol to be used.
+ALLOW_V2 = true
+ALLOW_V3 = true
+
+// Refuse to send unencrypted messages.
+REQUIRE_ENCRYPTION = false
+
+// Advertise your support of OTR using the whitespace tag.
+SEND_WHITESPACE_TAG = false
+
+// Start the OTR AKE when you receive a whitespace tag.
+WHITESPACE_START_AKE = false
+
+// Start the OTR AKE when you receive an OTR Error Message.
+ERROR_START_AKE = false
+</code></pre>
+
+<hr><h3>
+<a name="instance-tags" class="anchor" href="#instance-tags"><span class="octicon octicon-link"></span></a>Instance Tags</h3>
+
+<p>These are intended to be persistent and can be precomputed.</p>
+
+<pre><code>var myTag = OTR.makeInstanceTag()
+var options = { instance_tag: myTag }
+
+var buddy = new OTR(options)
+</code></pre>
+
+<hr><h3>
+<a name="fingerprints" class="anchor" href="#fingerprints"><span class="octicon octicon-link"></span></a>Fingerprints</h3>
+
+<p>OTR public key fingerprints can be obtained as follows:</p>
+
+<pre><code>// assume you've gone through the ake with buddy
+var buddy = new OTR({ priv: myKey })
+// buddy.msgstate === OTR.CONST.MSGSTATE_ENCRYPTED
+
+// for my key, either one of the following
+myKey.fingerprint()
+// or,
+buddy.priv.fingerprint()
+
+// for their key
+buddy.their_priv_pk.fingerprint()
+</code></pre>
+
+<hr><h3>
+<a name="socialist-millionaire-protocol" class="anchor" href="#socialist-millionaire-protocol"><span class="octicon octicon-link"></span></a>Socialist Millionaire Protocol</h3>
+
+<p>At any time after establishing encryption, either party can initiate SMP to
+detect impersonation or man-in-the-middle attacks. A shared secret,
+exchanged through an out-of-band channel prior to starting the conversation,
+is required.</p>
+
+<pre><code>var secret = "ghostbusters"
+buddy.smpSecret(secret)
+</code></pre>
+
+<p>A question can be supplied, as a reminder of the shared secret.</p>
+
+<pre><code>var question = "who are you going to call?"
+buddy.smpSecret(secret, question)
+</code></pre>
+
+<p>If you plan on using SMP, as opposed to just allowing fingerprints for
+verification, provide on optional callback when initiating OTR,
+otherwise a no-opt is fired.</p>
+
+<pre><code>var buddy = new OTR()
+
+buddy.on('smp', function (type, data) {
+  switch (type) {
+    case 'question':
+      // call(data) some function with question?
+      // return the user supplied data to
+      // userA.smpSecret(secret)
+      break
+    case 'trust':
+      // smp completed or aborted
+      // check userA.trust and update ui accordingly
+      break
+    default:
+      throw new Error('Unknown type.')
+  }
+})
+</code></pre>
+
+<p>If the protocol successfully runs to completion,</p>
+
+<pre><code>buddy.trust === true
+</code></pre>
+
+<hr><h3>
+<a name="private-keys" class="anchor" href="#private-keys"><span class="octicon octicon-link"></span></a>Private Keys</h3>
+
+<p>To export a private, long-lived key:</p>
+
+<pre><code>var myKey = new DSA()
+var string = myKey.packPrivate()  // returns a Base64 encoded string
+</code></pre>
+
+<p>It can then be imported as follows,</p>
+
+<pre><code>string = "AAAAAACA4COdKHpU/np9F8EDdnGiJJmc89p ... I9BzTkQduFA7ovXAMY="
+myKey = DSA.parsePrivate(string)
+</code></pre>
+
+<p>Importing the (somewhat) standard libotr s-expression format works as well,</p>
+
+<pre><code>// in node.js
+var fs = require('fs')
+string = fs.readFileSync("~/.purple/otr.private_key", 'utf8')
+
+// leaving out the terminal backslashes needed for multiline strings in js
+string = "(privkeys
+  (account
+    (name "foo@example.com")
+    (protocol prpl-jabber)
+    (private-key
+      (dsa
+        (p #00FC07 ... 2AEFD07A2081#)
+        (q #ASD5FF ... LKJDF898DK12#)
+        (g #535E3E ... 1E3BC1FC6F26#)
+        (y #0AC867 ... 8969009B6ECF#)
+        (x #14D034 ... F72D79043216#)
+      )
+    )
+  )
+)"
+
+myKey = DSA.parsePrivate(string, true)
+</code></pre>
+
+<hr><h3>
+<a name="extra-symmetric-key" class="anchor" href="#extra-symmetric-key"><span class="octicon octicon-link"></span></a>Extra Symmetric Key</h3>
+
+<p>In version 3 of the protocol, an extra symmetric key is derived during the AKE. This may be used for secure communication over a different channel (e.g., file transfer, voice chat).</p>
+
+<pre><code>var filename = "test.zip"
+var buddy = new OTR()
+buddy.sendFile(filename)
+buddy.on('file', function (type, key, filename) {
+  // type === 'send'
+  // key should be used to encrypt filename
+  // and sent through a different channel
+})
+</code></pre>
+
+<p>On the other end,</p>
+
+<pre><code>var friend = new OTR()
+friend.on('file', function (type, key, filename) {
+  // type === 'receive'
+  // decrypt filename with key, once received
+})
+</code></pre>
+
+<hr><h3>
+<a name="links" class="anchor" href="#links"><span class="octicon octicon-link"></span></a>Links</h3>
+
+<p>Spec:</p>
+
+<ul>
+<li><a href="http://www.cypherpunks.ca/otr/Protocol-v3-4.0.0.html">http://www.cypherpunks.ca/otr/Protocol-v3-4.0.0.html</a></li>
+<li><a href="http://www.cypherpunks.ca/otr/Protocol-v2-3.1.0.html">http://www.cypherpunks.ca/otr/Protocol-v2-3.1.0.html</a></li>
+<li>See: <code>specs/</code>
+</li>
+</ul><p>Using:</p>
+
+<ul>
+<li><a href="http://code.google.com/p/crypto-js/">crypto-js</a></li>
+<li><a href="http://leemon.com/crypto/BigInt.html">bigint.js</a></li>
+<li><a href="https://gist.github.com/dchest/4582374">salsa20.js</a></li>
+<li><a href="https://github.com/Wolfy87/EventEmitter">eventemitter.js</a></li>
+</ul><hr><h3>
+<a name="in-the-wild" class="anchor" href="#in-the-wild"><span class="octicon octicon-link"></span></a>In The Wild</h3>
+
+<p>A sampling of projects that use this library:</p>
+
+<ul>
+<li><a href="https://github.com/cryptocat/cryptocat">Cryptocat</a></li>
+<li><a href="https://github.com/jonkri/yabasta">Yabasta</a></li>
+<li><a href="https://github.com/sualko/diaspora">Diaspora</a></li>
+</ul><hr><h3>
+<a name="license" class="anchor" href="#license"><span class="octicon octicon-link"></span></a>License</h3>
+
+<p>MPL v2.0</p>
+      </section>
+      <footer>
+        <p>This project is maintained by <a href="https://github.com/arlolra">arlolra</a></p>
+        <p><small>Hosted on GitHub Pages &mdash; Theme by <a href="https://github.com/orderedlist">orderedlist</a></small></p>
+      </footer>
+    </div>
+    <script src="javascripts/scale.fix.js"></script>
+    
+  </body>
+</html>
