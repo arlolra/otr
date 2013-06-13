@@ -2,7 +2,8 @@ module.exports = function (grunt) {
   "use strict";
 
   var cryptojs = [
-      'vendor/cryptojs/core.js'
+      'vendor/cryptojs/header.js'
+    , 'vendor/cryptojs/core.js'
     , 'vendor/cryptojs/enc-base64.js'
     , 'vendor/cryptojs/cipher-core.js'
     , 'vendor/cryptojs/aes.js'
@@ -11,6 +12,7 @@ module.exports = function (grunt) {
     , 'vendor/cryptojs/hmac.js'
     , 'vendor/cryptojs/pad-nopadding.js'
     , 'vendor/cryptojs/mode-ctr.js'
+    , 'vendor/cryptojs/footer.js'
   ]
 
   grunt.loadNpmTasks('grunt-contrib-clean')
@@ -30,32 +32,28 @@ module.exports = function (grunt) {
             '  This file is concatenated for the browser.\n' +
             '  Please see: <%= pkg.homepage %>' +
             '\n\n*/\n\n'
-        , cryptojs: 'module.exports = CryptoJS'
-        , globals: 'var OTR = {}, DSA = {}\n\n'
       }
     , concat: {
           otr: {
               options: {
-                banner: '<%= meta.banner %><%= meta.globals %>'
+                banner: '<%= meta.banner %>'
               }
             , src: [
-                  'lib/const.js'
+                  'etc/header.js'
+                , 'lib/const.js'
                 , 'lib/helpers.js'
                 , 'lib/dsa.js'
                 , 'lib/parse.js'
                 , 'lib/ake.js'
                 , 'lib/sm.js'
                 , 'lib/otr.js'
+                , 'etc/footer.js'
               ]
             , dest: 'build/otr.js'
           }
         , cryptojs: {
-              src: cryptojs.concat('<banner:meta.cryptojs>')
-            , dest: 'vendor/crypto.js'
-          }
-        , crypto_dep: {
               src: cryptojs
-            , dest: 'build/dep/crypto.js'
+            , dest: 'vendor/crypto.js'
           }
       }
     , uglify: {
@@ -93,14 +91,15 @@ module.exports = function (grunt) {
                 , "beforeEach" : true
                 , "before"     : true
                 , "describe"   : true
+                , "define"     : true
               }
           }
         , all: ['*.js', 'lib/*.js', 'test/spec/unit/*.js']
-    }
+      }
   })
 
   grunt.registerTask('copy_dep', function () {
-    var files = ['salsa20.js', 'bigint.js', 'eventemitter.js']
+    var files = ['salsa20.js', 'bigint.js', 'eventemitter.js', 'crypto.js']
       , src = 'vendor/'
       , dest = 'build/dep/'
     files.forEach(function (f) {
@@ -108,9 +107,8 @@ module.exports = function (grunt) {
     })
   })
 
-  grunt.registerTask('cryptojs', ['concat:cryptojs'])
   grunt.registerTask('otr', ['concat:otr', 'uglify:otr'])
-  grunt.registerTask('dep', ['concat:crypto_dep', 'copy_dep'])
+  grunt.registerTask('dep', ['concat:cryptojs', 'copy_dep'])
   grunt.registerTask('default', ['clean', 'otr', 'dep'])
 
 }

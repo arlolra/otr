@@ -1,96 +1,7 @@
 ;(function () {
 
-  var root = this
+function BigInt(crypto, Salsa20) {
 
-  var bpe = 0  // bits stored per array element
-  for (bpe = 0; (1 << (bpe + 1)) > (1 << bpe); bpe++) ;  // bpe = number of bits in the mantissa on this platform
-  bpe >>= 1  // bpe = number of bits in one element of the array representing the bigInt
-
-  var BigInt = {
-      str2bigInt    : str2bigInt
-    , bigInt2str    : bigInt2str
-    , int2bigInt    : int2bigInt
-    , multMod       : multMod
-    , powMod        : powMod
-    , inverseMod    : inverseMod
-    , randBigInt    : randBigInt
-    , equals        : equals
-    , sub           : sub
-    , mod           : mod
-    , mod_          : mod_
-    , modInt        : modInt
-    , mult          : mult
-    , divInt_       : divInt_
-    , rightShift_   : rightShift_
-    , leftShift_    : leftShift_
-    , dup           : dup
-    , greater       : greater
-    , add           : add
-    , addInt        : addInt
-    , addInt_       : addInt_
-    , isZero        : isZero
-    , bitSize       : bitSize
-    , randTruePrime : randTruePrime
-    , millerRabin   : millerRabin
-    , divide_       : divide_
-    , trim          : trim
-    , expand        : expand
-    , bpe           : bpe
-  }
-
-  var Salsa20, crypto
-  if (typeof require !== 'undefined') {
-    module.exports = BigInt
-    Salsa20 = require('./salsa20.js')
-    crypto = require('crypto')
-  } else {
-    root.BigInt = BigInt
-    Salsa20 = root.Salsa20
-    crypto = root.crypto
-  }
-
-  function seedRand(state) {
-    return function () {
-      var x, o = ''
-      while (o.length < 16) {
-        x = state.getBytes(1)
-        if (x[0] <= 250) o += x[0] % 10
-      }
-      return parseFloat('0.' + o)
-    }
-  }
-
-  ;(function seed() {
-
-    var buf
-    if (typeof require !== 'undefined') {
-      try {
-        buf = crypto.randomBytes(40)
-      } catch (e) { throw e }
-    } else if ( (typeof crypto !== 'undefined') &&
-                (typeof crypto.getRandomValues === 'function')
-    ) {
-      buf = new Uint8Array(40)
-      crypto.getRandomValues(buf)
-    } else {
-      throw new Error('Keys should not be generated without CSPRNG.')
-    }
-
-    var state = new Salsa20([
-      buf[00], buf[01], buf[02], buf[03], buf[04], buf[05], buf[06], buf[07],
-      buf[08], buf[09], buf[10], buf[11], buf[12], buf[13], buf[14], buf[15],
-      buf[16], buf[17], buf[18], buf[19], buf[20], buf[21], buf[22], buf[23],
-      buf[24], buf[25], buf[26], buf[27], buf[28], buf[29], buf[30], buf[31]
-    ],[
-      buf[32], buf[33], buf[34], buf[35], buf[36], buf[37], buf[38], buf[39]
-    ])
-
-    Math.random = seedRand(state)
-
-    // reseed every 5 mins
-    setTimeout(seed, 5 * 60 * 1000)
-
-  }())
   ////////////////////////////////////////////////////////////////////////////////////////
   // Big Integer Library v. 5.5
   // Created 2000, last modified 2013
@@ -273,6 +184,7 @@
   ////////////////////////////////////////////////////////////////////////////////////////
 
   //globals
+  var bpe = 0        // bits stored per array element
   var mask=0;        //AND this with an array element to chop it down to bpe bits
   var radix=mask+1;  //equals 2^bpe.  A single 1 bit to the left of the last bit of mask.
 
@@ -280,6 +192,8 @@
   var digitsStr='0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz_=!@#$%^&*()[]{}|;:,.<>/?`~ \\\'\"+-';
 
   //initialize the global variables
+  for (bpe = 0; (1<<(bpe+1)) > (1<<bpe); bpe++);  // bpe = number of bits in the mantissa on this platform
+  bpe>>=1;                   // bpe = number of bits in one element of the array representing the bigInt
   mask=(1<<bpe)-1;           //AND the mask with an integer to get its bpe least significant bits
   radix=mask+1;              //2^bpe.  a single 1 bit to the left of the first bit of mask
   var one=int2bigInt(1,1,1);     //constant used in powMod_()
@@ -1603,6 +1517,103 @@
     if (!greater(n,sa))
       sub_(sa,n);
     copy_(x,sa);
+  }
+
+
+  // otr.js stuff
+
+  var BigInt = {
+      str2bigInt    : str2bigInt
+    , bigInt2str    : bigInt2str
+    , int2bigInt    : int2bigInt
+    , multMod       : multMod
+    , powMod        : powMod
+    , inverseMod    : inverseMod
+    , randBigInt    : randBigInt
+    , equals        : equals
+    , sub           : sub
+    , mod           : mod
+    , mod_          : mod_
+    , modInt        : modInt
+    , mult          : mult
+    , divInt_       : divInt_
+    , rightShift_   : rightShift_
+    , leftShift_    : leftShift_
+    , dup           : dup
+    , greater       : greater
+    , add           : add
+    , addInt        : addInt
+    , addInt_       : addInt_
+    , isZero        : isZero
+    , bitSize       : bitSize
+    , randTruePrime : randTruePrime
+    , millerRabin   : millerRabin
+    , divide_       : divide_
+    , trim          : trim
+    , expand        : expand
+    , bpe           : bpe
+  }
+
+  function seedRand(state) {
+    return function () {
+      var x, o = ''
+      while (o.length < 16) {
+        x = state.getBytes(1)
+        if (x[0] <= 250) o += x[0] % 10
+      }
+      return parseFloat('0.' + o)
+    }
+  }
+
+  ;(function seed() {
+
+    var buf
+    if ( (typeof crypto !== 'undefined') &&
+         (typeof crypto.randomBytes === 'function')
+    ) {
+      try {
+        buf = crypto.randomBytes(40)
+      } catch (e) { throw e }
+    } else if ( (typeof crypto !== 'undefined') &&
+                (typeof crypto.getRandomValues === 'function')
+    ) {
+      buf = new Uint8Array(40)
+      crypto.getRandomValues(buf)
+    } else {
+      throw new Error('Keys should not be generated without CSPRNG.')
+    }
+
+    var state = new Salsa20([
+      buf[00], buf[01], buf[02], buf[03], buf[04], buf[05], buf[06], buf[07],
+      buf[08], buf[09], buf[10], buf[11], buf[12], buf[13], buf[14], buf[15],
+      buf[16], buf[17], buf[18], buf[19], buf[20], buf[21], buf[22], buf[23],
+      buf[24], buf[25], buf[26], buf[27], buf[28], buf[29], buf[30], buf[31]
+    ],[
+      buf[32], buf[33], buf[34], buf[35], buf[36], buf[37], buf[38], buf[39]
+    ])
+
+    Math.random = seedRand(state)
+
+    // reseed every 5 mins
+    setTimeout(seed, 5 * 60 * 1000)
+
+  }())
+
+  return BigInt
+
+}
+
+  var root = this
+
+  var Salsa20, crypto
+  if (typeof define === 'function' && define.amd) {
+    define(['./salsa20'], BigInt.bind(this, root.crypto))
+  } else if (typeof module !== 'undefined' && module.exports) {
+    Salsa20 = require('./salsa20.js')
+    crypto = require('crypto')
+    module.exports = BigInt.call(this, crypto, Salsa20)
+  } else {
+    root.BigInt = BigInt.call(this, root.crypto, root.Salsa20)
   }
 
 }).call(this)

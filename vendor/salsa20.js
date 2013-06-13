@@ -1,12 +1,14 @@
 // Salsa20 implementation
-// Contributed by Dmitry Chestnykh
+// Contributed to Cryptocat by Dmitry Chestnykh
 // 21-01-2013
 
 ;(function () {
 
     var root = this
 
-    if (typeof exports !== 'undefined') {
+    if (typeof define === 'function' && define.amd) {
+      define(function () { return Salsa20 })
+    } else if (typeof module !== 'undefined' && module.exports) {
       module.exports = Salsa20
     } else {
       root.Salsa20 = Salsa20
