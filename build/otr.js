@@ -1,6 +1,6 @@
 /*!
 
-  otr.js v0.1.5 - 2013-05-23
+  otr.js v0.1.6 - 2013-06-12
   (c) 2013 - Arlo Breault <arlolra@gmail.com>
   Freely distributed under the MPL v2.0 license.
 
@@ -9,7 +9,9 @@
 
 */
 
-var OTR = {}, DSA = {}
+;(function () {
+
+function OTR() {
 
 ;(function () {
   "use strict";
@@ -62,7 +64,7 @@ var OTR = {}, DSA = {}
 
   }
 
-  if (typeof exports !== 'undefined') {
+  if (typeof module !== 'undefined' && module.exports) {
     module.exports = CONST
   } else {
     root.OTR.CONST = CONST
@@ -74,13 +76,12 @@ var OTR = {}, DSA = {}
 
   var root = this
 
-  var HLP, CryptoJS, BigInt
-  if (typeof exports !== 'undefined') {
-    HLP = exports
+  var HLP = {}, CryptoJS, BigInt
+  if (typeof module !== 'undefined' && module.exports) {
+    module.exports = HLP = {}
     CryptoJS = require('../vendor/crypto.js')
     BigInt = require('../vendor/bigint.js')
   } else {
-    HLP = {}
     if (root.OTR) root.OTR.HLP = HLP
     if (root.DSA) root.DSA.HLP = HLP
     CryptoJS = root.CryptoJS
@@ -476,7 +477,7 @@ var OTR = {}, DSA = {}
   var root = this
 
   var CryptoJS, BigInt, HLP
-  if (typeof exports !== 'undefined') {
+  if (typeof module !== 'undefined' && module.exports) {
     module.exports = DSA
     CryptoJS = require('../vendor/crypto.js')
     BigInt = require('../vendor/bigint.js')
@@ -979,14 +980,14 @@ var OTR = {}, DSA = {}
 
   var root = this
 
-  var Parse, CryptoJS, CONST, HLP
-  if (typeof exports !== 'undefined') {
-    Parse = exports
+  var Parse = {}, CryptoJS, CONST, HLP
+  if (typeof module !== 'undefined' && module.exports) {
+    module.exports = Parse
     CryptoJS = require('../vendor/crypto.js')
     CONST = require('./const.js')
     HLP = require('./helpers.js')
   } else {
-    Parse = root.OTR.Parse = {}
+    root.OTR.Parse = Parse
     CryptoJS = root.CryptoJS
     CONST = root.OTR.CONST
     HLP = root.OTR.HLP
@@ -1185,7 +1186,7 @@ var OTR = {}, DSA = {}
   var root = this
 
   var CryptoJS, BigInt, CONST, HLP, DSA
-  if (typeof exports !== 'undefined') {
+  if (typeof module !== 'undefined' && module.exports) {
     module.exports = AKE
     CryptoJS = require('../vendor/crypto.js')
     BigInt = require('../vendor/bigint.js')
@@ -1582,7 +1583,7 @@ var OTR = {}, DSA = {}
   var root = this
 
   var CryptoJS, BigInt, CONST, HLP, DSA
-  if (typeof exports !== 'undefined') {
+  if (typeof module !== 'undefined' && module.exports) {
     module.exports = SM
     CryptoJS = require('../vendor/crypto.js')
     BigInt = require('../vendor/bigint.js')
@@ -2032,7 +2033,7 @@ var OTR = {}, DSA = {}
   var root = this
 
   var CryptoJS, BigInt, EventEmitter, CONST, HLP, Parse, AKE, SM, DSA
-  if (typeof exports !== 'undefined') {
+  if (typeof module !== 'undefined' && module.exports) {
     module.exports = OTR
     CryptoJS = require('../vendor/crypto.js')
     BigInt = require('../vendor/bigint.js')
@@ -2652,6 +2653,38 @@ var OTR = {}, DSA = {}
     if (BigInt.greater(BigInt.str2bigInt('100', 16), num))
       return OTR.makeInstanceTag()
     return HLP.packINT(parseInt(BigInt.bigInt2str(num, 10), 10))
+  }
+
+}).call(this)
+
+  var root = this
+  return {
+      OTR: root.OTR
+    , DSA: root.DSA
+  }
+
+}
+
+  var root = this
+  if (typeof define === 'function' && define.amd) {
+    define([
+        "./dep/bigint"
+      , "./dep/crypto"
+      , "./dep/eventemitter"
+    ], function (BigInt, CryptoJS, EventEmitter) {
+      var root = {
+          BigInt: BigInt
+        , CryptoJS: CryptoJS
+        , EventEmitter: EventEmitter
+        , OTR: {}
+        , DSA: {}
+      }
+      return OTR.call(root)
+    })
+  } else {
+    root.OTR = {}
+    root.DSA = {}
+    OTR.call(root)
   }
 
 }).call(this)
