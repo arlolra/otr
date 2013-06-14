@@ -2,17 +2,17 @@
 // Contributed to Cryptocat by Dmitry Chestnykh
 // 21-01-2013
 
-;(function () {
+;(function (root, factory) {
 
-    var root = this
+  if (typeof define === 'function' && define.amd) {
+    define(factory)
+  } else if (typeof module !== 'undefined' && module.exports) {
+    module.exports = factory()
+  } else {
+    root.Salsa20 = factory()
+  }
 
-    if (typeof define === 'function' && define.amd) {
-      define(function () { return Salsa20 })
-    } else if (typeof module !== 'undefined' && module.exports) {
-      module.exports = Salsa20
-    } else {
-      root.Salsa20 = Salsa20
-    }
+}(this, function () {
 
     function Salsa20(key, nonce) {
         // Constants.
@@ -249,4 +249,6 @@
             this.block[62] = (x15 >>> 16) & 0xff; this.block[63] = (x15 >>> 24) & 0xff;
     };
 
-}).call(this)
+  return Salsa20
+
+}))

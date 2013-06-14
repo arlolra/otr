@@ -1,6 +1,14 @@
-;(function () {
+;(function (root, factory) {
 
-function CryptoJS() {
+  if (typeof define === "function" && define.amd) {
+    define(factory)
+  } else if (typeof module !== 'undefined' && module.exports) {
+    module.exports = factory()
+  } else {
+    root.CryptoJS = factory()
+  }
+
+}(this, function () {
 
 /*
 CryptoJS v3.0.2
@@ -2410,16 +2418,4 @@ CryptoJS.mode.CTR = (function () {
 
   return CryptoJS
 
-}
-
-  var root = this
-
-  if (typeof define === "function" && define.amd) {
-    define(CryptoJS)
-  } else if (typeof module !== 'undefined' && module.exports) {
-    module.exports = CryptoJS()
-  } else {
-    root.CryptoJS = CryptoJS()
-  }
-
-}).call(this)
+}))

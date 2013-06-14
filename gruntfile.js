@@ -72,27 +72,7 @@ module.exports = function (grunt) {
       }
     , jshint: {
           options: {
-              "-W015"    : true
-            , "-W018"    : true
-            , "browser"  : true
-            , "devel"    : true
-            , "node"     : true
-            , "bitwise"  : false
-            , "indent"   : 2
-            , "laxcomma" : true
-            , "asi"      : true
-            , "undef"    : true
-            , "strict"   : true
-            , "expr"     : true
-            , "white"    : false
-            , "multistr" : true
-            , "globals"  : {
-                  "it"         : true
-                , "beforeEach" : true
-                , "before"     : true
-                , "describe"   : true
-                , "define"     : true
-              }
+            jshintrc: '.jshintrc'
           }
         , all: ['*.js', 'lib/*.js', 'test/spec/unit/*.js']
       }
