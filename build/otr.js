@@ -1,6 +1,6 @@
 /*!
 
-  otr.js v0.1.6 - 2013-06-12
+  otr.js v0.1.7 - 2013-06-14
   (c) 2013 - Arlo Breault <arlolra@gmail.com>
   Freely distributed under the MPL v2.0 license.
 
@@ -9,9 +9,29 @@
 
 */
 
-;(function () {
+;(function (root, factory) {
 
-function OTR() {
+  if (typeof define === 'function' && define.amd) {
+    define([
+        "./dep/bigint"
+      , "./dep/crypto"
+      , "./dep/eventemitter"
+    ], function (BigInt, CryptoJS, EventEmitter) {
+      return factory({
+          BigInt: BigInt
+        , CryptoJS: CryptoJS
+        , EventEmitter: EventEmitter
+        , OTR: {}
+        , DSA: {}
+      })
+    })
+  } else {
+    root.OTR = {}
+    root.DSA = {}
+    factory(root)
+  }
+
+}(this, function (root) {
 
 ;(function () {
   "use strict";
@@ -2657,34 +2677,9 @@ function OTR() {
 
 }).call(this)
 
-  var root = this
   return {
       OTR: root.OTR
     , DSA: root.DSA
   }
 
-}
-
-  var root = this
-  if (typeof define === 'function' && define.amd) {
-    define([
-        "./dep/bigint"
-      , "./dep/crypto"
-      , "./dep/eventemitter"
-    ], function (BigInt, CryptoJS, EventEmitter) {
-      var root = {
-          BigInt: BigInt
-        , CryptoJS: CryptoJS
-        , EventEmitter: EventEmitter
-        , OTR: {}
-        , DSA: {}
-      }
-      return OTR.call(root)
-    })
-  } else {
-    root.OTR = {}
-    root.DSA = {}
-    OTR.call(root)
-  }
-
-}).call(this)
+}))
