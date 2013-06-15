@@ -1541,7 +1541,9 @@
     , powMod        : powMod
     , inverseMod    : inverseMod
     , randBigInt    : randBigInt
+    , randBigInt_   : randBigInt_
     , equals        : equals
+    , equalsInt     : equalsInt
     , sub           : sub
     , mod           : mod
     , mod_          : mod_
@@ -1563,6 +1565,8 @@
     , trim          : trim
     , expand        : expand
     , bpe           : bpe
+    , primes        : primes
+    , findPrimes    : findPrimes
   }
 
   function seedRand(state) {
