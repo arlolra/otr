@@ -1,6 +1,6 @@
 {
   "name": "otr",
-  "version": "0.1.7",
+  "version": "0.1.8",
   "description": "Off-the-Record Messaging Protocol",
   "homepage": "https://github.com/arlolra/otr",
   "main": "index.js",

@@ -1,4 +1,11 @@
 
+0.1.8 / 2013-06-18
+==================
+
+ * try to avoid key compromise from entropy failures
+ * upgrade dependencies
+ * remove dead code
+
 0.1.7 / 2013-06-14
 ==================
 
