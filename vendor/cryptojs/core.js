@@ -1,7 +1,7 @@
 /*
-CryptoJS v3.0.2
+CryptoJS v3.1.2
 code.google.com/p/crypto-js
-(c) 2009-2012 by Jeff Mott. All rights reserved.
+(c) 2009-2013 by Jeff Mott. All rights reserved.
 code.google.com/p/crypto-js/wiki/License
 */
 /**
@@ -52,6 +52,16 @@ var CryptoJS = CryptoJS || (function (Math, undefined) {
                 if (overrides) {
                     subtype.mixIn(overrides);
                 }
+
+                // Create default initializer
+                if (!subtype.hasOwnProperty('init')) {
+                    subtype.init = function () {
+                        subtype.$super.init.apply(this, arguments);
+                    };
+                }
+
+                // Initializer's prototype is the subtype object
+                subtype.init.prototype = subtype;
 
                 // Reference supertype
                 subtype.$super = this;
@@ -112,9 +122,6 @@ var CryptoJS = CryptoJS || (function (Math, undefined) {
                 }
 
                 // IE won't copy toString using the loop above
-                // Other non-enumerable properties are:
-                //   hasOwnProperty, isPrototypeOf, propertyIsEnumerable,
-                //   toLocaleString, valueOf
                 if (properties.hasOwnProperty('toString')) {
                     this.toString = properties.toString;
                 }
@@ -130,7 +137,7 @@ var CryptoJS = CryptoJS || (function (Math, undefined) {
              *     var clone = instance.clone();
              */
             clone: function () {
-                return this.$super.extend(this);
+                return this.init.prototype.extend(this);
             }
         };
     }());
@@ -276,7 +283,7 @@ var CryptoJS = CryptoJS || (function (Math, undefined) {
                 words.push((Math.random() * 0x100000000) | 0);
             }
 
-            return WordArray.create(words, nBytes);
+            return new WordArray.init(words, nBytes);
         }
     });
 
@@ -341,7 +348,7 @@ var CryptoJS = CryptoJS || (function (Math, undefined) {
                 words[i >>> 3] |= parseInt(hexStr.substr(i, 2), 16) << (24 - (i % 8) * 4);
             }
 
-            return WordArray.create(words, hexStrLength / 2);
+            return new WordArray.init(words, hexStrLength / 2);
         }
     };
 
@@ -400,7 +407,7 @@ var CryptoJS = CryptoJS || (function (Math, undefined) {
                 words[i >>> 2] |= (latin1Str.charCodeAt(i) & 0xff) << (24 - (i % 4) * 8);
             }
 
-            return WordArray.create(words, latin1StrLength);
+            return new WordArray.init(words, latin1StrLength);
         }
     };
 
@@ -449,6 +456,7 @@ var CryptoJS = CryptoJS || (function (Math, undefined) {
 
     /**
      * Abstract buffered block algorithm template.
+     *
      * The property blockSize must be implemented in a concrete subtype.
      *
      * @property {number} _minBufferSize The number of blocks that should be kept unprocessed in the buffer. Default: 0
@@ -463,7 +471,7 @@ var CryptoJS = CryptoJS || (function (Math, undefined) {
          */
         reset: function () {
             // Initial values
-            this._data = WordArray.create();
+            this._data = new WordArray.init();
             this._nDataBytes = 0;
         },
 
@@ -490,18 +498,19 @@ var CryptoJS = CryptoJS || (function (Math, undefined) {
 
         /**
          * Processes available data blocks.
-         * This method invokes _doProcessBlock(dataWords, offset), which must be implemented by a concrete subtype.
          *
-         * @param {boolean} flush Whether all blocks and partial blocks should be processed.
+         * This method invokes _doProcessBlock(offset), which must be implemented by a concrete subtype.
          *
-         * @return {WordArray} The data after processing.
+         * @param {boolean} doFlush Whether all blocks and partial blocks should be processed.
+         *
+         * @return {WordArray} The processed data.
          *
          * @example
          *
          *     var processedData = bufferedBlockAlgorithm._process();
          *     var processedData = bufferedBlockAlgorithm._process(!!'flush');
          */
-        _process: function (flush) {
+        _process: function (doFlush) {
             // Shortcuts
             var data = this._data;
             var dataWords = data.words;
@@ -511,7 +520,7 @@ var CryptoJS = CryptoJS || (function (Math, undefined) {
 
             // Count blocks ready
             var nBlocksReady = dataSigBytes / blockSizeBytes;
-            if (flush) {
+            if (doFlush) {
                 // Round up to include partial blocks
                 nBlocksReady = Math.ceil(nBlocksReady);
             } else {
@@ -539,7 +548,7 @@ var CryptoJS = CryptoJS || (function (Math, undefined) {
             }
 
             // Return processed words
-            return WordArray.create(processedWords, nBytesReady);
+            return new WordArray.init(processedWords, nBytesReady);
         },
 
         /**
@@ -570,7 +579,7 @@ var CryptoJS = CryptoJS || (function (Math, undefined) {
         /**
          * Configuration options.
          */
-        // cfg: Base.extend(),
+        cfg: Base.extend(),
 
         /**
          * Initializes a newly created hasher.
@@ -583,7 +592,7 @@ var CryptoJS = CryptoJS || (function (Math, undefined) {
          */
         init: function (cfg) {
             // Apply config defaults
-            // this.cfg = this.cfg.extend(cfg);
+            this.cfg = this.cfg.extend(cfg);
 
             // Set initial values
             this.reset();
@@ -648,25 +657,9 @@ var CryptoJS = CryptoJS || (function (Math, undefined) {
             }
 
             // Perform concrete-hasher logic
-            this._doFinalize();
+            var hash = this._doFinalize();
 
-            return this._hash;
-        },
-
-        /**
-         * Creates a copy of this object.
-         *
-         * @return {Object} The clone.
-         *
-         * @example
-         *
-         *     var clone = hasher.clone();
-         */
-        clone: function () {
-            var clone = BufferedBlockAlgorithm.clone.call(this);
-            clone._hash = this._hash.clone();
-
-            return clone;
+            return hash;
         },
 
         blockSize: 512/32,
@@ -686,7 +679,7 @@ var CryptoJS = CryptoJS || (function (Math, undefined) {
          */
         _createHelper: function (hasher) {
             return function (message, cfg) {
-                return hasher.create(cfg).finalize(message);
+                return new hasher.init(cfg).finalize(message);
             };
         },
 
@@ -705,7 +698,7 @@ var CryptoJS = CryptoJS || (function (Math, undefined) {
          */
         _createHmacHelper: function (hasher) {
             return function (message, key) {
-                return C_algo.HMAC.create(hasher, key).finalize(message);
+                return new C_algo.HMAC.init(hasher, key).finalize(message);
             };
         }
     });
