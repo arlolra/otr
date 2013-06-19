@@ -4,5 +4,9 @@ node_js:
   - "0.10"
   - "0.8"
 
+before_install:
+  - "sudo apt-get install -qq libotr2-dev"
+  - "cd test && make build LIBOTR_DIR=/usr"
+
 script:
   - "make all"

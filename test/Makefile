@@ -1,4 +1,5 @@
 CC=gcc
+LIBOTR_DIR=/tmp/libotr
 
 all: libotr build
 
@@ -8,14 +9,16 @@ libotr:
 	fi;
 	rm -rf libotr-3.2.0;
 	tar -xzvf libotr-3.2.0.tar.gz;
-	cd libotr-3.2.0; ./configure --prefix=/tmp/libotr; make install;
+	cd libotr-3.2.0; ./configure --prefix=$(LIBOTR_DIR); make install;
 
 build:
 	$(CC) libotr_test_helper.c \
-		-L/tmp/libotr/lib \
-		-I/tmp/libotr/include/libotr \
+		-L$(LIBOTR_DIR)/lib \
+		-I$(LIBOTR_DIR)/include/libotr \
 		-lotr \
-		-o /tmp/a.out
+		-o libotr_test_helper.out
 
 clean:
-	rm -rf libotr-3.2.0* /tmp/libotr /tmp/a.out
+	rm -rf libotr-3.2.0* /tmp/libotr libotr_test_helper.out
+
+.PHONY: clean build libotr

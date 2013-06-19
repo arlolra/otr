@@ -19,10 +19,10 @@ describe('Libotr', function () {
     buddy = new OTR({ priv: keys.userA })
   })
 
-  it.skip('should ake and talk with libotr', function (done) {
+  it('should ake and talk with libotr', function (done) {
     this.timeout(10000)
 
-    var cp = spawn('/tmp/a.out')
+    var cp = spawn('test/libotr_test_helper.out')
 
     buddy.on('io', function (msg) {
       cp.stdin.write(msg + '\n')
