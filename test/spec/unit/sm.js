@@ -38,7 +38,7 @@ describe('SM', function () {
   })
 
   it('1 should verify the SM secret', function (done) {
-    this.timeout(10000)
+    this.timeout(15000)
     var both = false
 
     userA.on('ui', function (msg) { assert.equal(false, !!msg, msg) })
@@ -83,7 +83,7 @@ describe('SM', function () {
 
 
   it('2 should verify the SM secret failed', function (done) {
-    this.timeout(10000)
+    this.timeout(15000)
     var both = false
 
     userA.on('ui', function (msg) { assert.equal(false, !!msg, msg) })
@@ -126,7 +126,7 @@ describe('SM', function () {
   })
 
   it('3 should verify the SM secret with question', function (done) {
-    this.timeout(10000)
+    this.timeout(15000)
     var both = false
 
     userA.on('ui', function (msg) { assert.equal(false, !!msg, msg) })
