@@ -6,7 +6,7 @@ node_js:
 
 before_install:
   - "sudo apt-get install -qq libotr2-dev"
-  - "cd test && make build LIBOTR_DIR=/usr"
+  - "pushd test; make build LIBOTR_DIR=/usr; popd"
 
 script:
   - "make all"
