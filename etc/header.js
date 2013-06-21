@@ -13,12 +13,12 @@
         , OTR: {}
         , DSA: {}
       }
-      return factory.call(root, root)
+      return factory.call(root)
     })
   } else {
     root.OTR = {}
     root.DSA = {}
-    factory(root)
+    factory.call(root)
   }
 
-}(this, function (root) {
+}(this, function () {

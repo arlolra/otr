@@ -1,7 +1,7 @@
 
   return {
-      OTR: root.OTR
-    , DSA: root.DSA
+      OTR: this.OTR
+    , DSA: this.DSA
   }
 
 }))
