@@ -6,13 +6,14 @@
       , "./dep/crypto"
       , "./dep/eventemitter"
     ], function (BigInt, CryptoJS, EventEmitter) {
-      return factory({
+      var root = {
           BigInt: BigInt
         , CryptoJS: CryptoJS
         , EventEmitter: EventEmitter
         , OTR: {}
         , DSA: {}
-      })
+      }
+      return factory.call(root, root)
     })
   } else {
     root.OTR = {}

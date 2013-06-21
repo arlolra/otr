@@ -1599,8 +1599,8 @@
     }
 
     var state = new Salsa20([
-      buf[00], buf[01], buf[02], buf[03], buf[04], buf[05], buf[06], buf[07],
-      buf[08], buf[09], buf[10], buf[11], buf[12], buf[13], buf[14], buf[15],
+      buf[ 0], buf[ 1], buf[ 2], buf[ 3], buf[ 4], buf[ 5], buf[ 6], buf[ 7],
+      buf[ 8], buf[ 9], buf[10], buf[11], buf[12], buf[13], buf[14], buf[15],
       buf[16], buf[17], buf[18], buf[19], buf[20], buf[21], buf[22], buf[23],
       buf[24], buf[25], buf[26], buf[27], buf[28], buf[29], buf[30], buf[31]
     ],[
