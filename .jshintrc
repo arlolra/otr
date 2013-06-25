@@ -1,11 +1,9 @@
 {
-    "-W015"    : true
-  , "-W018"    : true
-  , "browser"  : true
+    "browser"  : true
   , "devel"    : true
   , "node"     : true
   , "bitwise"  : false
-  , "indent"   : 2
+  , "indent"   : false
   , "laxcomma" : true
   , "asi"      : true
   , "undef"    : true
