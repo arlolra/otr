@@ -12,10 +12,13 @@
   , "white"    : false
   , "multistr" : true
   , "globals"  : {
-        "it"         : true
-      , "beforeEach" : true
-      , "before"     : true
-      , "describe"   : true
-      , "define"     : true
+        "it"            : true
+      , "beforeEach"    : true
+      , "before"        : true
+      , "describe"      : true
+      , "define"        : true
+      , "postMessage"   : true
+      , "onmessage"     : true
+      , "importScripts" : true
     }
 }
