@@ -620,7 +620,7 @@
       b[i]=0;
     a=Math.floor((n-1)/bpe)+1; //# array elements to hold the BigInt
     for (i=0;i<a;i++) {
-      b[i]=Math.floor(Math.random()*(1<<(bpe-1)));
+      b[i]=Math.floor(Math.random()*(1<<bpe));
     }
     b[a-1] &= (2<<((n-1)%bpe))-1;
     if (s==1)
