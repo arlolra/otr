@@ -1,4 +1,15 @@
 
+0.2.0 / 2013-07-04
+==================
+
+ * smp in webworker
+ * missing bits in randBigInt_
+ * don't waste entropy
+ * fix for instance tags greater than max uint
+ * some linting
+ * fix amd
+ * always run the libotr test
+
 0.1.8 / 2013-06-18
 ==================
 

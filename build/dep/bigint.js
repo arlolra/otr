@@ -620,7 +620,7 @@
       b[i]=0;
     a=Math.floor((n-1)/bpe)+1; //# array elements to hold the BigInt
     for (i=0;i<a;i++) {
-      b[i]=Math.floor(Math.random()*(1<<(bpe-1)));
+      b[i]=Math.floor(Math.random()*(1<<bpe));
     }
     b[a-1] &= (2<<((n-1)%bpe))-1;
     if (s==1)
@@ -1567,21 +1567,59 @@
     , bpe           : bpe
     , primes        : primes
     , findPrimes    : findPrimes
+    , getSeed       : getSeed
   }
 
-  function seedRand(state) {
-    return function () {
-      var x, o = ''
-      while (o.length < 16) {
-        x = state.getBytes(1)
-        if (x[0] <= 250) o += x[0] % 10
+  // from http://davidbau.com/encode/seedrandom.js
+
+  function seedRand(buf) {
+
+    var state = new Salsa20([
+      buf[ 0], buf[ 1], buf[ 2], buf[ 3], buf[ 4], buf[ 5], buf[ 6], buf[ 7],
+      buf[ 8], buf[ 9], buf[10], buf[11], buf[12], buf[13], buf[14], buf[15],
+      buf[16], buf[17], buf[18], buf[19], buf[20], buf[21], buf[22], buf[23],
+      buf[24], buf[25], buf[26], buf[27], buf[28], buf[29], buf[30], buf[31]
+    ],[
+      buf[32], buf[33], buf[34], buf[35], buf[36], buf[37], buf[38], buf[39]
+    ])
+
+    var width = 256
+      , chunks = 6
+      , significance = Math.pow(2, 52)
+      , overflow = significance * 2
+
+    function numerator() {
+      var bytes = state.getBytes(chunks)
+      var i = 0, r = 0
+      for (; i < chunks; i++) {
+        r = r * width + bytes[i]
       }
-      return parseFloat('0.' + o)
+      return r
     }
+
+    // This function returns a random double in [0, 1) that contains
+    // randomness in every bit of the mantissa of the IEEE 754 value.
+
+    return function () {               // Closure to return a random double:
+      var n = numerator()              // Start with a numerator n < 2 ^ 48
+        , d = Math.pow(width, chunks)  //   and denominator d = 2 ^ 48.
+        , x = 0                        //   and no 'extra last byte'.
+      while (n < significance) {       // Fill up all significant digits by
+        n = (n + x) * width            //   shifting numerator and
+        d *= width                     //   denominator and generating a
+        x = state.getBytes(1)[0]       //   new least-significant-byte.
+      }
+      while (n >= overflow) {          // To avoid rounding up, before adding
+        n /= 2                         //   last byte, shift everything
+        d /= 2                         //   right using integer math until
+        x >>>= 1                       //   we have exactly the desired bits.
+      }
+      return (n + x) / d               // Form the number within [0, 1).
+    }
+
   }
 
-  ;(function seed() {
-
+  function getSeed() {
     var buf
     if ( (typeof crypto !== 'undefined') &&
          (typeof crypto.randomBytes === 'function')
@@ -1597,20 +1635,15 @@
     } else {
       throw new Error('Keys should not be generated without CSPRNG.')
     }
+    return Array.prototype.slice.call(buf, 0)
+  }
 
-    var state = new Salsa20([
-      buf[00], buf[01], buf[02], buf[03], buf[04], buf[05], buf[06], buf[07],
-      buf[08], buf[09], buf[10], buf[11], buf[12], buf[13], buf[14], buf[15],
-      buf[16], buf[17], buf[18], buf[19], buf[20], buf[21], buf[22], buf[23],
-      buf[24], buf[25], buf[26], buf[27], buf[28], buf[29], buf[30], buf[31]
-    ],[
-      buf[32], buf[33], buf[34], buf[35], buf[36], buf[37], buf[38], buf[39]
-    ])
+  ;(function seed() {
 
-    Math.random = seedRand(state)
+    seedRand(getSeed())
 
     // reseed every 5 mins
-    setTimeout(seed, 5 * 60 * 1000)
+    if (typeof setTimeout === 'function') setTimeout(seed, 5 * 60 * 1000)
 
   }())
 
