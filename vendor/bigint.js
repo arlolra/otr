@@ -512,7 +512,7 @@
       copyInt_(ans,0);
       for (dd=1;dd;) {
         dd=0;
-        ans[0]= 1 | (1<<(k-1)) | Math.floor(Math.random()*(1<<k));  //random, k-bit, odd integer, with msb 1
+        ans[0]= 1 | (1<<(k-1)) | randomBitInt(k);  //random, k-bit, odd integer, with msb 1
         for (j=1;(j<primes.length) && ((primes[j]&pm)==primes[j]);j++) { //trial division by all primes 3...sqrt(2^k)
           if (0==(ans[0]%primes[j])) {
             dd=1;
@@ -527,7 +527,7 @@
     B=c*k*k;    //try small primes up to B (or all the primes[] array if the largest is less than B).
     if (k>2*m)  //generate this k-bit number by first recursively generating a number that has between k/2 and k-m bits
       for (r=1; k-k*r<=m; )
-        r=pows[Math.floor(Math.random()*512)];   //r=Math.pow(2,Math.random()-1);
+        r=pows[randomBitInt(9)];   //r=Math.pow(2,Math.random()-1);
     else
       r=0.5;
 
@@ -620,7 +620,7 @@
       b[i]=0;
     a=Math.floor((n-1)/bpe)+1; //# array elements to hold the BigInt
     for (i=0;i<a;i++) {
-      b[i]=Math.floor(Math.random()*(1<<bpe));
+      b[i]=randomBitInt(bpe);
     }
     b[a-1] &= (2<<((n-1)%bpe))-1;
     if (s==1)
@@ -1572,6 +1572,8 @@
 
   // from http://davidbau.com/encode/seedrandom.js
 
+  var randomBitInt
+
   function seedRand(buf) {
 
     var state = new Salsa20([
@@ -1597,6 +1599,20 @@
       return r
     }
 
+    function randomByte() {
+      return state.getBytes(1)[0]
+    }
+
+    randomBitInt = function (k) {
+      var i = 0, r = 0
+      var b = Math.floor(k / 8)
+      var mask = (1 << (k % 8)) - 1
+      for (; i < b; i++)
+        r += Math.pow(256, i) * randomByte()
+      if (mask) r += Math.pow(256, i) * (randomByte() & mask)
+      return r
+    }
+
     // This function returns a random double in [0, 1) that contains
     // randomness in every bit of the mantissa of the IEEE 754 value.
 
@@ -1607,7 +1623,7 @@
       while (n < significance) {       // Fill up all significant digits by
         n = (n + x) * width            //   shifting numerator and
         d *= width                     //   denominator and generating a
-        x = state.getBytes(1)[0]       //   new least-significant-byte.
+        x = randomByte()               //   new least-significant-byte.
       }
       while (n >= overflow) {          // To avoid rounding up, before adding
         n /= 2                         //   last byte, shift everything
