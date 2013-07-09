@@ -1658,8 +1658,9 @@
 
     Math.random = seedRand(getSeed())
 
-    // reseed every 5 mins
-    if (typeof setTimeout === 'function') setTimeout(seed, 5 * 60 * 1000)
+    // reseed every 5 mins (not in ww)
+    if ( typeof setTimeout === 'function' && typeof document !== 'undefined' )
+      setTimeout(seed, 5 * 60 * 1000)
 
   }())
 
