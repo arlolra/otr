@@ -1,6 +1,6 @@
 /*!
 
-  otr.js v0.2.1 - 2013-07-06
+  otr.js v0.2.2 - 2013-08-10
   (c) 2013 - Arlo Breault <arlolra@gmail.com>
   Freely distributed under the MPL v2.0 license.
 
@@ -152,10 +152,6 @@
 
   HLP.randomExponent = function () {
     return BigInt.randBigInt(1536)
-  }
-
-  HLP.randomValue = function () {
-    return BigInt.randBigInt(128)
   }
 
   HLP.smpHash = function (version, fmpi, smpi) {
@@ -1439,7 +1435,7 @@
       var gxmpi = HLP.packMPI(this.our_dh.publicKey)
       gxmpi = CryptoJS.enc.Latin1.parse(gxmpi)
 
-      this.r = HLP.randomValue()
+      this.r = BigInt.randBigInt(128)
       var key = CryptoJS.enc.Hex.parse(BigInt.bigInt2str(this.r, 16))
       key = CryptoJS.enc.Latin1.stringify(key)
 
@@ -1851,8 +1847,8 @@
 
     // zero-knowledge proof that the exponents
     // associated with g2a & g3a are known
-    var r2 = HLP.randomValue()
-    var r3 = HLP.randomValue()
+    var r2 = HLP.randomExponent()
+    var r3 = HLP.randomExponent()
     this.c2 = this.computeC(1, r2)
     this.c3 = this.computeC(2, r3)
     this.d2 = this.computeD(r2, this.a2, this.c2)
