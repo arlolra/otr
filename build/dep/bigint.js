@@ -1604,12 +1604,13 @@
     }
 
     randomBitInt = function (k) {
+      if (k > 31) throw new Error("Too many bits.")
       var i = 0, r = 0
       var b = Math.floor(k / 8)
       var mask = (1 << (k % 8)) - 1
+      if (mask) r = randomByte() & mask
       for (; i < b; i++)
-        r += Math.pow(256, i) * randomByte()
-      if (mask) r += Math.pow(256, i) * (randomByte() & mask)
+        r = (256 * r) + randomByte()
       return r
     }
 
