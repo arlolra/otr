@@ -1031,7 +1031,17 @@
       return x;
     }
 
-    x=int2bigInt(0,base*k,0);
+    // log2(base)*k
+    var bb = base, p = 0;
+    var b = base == 1 ? k : 0;
+    while (bb > 1) {
+      if (bb & 1) p = 1;
+      b += k;
+      bb >>= 1;
+    }
+    b += p*k;
+
+    x=int2bigInt(0,b,0);
     for (i=0;i<k;i++) {
       d=digitsStr.indexOf(s.substring(i,i+1),0);
       if (base<=36 && d>=36)  //convert lowercase to uppercase if base<=36
