@@ -1,4 +1,11 @@
 
+0.2.3 / 2013-08-17
+==================
+
+ * bits in base
+ * fix smp in ww #35
+ * avoid possibility of floats
+
 0.2.2 / 2013-08-10
 ==================
 

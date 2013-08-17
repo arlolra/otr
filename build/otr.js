@@ -1,6 +1,6 @@
 /*!
 
-  otr.js v0.2.2 - 2013-08-10
+  otr.js v0.2.3 - 2013-08-17
   (c) 2013 - Arlo Breault <arlolra@gmail.com>
   Freely distributed under the MPL v2.0 license.
 
@@ -1204,7 +1204,6 @@
       // ake info
       this.otr.ssid = this.ssid
       this.otr.transmittedRS = this.transmittedRS
-      this.otr._smInit()
       this.otr_version = version
 
       // go encrypted
@@ -1461,7 +1460,7 @@
     module.exports = SM
     CryptoJS = require('../vendor/crypto.js')
     BigInt = require('../vendor/bigint.js')
-    EventEmitter = require('../vendor/eventemitter.js').EventEmitter
+    EventEmitter = require('../vendor/eventemitter.js')
     CONST = require('./const.js')
     HLP = require('./helpers.js')
   } else {
@@ -1896,7 +1895,7 @@
     module.exports = OTR
     CryptoJS = require('../vendor/crypto.js')
     BigInt = require('../vendor/bigint.js')
-    EventEmitter = require('../vendor/eventemitter.js').EventEmitter
+    EventEmitter = require('../vendor/eventemitter.js')
     Worker = require('webworker-threads').Worker
     SMWPath = require('path').join(__dirname, '/sm-webworker.js')
     CONST = require('./const.js')
@@ -2089,7 +2088,7 @@
       , debug: this.debug
     }
     if (this.smw) {
-      if (this.sm) this.sm.worker.close()  // destroy prev webworker
+      if (this.sm) this.sm.worker.terminate()  // destroy prev webworker
       this.sm = new this._SMW(this, reqs)
     } else {
       this.sm = new SM(reqs)
@@ -2098,10 +2097,6 @@
     this.sm.on('trust', function (trust) {
       self.trust = trust
       self.trigger('smp', ['trust', trust])
-      if (self.smw) {
-        this.worker.close()
-        self.sm = null
-      }
     })
     this.sm.on('question', function (question) {
       self.trigger('smp', ['question', question])
@@ -2376,6 +2371,7 @@
             if (this.sm) this.sm.abort()
             return
           }
+          if (!this.sm) this._smInit()
           this.sm.handleSM({ msg: msg, type: type })
           break
         case 8:
@@ -2400,6 +2396,7 @@
     if (typeof secret !== 'string' || secret.length < 1)
       return this.error('Secret is required.')
 
+    if (!this.sm) this._smInit()
     this.sm.rcvSecret(secret, question)
   }
 
@@ -2580,7 +2577,10 @@
   OTR.prototype.endOtr = function () {
     if (this.msgstate === CONST.MSGSTATE_ENCRYPTED) {
       this.sendMsg('\x00\x00\x01\x00\x00')
-      this.sm = null
+      if (this.sm) {
+        if (this.smw) this.sm.worker.terminate()  // destroy webworker
+        this.sm = null
+      }
     }
     this.msgstate = CONST.MSGSTATE_PLAINTEXT
     this.receivedPlaintext = false
