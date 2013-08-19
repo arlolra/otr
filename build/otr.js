@@ -1,6 +1,6 @@
 /*!
 
-  otr.js v0.2.3 - 2013-08-17
+  otr.js v0.2.4 - 2013-08-19
   (c) 2013 - Arlo Breault <arlolra@gmail.com>
   Freely distributed under the MPL v2.0 license.
 
@@ -137,6 +137,16 @@
     Ctor.prototype = parent.prototype
     child.prototype = new Ctor()
     child.__super__ = parent.prototype
+  }
+
+  // constant-time string comparison
+  HLP.compare = function (str1, str2) {
+    if (str1.length !== str2.length)
+      return false
+    var i = 0, result = 0
+    for (; i < str1.length; i++)
+      result |= str1[i].charCodeAt(0) ^ str2[i].charCodeAt(0)
+    return result === 0
   }
 
   HLP.divMod = function (num, den, n) {
@@ -1139,7 +1149,8 @@
     verifySignMac: function (mac, aesctr, m2, c, their_y, our_dh_pk, m1, ctr) {
       // verify mac
       var vmac = HLP.makeMac(aesctr, m2)
-      if (mac !== vmac) return ['MACs do not match.']
+      if (!HLP.compare(mac, vmac))
+        return ['MACs do not match.']
 
       // decrypt x
       var x = HLP.decryptAes(aesctr.substring(4), c, ctr)
@@ -1315,7 +1326,7 @@
           // verify hash
           var hash = CryptoJS.SHA256(CryptoJS.enc.Latin1.parse(gxmpi))
 
-          if (this.hashed !== hash.toString(CryptoJS.enc.Latin1))
+          if (!HLP.compare(this.hashed, hash.toString(CryptoJS.enc.Latin1)))
             return this.otr.error('Hashed g^x does not match.', true)
 
           // verify gx is legal 2 <= g^x <= N-2
@@ -2320,7 +2331,7 @@
     vt += msg.slice(0, 6).join('')
     var vmac = HLP.make1Mac(vt, sessKeys.rcvmac)
 
-    if (msg[6] !== vmac) {
+    if (!HLP.compare(msg[6], vmac)) {
       if (!ign) this.error('MACs do not match.')
       return
     }
