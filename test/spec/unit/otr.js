@@ -84,6 +84,29 @@ describe('OTR', function () {
     userA.sendMsg('hi')
   })
 
+  it('plaintext does not start ake', function (done) {
+    var userB = new OTR({ priv: keys.userB })
+    userB.on('error', function (err) { assert.ifError(err) })
+    userB.on('ui', function (msg, enc) {
+      assert.equal('hi', msg)
+      assert.ok(!enc)
+      assert.equal(userA.msgstate, CONST.MSGSTATE_PLAINTEXT)
+      assert.equal(userB.msgstate, CONST.MSGSTATE_PLAINTEXT)
+      done()
+    })
+    userB.on('io', function (msg) { userA.receiveMsg(msg) })
+    var userA = new OTR({ priv: keys.userA })
+    userA.on('error', function (err) { assert.ifError(err) })
+    userA.on('status', function (state) {
+      if (state === CONST.STATUS_AKE_INIT) {
+        assert.fail("Ake init.")
+      }
+    })
+    userA.on('io', userB.receiveMsg)
+    userB.WHITESPACE_START_AKE = true
+    userA.sendMsg('hi')
+  })
+
   it('whitespace start ake', function (done) {
     var userB = new OTR({ priv: keys.userB })
     userB.on('error', function (err) { assert.ifError(err) })
