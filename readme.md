@@ -59,8 +59,9 @@ For each user you're communicating with, instantiate an OTR object.
 
     var buddy = new OTR(options)
 
-    buddy.on('ui', function (msg) {
+    buddy.on('ui', function (msg, encrypted) {
       console.log("message to display to the user: " + msg)
+      // encrypted === true, if the received msg was encrypted
     })
 
     buddy.on('io', function (msg) {

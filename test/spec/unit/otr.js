@@ -525,4 +525,58 @@ describe('OTR', function () {
     userA.sendQueryMsg()
   })
 
+  it('should err when encrypted and rcving a plaintext message', function (done) {
+    var m = 'here we go now here we go now'
+
+    var userB = new OTR({ priv: keys.userB })
+    userB.on('status', function (state) {
+      if (state === CONST.STATUS_AKE_SUCCESS) {
+        assert.equal(userA.msgstate, CONST.MSGSTATE_ENCRYPTED)
+        assert.equal(userB.msgstate, CONST.MSGSTATE_ENCRYPTED)
+        // send a plaintext msg w/ internal api
+        // don't do this
+        userB._sendMsg(m, true)
+      }
+    })
+    userB.on('error', function (err) { assert.ifError(err) })
+    userB.on('io', function (msg) { userA.receiveMsg(msg) })
+
+    var userA = new OTR({ priv: keys.userA })
+    userA.on('error', function (err) {
+      assert.ok(err, "We got an error.")
+      done()
+    })
+    userA.on('io', userB.receiveMsg)
+    userA.on('ui', function (msg, enc) {
+      assert.ok(msg)
+      assert.ifError(enc)
+    })
+
+    assert.equal(userA.msgstate, CONST.MSGSTATE_PLAINTEXT)
+    assert.equal(userB.msgstate, CONST.MSGSTATE_PLAINTEXT)
+    userA.sendQueryMsg()
+  })
+
+  it('should err when require encrypted and rcving a plaintext', function (done) {
+    var m = 'here we go now here we go now'
+
+    var userB = new OTR({ priv: keys.userB })
+    userB.REQUIRE_ENCRYPTION = true
+    userB.on('ui', function (msg, enc) {
+      assert.ok(msg)
+      assert.ifError(enc)
+    })
+    userB.on('error', function (err) {
+      assert.ok(err, "We got an error.")
+      done()
+    })
+
+    var userA = new OTR({ priv: keys.userA })
+    userA.on('io', userB.receiveMsg)
+
+    assert.equal(userA.msgstate, CONST.MSGSTATE_PLAINTEXT)
+    assert.equal(userB.msgstate, CONST.MSGSTATE_PLAINTEXT)
+    userA.sendMsg(m)
+  })
+
 })
