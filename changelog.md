@@ -1,4 +1,10 @@
 
+0.2.5 / 2013-08-20
+==================
+
+ * add encrypted parameter to ui listener
+ * fix whitespace start ake always starting ake
+
 0.2.4 / 2013-08-19
 ==================
 

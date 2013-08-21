@@ -1,6 +1,6 @@
 /*!
 
-  otr.js v0.2.4 - 2013-08-19
+  otr.js v0.2.5 - 2013-08-20
   (c) 2013 - Arlo Breault <arlolra@gmail.com>
   Freely distributed under the MPL v2.0 license.
 
@@ -877,6 +877,11 @@
     HLP = root.OTR.HLP
   }
 
+  // whitespace tags
+  var tags = {}
+  tags[CONST.WHITESPACE_TAG_V2] = CONST.OTR_VERSION_2
+  tags[CONST.WHITESPACE_TAG_V3] = CONST.OTR_VERSION_3
+
   Parse.parseMsg = function (otr, msg) {
 
     var ver = []
@@ -895,10 +900,6 @@
 
         msg = msg.split('')
         msg.splice(ind, 16)
-
-        var tags = {}
-        tags[CONST.WHITESPACE_TAG_V2] = CONST.OTR_VERSION_2
-        tags[CONST.WHITESPACE_TAG_V3] = CONST.OTR_VERSION_3
 
         var tag, len = msg.length
         for (; ind < len;) {
@@ -2494,6 +2495,7 @@
           this.checkInstanceTags(msg.instance_tags)
         ) return  // ignore
         msg.msg = this.handleDataMsg(msg)
+        msg.encrypted = true
         break
       case 'query':
         if (this.msgstate === CONST.MSGSTATE_ENCRYPTED) this._akeInit()
@@ -2510,10 +2512,11 @@
         this.receivedPlaintext = true
 
         // received a whitespace tag
-        if (this.WHITESPACE_START_AKE) this.doAKE(msg)
+        if (this.WHITESPACE_START_AKE && msg.ver.length > 0)
+          this.doAKE(msg)
     }
 
-    if (msg.msg) this.trigger('ui', [msg.msg])
+    if (msg.msg) this.trigger('ui', [msg.msg, msg.encrypted])
   }
 
   OTR.prototype.checkInstanceTags = function (it) {
