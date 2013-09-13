@@ -237,10 +237,6 @@ otherwise a no-opt is fired.
       }
     })
 
-If the protocol successfully runs to completion,
-
-    buddy.trust === true  // only for the initiating party
-
 Both users should run the SMP to establish trust. Further, it should be run each time a partner presents a fresh long-lived key.
 
 ---
