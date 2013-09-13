@@ -1,6 +1,6 @@
 /*!
 
-  otr.js v0.2.5 - 2013-08-20
+  otr.js v0.2.6 - 2013-09-12
   (c) 2013 - Arlo Breault <arlolra@gmail.com>
   Freely distributed under the MPL v2.0 license.
 
@@ -1567,7 +1567,7 @@
 
   // the bulk of the work
   SM.prototype.handleSM = function (msg) {
-    var send, r2, r3, r7, t1, t2, t3, t4, rab, tmp2, cR, d7, ms
+    var send, r2, r3, r7, t1, t2, t3, t4, rab, tmp2, cR, d7, ms, trust
 
     var expectStates = {
         2: CONST.SMPSTATE_EXPECT1
@@ -1750,18 +1750,14 @@
         cR = HLP.smpHash(8, BigInt.powMod(G, r7, N), tmp2)
         d7 = this.computeD(r7, this.a3, cR)
 
-        rab = this.computeRab(msg[5])
-
-        if (!BigInt.equals(rab, HLP.divMod(msg[0], this.p, N)))
-          return this.abort()
-
         send = HLP.packINT(3) + HLP.packMPIs([ this.r, cR, d7 ])
-
-        // TLV
         send = HLP.packTLV(5, send)
 
+        rab = this.computeRab(msg[5])
+        trust = !!BigInt.equals(rab, HLP.divMod(msg[0], this.p, N))
+
+        this.trigger('trust', [trust, 'answered'])
         this.init()
-        this.trigger('trust', [true])
         break
 
       case CONST.SMPSTATE_EXPECT4:
@@ -1781,12 +1777,10 @@
           return this.abort()
 
         rab = this.computeRab(msg[0])
+        trust = !!BigInt.equals(rab, this.PoP)
 
-        if (!BigInt.equals(rab, this.PoP))
-          return this.abort()
-
+        this.trigger('trust', [trust, 'asked'])
         this.init()
-        this.trigger('trust', [true])
         return
 
     }
@@ -1892,7 +1886,7 @@
   SM.prototype.abort = function () {
     this.init()
     this.sendMsg(HLP.packTLV(6, ''))
-    this.trigger('trust', [false])
+    this.trigger('abort')
   }
 
 }).call(this)
@@ -2031,7 +2025,6 @@
 
     // smp
     this.sm = null  // initialized after AKE
-    this.trust = false  // will be true after successful smp
 
     // when ake is complete
     // save their keys and the session
@@ -2106,12 +2099,10 @@
       this.sm = new SM(reqs)
     }
     var self = this
-    this.sm.on('trust', function (trust) {
-      self.trust = trust
-      self.trigger('smp', ['trust', trust])
-    })
-    this.sm.on('question', function (question) {
-      self.trigger('smp', ['question', question])
+    ;['trust', 'abort', 'question'].forEach(function (e) {
+      self.sm.on(e, function () {
+        self.trigger('smp', [e].concat(Array.prototype.slice.call(arguments)))
+      })
     })
     this.sm.on('send', function (ssid, send) {
       if (self.ssid === ssid)

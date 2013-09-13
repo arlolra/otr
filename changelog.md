@@ -1,4 +1,10 @@
 
+0.2.6 / 2013-09-12
+==================
+
+ * client should handle trust state
+ * smp should go both ways
+
 0.2.5 / 2013-08-20
 ==================
 
