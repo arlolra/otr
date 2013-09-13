@@ -257,7 +257,7 @@ otherwise a no-opt is fired.</p>
 
 <pre><code>var buddy = new OTR()
 
-buddy.on('smp', function (type, data) {
+buddy.on('smp', function (type, data, act) {
   switch (type) {
     case 'question':
       // call(data) some function with question?
@@ -265,19 +265,19 @@ buddy.on('smp', function (type, data) {
       // userA.smpSecret(secret)
       break
     case 'trust':
-      // smp completed or aborted
-      // check userA.trust and update ui accordingly
+      // smp completed
+      // check data (true|false) and update ui accordingly
+      // act ("asked"|"answered") provides info one who initiated the smp
       break
+    case 'abort':
+      // smp was aborted. notify the user or update ui
     default:
       throw new Error('Unknown type.')
   }
 })
 </code></pre>
 
-<p>If the protocol successfully runs to completion,</p>
-
-<pre><code>buddy.trust === true
-</code></pre>
+<p>Both users should run the SMP to establish trust. Further, it should be run each time a partner presents a fresh long-lived key.</p>
 
 <hr><h3>
 <a name="private-keys" class="anchor" href="#private-keys"><span class="octicon octicon-link"></span></a>Private Keys</h3>
