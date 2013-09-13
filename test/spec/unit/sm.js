@@ -48,17 +48,14 @@ describe('SM', function () {
       if (state === CONST.STATUS_AKE_SUCCESS) {
         assert.equal(userB.msgstate, CONST.MSGSTATE_ENCRYPTED, 'Encrypted')
         assert.equal(userA.msgstate, CONST.MSGSTATE_ENCRYPTED, 'Encrypted')
-        assert.ifError(userA.trust, 'Trust B? false')
-        assert.ifError(userB.trust, 'Trust A? false')
         userA.smpSecret('applesAndOranges')
       }
     })
 
-    userA.on('smp', function (type, one, two) {
+    userA.on('smp', function (type, data, act) {
       if (type === 'trust') {
-        assert.ok(one, 'Trust B? false')
-        assert.equal(two, 'asked', 'Trust B? false')
-        assert.ok(userA.trust, 'Trust B? false')
+        assert.ok(data, 'Trust B? false')
+        assert.equal(act, 'asked', 'Trust B? false')
         if (both) done()
         else both = true
       } else {
@@ -68,15 +65,14 @@ describe('SM', function () {
 
     userB.sendQueryMsg()  // must have AKEd for SM
 
-    userB.on('smp', function (type, one, two) {
+    userB.on('smp', function (type, data, act) {
       switch (type) {
         case 'question':
           userB.smpSecret('applesAndOranges')
           break
         case 'trust':
-          assert.ok(one, 'Trust A? false')
-          assert.equal(two, 'answered', 'Trust A? false')
-          assert.ifError(userB.trust, 'Trust A? false')
+          assert.ok(data, 'Trust A? false')
+          assert.equal(act, 'answered', 'Trust A? false')
           if (both) done()
           else both = true
           break
@@ -94,11 +90,10 @@ describe('SM', function () {
     userA.on('ui', function (msg) { assert.ifError(msg, msg) })
     userA.on('error', function (err) { assert.ifError(err, err) })
 
-    userA.on('smp', function (type, one, two) {
+    userA.on('smp', function (type, data, act) {
       if (type === 'trust') {
-        assert.equal(two, 'asked')
-        assert.ifError(one)
-        assert.ifError(userA.trust)
+        assert.equal(act, 'asked')
+        assert.ifError(data)
         if (both) done()
         else both = true
       } else {
@@ -110,23 +105,20 @@ describe('SM', function () {
       if (state === CONST.STATUS_AKE_SUCCESS) {
         assert.equal(userB.msgstate, CONST.MSGSTATE_ENCRYPTED, 'Encrypted')
         assert.equal(userA.msgstate, CONST.MSGSTATE_ENCRYPTED, 'Encrypted')
-        assert.ifError(userA.trust, 'Trust B? false')
-        assert.ifError(userB.trust, 'Trust A? false')
         userA.smpSecret('applesAndOranges')
       }
     })
 
     userB.sendQueryMsg()  // must have AKEd for SM
 
-    userB.on('smp', function (type, one, two) {
+    userB.on('smp', function (type, data, act) {
       switch (type) {
         case 'question':
           userB.smpSecret('bananasAndPears')
           break
         case 'trust':
-          assert.ifError(one, 'Trust A? false')
-          assert.equal(two, 'answered', 'Trust A? false')
-          assert.ifError(userB.trust)
+          assert.ifError(data, 'Trust A? false')
+          assert.equal(act, 'answered', 'Trust A? false')
           if (both) done()
           else both = true
           break
@@ -143,11 +135,10 @@ describe('SM', function () {
     userA.on('ui', function (msg) { assert.ifError(msg, msg) })
     userA.on('error', function (err) { assert.ifError(err, err) })
 
-    userA.on('smp', function (type, one, two) {
+    userA.on('smp', function (type, data, act) {
       if (type === 'trust') {
-        assert.ok(one)
-        assert.equal(two, 'asked')
-        assert.ok(userA.trust)
+        assert.ok(data)
+        assert.equal(act, 'asked')
         if (both) done()
         else both = true
       } else {
@@ -159,24 +150,21 @@ describe('SM', function () {
       if (state === CONST.STATUS_AKE_SUCCESS) {
         assert.equal(userB.msgstate, CONST.MSGSTATE_ENCRYPTED, 'Encrypted')
         assert.equal(userA.msgstate, CONST.MSGSTATE_ENCRYPTED, 'Encrypted')
-        assert.ifError(userA.trust, 'Trust B? false')
-        assert.ifError(userB.trust, 'Trust A? false')
         userA.smpSecret('applesAndOranges', 'What is difference?')
       }
     })
 
     userB.sendQueryMsg()  // must have AKEd for SM
 
-    userB.on('smp', function (type, one, two) {
+    userB.on('smp', function (type, data, act) {
       switch (type) {
         case 'question':
-          assert.equal('What is difference?', one, type)
+          assert.equal('What is difference?', data, type)
           userB.smpSecret('applesAndOranges')
           break
         case 'trust':
-          assert.ok(one)
-          assert.equal(two, 'answered')
-          assert.ifError(userB.trust)
+          assert.ok(data)
+          assert.equal(act, 'answered')
           if (both) done()
           else both = true
           break
@@ -201,17 +189,14 @@ describe('SM', function () {
       if (state === CONST.STATUS_AKE_SUCCESS) {
         assert.equal(userB.msgstate, CONST.MSGSTATE_ENCRYPTED, 'Encrypted')
         assert.equal(userA.msgstate, CONST.MSGSTATE_ENCRYPTED, 'Encrypted')
-        assert.ifError(userA.trust, 'Trust B? false')
-        assert.ifError(userB.trust, 'Trust A? false')
         userA.smpSecret('applesAndOranges')
       }
     })
 
-    userA.on('smp', function (type, one, two) {
+    userA.on('smp', function (type, data, act) {
       if (type === 'trust') {
-        assert.ok(one)
-        assert.equal(two, 'asked')
-        assert.ok(userA.trust, 'Trust B? false')
+        assert.ok(data)
+        assert.equal(act, 'asked')
         if (both) done()
         else both = true
       } else {
@@ -221,15 +206,14 @@ describe('SM', function () {
 
     userB.sendQueryMsg()  // must have AKEd for SM
 
-    userB.on('smp', function (type, one, two) {
+    userB.on('smp', function (type, data, act) {
       switch (type) {
         case 'question':
           userB.smpSecret('applesAndOranges')
           break
         case 'trust':
-          assert.ok(one)
-          assert.equal(two, 'answered')
-          assert.ifError(userB.trust, 'Trust A? false')
+          assert.ok(data)
+          assert.equal(act, 'answered')
           if (both) done()
           else both = true
           break
@@ -251,10 +235,10 @@ describe('SM', function () {
     userA.on('ui', function (msg) { assert.ifError(msg, msg) })
     userA.on('error', function (err) { assert.ifError(err, err) })
 
-    userA.on('smp', function (type, one, two) {
+    userA.on('smp', function (type, data, act) {
       if (type === 'trust') {
-        assert.equal(two, 'asked')
-        assert.ifError(one)
+        assert.equal(act, 'asked')
+        assert.ifError(data)
         assert.ifError(userA.trust)
         if (both) done()
         else both = true
@@ -267,23 +251,20 @@ describe('SM', function () {
       if (state === CONST.STATUS_AKE_SUCCESS) {
         assert.equal(userB.msgstate, CONST.MSGSTATE_ENCRYPTED, 'Encrypted')
         assert.equal(userA.msgstate, CONST.MSGSTATE_ENCRYPTED, 'Encrypted')
-        assert.ifError(userA.trust, 'Trust B? false')
-        assert.ifError(userB.trust, 'Trust A? false')
         userA.smpSecret('applesAndOranges')
       }
     })
 
     userB.sendQueryMsg()  // must have AKEd for SM
 
-    userB.on('smp', function (type, one, two) {
+    userB.on('smp', function (type, data, act) {
       switch (type) {
         case 'question':
           userB.smpSecret('bananasAndPears')
           break
         case 'trust':
-          assert.equal(two, 'answered')
-          assert.ifError(one)
-          assert.ifError(userB.trust)
+          assert.equal(act, 'answered')
+          assert.ifError(data)
           if (both) done()
           else both = true
           break
