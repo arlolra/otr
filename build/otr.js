@@ -13,9 +13,9 @@
 
   if (typeof define === 'function' && define.amd) {
     define([
-        "./dep/bigint"
-      , "./dep/crypto"
-      , "./dep/eventemitter"
+        "bigint"
+      , "crypto"
+      , "eventemitter"
     ], function (BigInt, CryptoJS, EventEmitter) {
       var root = {
           BigInt: BigInt
