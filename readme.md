@@ -328,6 +328,7 @@ A sampling of projects that use this library:
 - [Yabasta](https://github.com/jonkri/yabasta)
 - [Diaspora](https://github.com/sualko/diaspora)
 - [Converse.js](https://github.com/jcbrand/converse.js)
+- [WebRTCCopy](https://github.com/erbbysam/webRTCCopy)
 
 ---
 
