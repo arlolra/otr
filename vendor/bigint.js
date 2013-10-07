@@ -1578,6 +1578,206 @@
     , primes        : primes
     , findPrimes    : findPrimes
     , getSeed       : getSeed
+    , jacobi        : jacobi
+    , lowestSetBit  : lowestSetBit
+    , lbit          : lbit
+    , lucas         : lucas
+    , twoToThe      : twoToThe
+    , perfectSquare : perfectSquare
+  }
+
+  // int. lowest set bit
+  // zero based
+  // max < 2^31
+  function lbit(x) {
+    if (x === 0) return -1
+    var k = 0
+    while ((x & 1) === 0) x >>= 1, k++
+    return k
+  }
+
+  // bigint. lowest set bit
+  // zero based
+  function lowestSetBit(x) {
+    var t = x.length - 1
+    for (; t > 0 && !x[t]; t--) ;  // first nonzero element of x
+    var i = 0
+    for (; i <= t; i++)
+      if (x[i]) return (i * BigInt.bpe) + lbit(x[i])
+    return -1
+  }
+
+  // computes the Jacobi symbol (a/n)
+  function jacobi(a, n, neg) {
+    a = mod(a, n)
+
+    // neg indicates that a should be interpreted
+    // as a negative number
+    if (neg) a = sub(n, a)
+
+    if (equalsInt(a, 1) || equalsInt(n, 1)) {
+      return 1
+    } else if (equalsInt(a, 0)) {
+      return 0
+    }
+
+    // a = 2^e * a_1
+    var e = lowestSetBit(a)
+    rightShift_(a, e)
+
+    var s, m8
+    if (!(e & 1)) {
+      s = 1
+    } else {
+      m8 = modInt(n, 8)
+      if (m8 == 1 || m8 == 7) {
+        s = 1
+      } else if (m8 == 3 || m8 == 5) {
+        s = -1
+      }
+    }
+
+    if (modInt(n, 4) == 3 || modInt(a, 4) == 3) {
+      s = -s
+    }
+
+    n = mod(n, a)
+    return s * jacobi(n, a, false)
+  }
+
+  // returns a bigint equal to 2^m
+  function twoToThe(m) {
+    var t = [1 << (m % bpe), 0]
+    var i = 0, b = Math.floor(m / bpe)
+    for (; i < b; i++) t.unshift(0)
+    return t
+  }
+
+  var two = int2bigInt(2, 2, 1);
+
+  // determine whether c is a perfect square
+  function perfectSquare(c) {
+    // make a guess of the right order of magnitude
+    var m = Math.ceil(bitSize(c) / 2)
+    var x = randBigInt(m, 1)
+
+    var tmp, r, xii, x, l, xi = []
+    for (;;) {
+      xii = dup(xi)
+      xi = dup(x)
+      tmp = add(c, mult(xi, xi))
+      l = tmp.length
+      x = new Array(l)
+      divide_(tmp, mult(xi, two), x, new Array(l))
+      if (equals(x, xi)) {
+        return !!equals(c, mult(x, x))
+      } else if (equals(x, xii)) {
+        // special case
+        return false
+      }
+    }
+  }
+
+  // C.3.3 http://cryptome.org/2013/07/NIST.FIPS.186-4.pdf
+  // returns true if probably prime, false if composite
+  function lucas(c) {
+
+    // even?
+    if (!(c[0] & 1)) return false
+
+    // test whether C is a perfect square
+    // return composite if so
+    if (perfectSquare(c)) return false
+
+    // find the first D in the sequence {5, –7, 9, ...}
+    // for which the Jacobi symbol (D/C) = -1
+    // return composite if Jacobi symbol is 0 for any D
+    var j = 0, d = int2bigInt(5, 3, 2), neg = false
+    for (;; neg = !neg, addInt_(d, 2)) {
+      // console.log(d)
+      j = jacobi(d, c, neg)
+      if (j == -1) break
+      else if (j == 0) return false
+    }
+
+    //console.log("here", c)
+    //console.log(j)
+    //console.log("d", d, neg)
+
+    // fix negative d
+    if (neg) {
+      mod_(d, c)
+      d = sub(c, d)
+    }
+
+    var k = addInt(c, 1)
+    //console.log("k", k)
+
+    // ignore leading zeroes
+    var r = k.length - 1
+    for (; r > 0 && !k[r]; r--) ;
+    //console.log("r", r)
+
+    // top bits, skipping the first
+    var r1 = bitSize(k) % bpe
+    if (r1 == 0) r1 = bpe
+    if (r1 == 1) {
+      r -= 1
+      r1 = bpe - 1
+    } else {
+      r1 -= 2
+    }
+
+    //console.log("r1", r1)
+
+    var u = one, v = one
+    for (; r > -1; r--) {
+
+      for (; r1 > -1; r1--) {
+
+        utmp = multMod(u, v, c)
+        //console.log("utmp", utmp)
+        vtmp = add(mult(v, v), mult(d, mult(u, u)))
+        //console.log("t", vtmp)
+        if (vtmp[0] & 1) add_(vtmp, c)
+        //console.log(vtmp)
+        rightShift_(vtmp, 1)  // division by 2
+        mod_(vtmp, c)
+        //console.log("vtmp", vtmp)
+
+        //console.log("kr", (k[r] >> r1) & 1)
+        if ((k[r] >> r1) & 1) {
+
+          u = add(utmp, vtmp)
+          //console.log(u)
+          if (u[0] & 1) add_(u, c)
+          rightShift_(u, 1)
+          mod_(u, c)
+          //console.log(u)
+
+          v = add(vtmp, mult(d, utmp))
+          //console.log(v)
+          if (v[0] & 1) add_(v, c)
+          rightShift_(v, 1)
+          mod_(v, c)
+          //console.log(v)
+
+        } else {
+          u = utmp
+          v = vtmp
+        }
+
+      }
+
+      // all bits after the first run
+      r1 = bpe - 1
+
+    }
+
+    // if u = 0, probably prime
+    // otherwise composite
+    return !!equalsInt(u, 0)
+
   }
 
   // from http://davidbau.com/encode/seedrandom.js
