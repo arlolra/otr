@@ -1,6 +1,6 @@
 /*!
 
-  otr.js v0.2.6 - 2013-09-12
+  otr.js v0.2.7 - 2013-10-12
   (c) 2013 - Arlo Breault <arlolra@gmail.com>
   Freely distributed under the MPL v2.0 license.
 
@@ -13,9 +13,9 @@
 
   if (typeof define === 'function' && define.amd) {
     define([
-        "./dep/bigint"
-      , "./dep/crypto"
-      , "./dep/eventemitter"
+        "bigint"
+      , "crypto"
+      , "eventemitter"
     ], function (BigInt, CryptoJS, EventEmitter) {
       var root = {
           BigInt: BigInt
@@ -273,12 +273,11 @@
     return bytes.substr(start / 8, n / 8)
   }
 
-  HLP.twotothe = function (g) {
-    var ex = g % 4
-    g = Math.floor(g / 4)
-    var str = (Math.pow(2, ex)).toString()
-    for (var i = 0; i < g; i++) str += '0'
-    return BigInt.str2bigInt(str, 16)
+  HLP.twotothe = function (m) {
+    var t = [1 << (m % BigInt.bpe), 0]
+    var i = 0, b = Math.floor(m / BigInt.bpe)
+    for (; i < b; i++) t.unshift(0)
+    return t
   }
 
   HLP.packBytes = function (val, bytes) {
