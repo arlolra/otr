@@ -40,6 +40,13 @@ And then,
 
 ---
 
+### Build
+
+The contents of `build/` are the result of calling `make build` and are only
+updated with releases. Please submit patches against `lib/` and `vendor/`.
+
+---
+
 ###Usage
 
 **Initial setup**: Compute your long-lived key beforehand. Currently this is
