@@ -17,4 +17,13 @@ describe('BigInt', function() {
     assert.equal(4, BigInt.bigInt2bits(test).length)
   })
 
+  it('should handle shift distances greater than the bit length of x', function () {
+    var bi = BigInt.str2bigInt("10000000000", 2)
+    BigInt.rightShift_(bi, 12)
+    assert.ok(BigInt.equalsInt(bi, 0))
+    bi = BigInt.str2bigInt("10", 2)
+    BigInt.rightShift_(bi, 26*3)
+    assert.ok(BigInt.equalsInt(bi, 0))
+  })
+
 })
