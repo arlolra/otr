@@ -22,11 +22,11 @@ describe('DSA', function() {
   })
 
   it('should generate a key with q > 2^(N - 1) and q < 2^N', function () {
-    assert.ok(HLP.between(key.q, HLP.twotothe(N - 1), HLP.twotothe(N)), 'q in between.')
+    assert.ok(HLP.between(key.q, BigInt.twoToThe(N - 1), BigInt.twoToThe(N)), 'q in between.')
   })
 
   it('should generate a key with p > 2^(L - 1) and p < 2^L', function () {
-    assert.ok(HLP.between(key.p, HLP.twotothe(L - 1), HLP.twotothe(L)), 'p in between.')
+    assert.ok(HLP.between(key.p, BigInt.twoToThe(L - 1), BigInt.twoToThe(L)), 'p in between.')
   })
 
   it('should generate a key with q being a multiple of q', function () {

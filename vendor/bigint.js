@@ -1541,7 +1541,65 @@
   }
 
 
-  // otr.js stuff
+  // otr.js additions
+
+
+  // computes num / den mod n
+  function divMod(num, den, n) {
+    return multMod(num, inverseMod(den, n), n)
+  }
+
+  // computes one - two mod n
+  function subMod(one, two, n) {
+    one = mod(one, n)
+    two = mod(two, n)
+    if (greater(two, one)) one = add(one, n)
+    return sub(one, two)
+  }
+
+  // computes 2^m as a bigInt
+  function twoToThe(m) {
+    var b = Math.floor(m / BigInt.bpe) + 2
+    var t = new Array(b)
+    for (var i = 0; i < b; i++) t[i] = 0
+    t[b - 2] = 1 << (m % BigInt.bpe)
+    return t
+  }
+
+  // cache these results for faster lookup
+  var _num2bin = (function () {
+    var i = 0, _num2bin= {}
+    for (; i < 0x100; ++i) {
+      _num2bin[i] = String.fromCharCode(i)  // 0 -> "\00"
+    }
+    return _num2bin
+  }())
+
+  // serialize a bigInt to an ascii string
+  // padded up to pad length
+  function bigInt2bits(bi, pad) {
+    pad || (pad = 0)
+    bi = BigInt.dup(bi)
+    var ba = ''
+    while (!BigInt.isZero(bi)) {
+      ba = _num2bin[bi[0] & 0xff] + ba
+      BigInt.rightShift_(bi, 8)
+    }
+    while (ba.length < pad) {
+      ba = '\x00' + ba
+    }
+    return ba
+  }
+
+  // converts a byte array to a bigInt
+  function ba2bigInt(data) {
+    var mpi = BigInt.str2bigInt('0', 10, data.length)
+    data.forEach(function (d, i) {
+      if (i) BigInt.leftShift_(mpi, 8)
+      mpi[0] |= d
+    })
+    return mpi
+  }
 
   var BigInt = {
       str2bigInt    : str2bigInt
@@ -1578,6 +1636,11 @@
     , primes        : primes
     , findPrimes    : findPrimes
     , getSeed       : getSeed
+    , divMod        : divMod
+    , subMod        : subMod
+    , twoToThe      : twoToThe
+    , bigInt2bits   : bigInt2bits
+    , ba2bigInt     : ba2bigInt
   }
 
   // from http://davidbau.com/encode/seedrandom.js

@@ -30,23 +30,11 @@ describe('Helpers', function () {
     assert.equal(two55, BigInt.bigInt2str(HLP.readMPI(str), 10))
   })
 
-  it('should exponentiate a BigInt with base two', function () {
-    assert.equal((Math.pow(2, 513)).toString(16), BigInt.bigInt2str(HLP.twotothe(513), 16))
-  })
-
   it('should pack a counter', function () {
     var thou = HLP.packCtr(1000)
     assert.equal(16, thou.length, '16 bytes.')
     assert.equal(1000, HLP.unpackCtr(thou), 'Thousand.')
     assert.equal('\x00\x00\x00\x00\x00\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00\x00', HLP.packCtr(1))
-  })
-
-  it('should return a bit string of the proper length', function () {
-    // 2^(8*3) < 2^(15*2) < 2^(8*4) === 4 bytes
-    // chosen because each array element in bigint.js holds 15 bits
-    // (on my machine) so it looks like [0, 0, 1]
-    var test = BigInt.str2bigInt((Math.pow(2, 30)).toString(), 10)
-    assert.equal(4, HLP.bigInt2bits(test).length)
   })
 
 })
