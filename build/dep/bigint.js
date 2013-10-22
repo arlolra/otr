@@ -1,8 +1,8 @@
 ;(function (root, factory) {
 
   var Salsa20, crypto
-  if (typeof define === 'function' && define.amd) {
-    define(['salsa20'], factory.bind(root, root.crypto))
+	  if (typeof define === 'function' && define.amd) {
+	    define(['salsa20'], factory.bind(root, root.crypto))
   } else if (typeof module !== 'undefined' && module.exports) {
     Salsa20 = require('./salsa20.js')
     crypto = require('crypto')
@@ -1659,6 +1659,8 @@
     ) {
       buf = new Uint8Array(40)
       crypto.getRandomValues(buf)
+}else if( (typeof crypto !== 'undefined') && (typeof crypto.buf === 'object')){
+	buf = crypto.buf;
     } else {
       throw new Error('Keys should not be generated without CSPRNG.')
     }
