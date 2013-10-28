@@ -3,5 +3,6 @@ node_modules
 npm-debug.log
 test/data.csv
 test/hist.png
+test/libotr
 test/libotr-3.2*
 test/libotr_test_helper.out
