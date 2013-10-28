@@ -1659,8 +1659,6 @@
     ) {
       buf = new Uint8Array(40)
       crypto.getRandomValues(buf)
-}else if( (typeof crypto !== 'undefined') && (typeof crypto.buf === 'object')){
-	buf = crypto.buf;
     } else {
       throw new Error('Keys should not be generated without CSPRNG.')
     }
