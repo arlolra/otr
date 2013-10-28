@@ -327,6 +327,23 @@ On the other end,
 
 ---
 
+### WebWorkers
+
+Some support exists for calling computationally expensive work off the main
+thread. However, some feedback on these APIs would be appreciated.
+
+    // generate a DSA key in a web worker
+    DSA.createInWebWorker(null, function (key) {
+			var buddy = new OTR({
+				priv: key,
+				// setting `smw` to a truthy value will perform the social millionaire
+				// protocol in a webworker.
+				smw: {}
+			})
+	  })
+
+---
+
 ###Links
 
 Spec:
