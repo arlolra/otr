@@ -1,8 +1,8 @@
 ;(function (root, factory) {
 
   var Salsa20, crypto
-  if (typeof define === 'function' && define.amd) {
-    define(['salsa20'], factory.bind(root, root.crypto))
+	  if (typeof define === 'function' && define.amd) {
+	    define(['salsa20'], factory.bind(root, root.crypto))
   } else if (typeof module !== 'undefined' && module.exports) {
     Salsa20 = require('./salsa20.js')
     crypto = require('crypto')
