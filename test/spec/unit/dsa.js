@@ -108,8 +108,8 @@ describe('DSA', function() {
     this.timeout(15000)
 
     DSA.createInWebWorker(null, function (key) {
-      assert.ok(HLP.between(key.q, HLP.twotothe(N - 1), HLP.twotothe(N)), 'q in between.')
-      assert.ok(HLP.between(key.p, HLP.twotothe(L - 1), HLP.twotothe(L)), 'p in between.')
+      assert.ok(HLP.between(key.q, BigInt.twoToThe(N - 1), BigInt.twoToThe(N)), 'q in between.')
+      assert.ok(HLP.between(key.p, BigInt.twoToThe(L - 1), BigInt.twoToThe(L)), 'p in between.')
       assert.ok(key instanceof DSA)
       done()
     })
