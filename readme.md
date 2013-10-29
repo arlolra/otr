@@ -336,8 +336,8 @@ thread. However, some feedback on these APIs would be appreciated.
     DSA.createInWebWorker(null, function (key) {
 			var buddy = new OTR({
 				priv: key,
-				// setting `smw` to a truthy value will perform the social millionaire
-				// protocol in a webworker.
+				// setting `smw` to a truthy value will perform the socialist
+				// millionaire protocol in a webworker.
 				smw: {}
 			})
 	  })
