@@ -105,7 +105,7 @@ describe('DSA', function() {
   })
 
   it('should create a key in a webworker', function (done) {
-    this.timeout(15000)
+    this.timeout(25000)
 
     DSA.createInWebWorker(null, function (key) {
       assert.ok(HLP.between(key.q, BigInt.twoToThe(N - 1), BigInt.twoToThe(N)), 'q in between.')

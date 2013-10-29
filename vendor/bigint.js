@@ -2,13 +2,13 @@
 
   var Salsa20, crypto
   if (typeof define === 'function' && define.amd) {
-    define(['salsa20'], factory.bind(root, root.crypto))
+    define(['salsa20'], factory.bind(root, root.crypto || root.msCrypto))
   } else if (typeof module !== 'undefined' && module.exports) {
     Salsa20 = require('./salsa20.js')
     crypto = require('crypto')
     module.exports = factory(crypto, Salsa20)
   } else {
-    root.BigInt = factory(root.crypto, root.Salsa20)
+    root.BigInt = factory(root.crypto || root.msCrypto, root.Salsa20)
   }
 
 }(this, function (crypto, Salsa20) {
