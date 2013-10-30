@@ -1502,7 +1502,7 @@
   //  n is odd
   //  np = -(n^(-1)) mod radix
   function mont_(x,y,n,np) {
-    var i,j,c,ui,t,ks;
+    var i,j,c,ui,t,t2,ks;
     var kn=n.length;
     var ky=y.length;
 
@@ -1526,27 +1526,27 @@
       //do sa=(sa+x[i]*y+ui*n)/b   where b=2**bpe.  Loop is unrolled 5-fold for speed
       j=1;
       for (;j<ky-4;) {
-        c+=sa[j]+ui*n[j]+t*y[j];   sa[j-1]=c & mask; c=(c-sa[j-1])/radix;   j++;
-        c+=sa[j]+ui*n[j]+t*y[j];   sa[j-1]=c & mask; c=(c-sa[j-1])/radix;   j++;
-        c+=sa[j]+ui*n[j]+t*y[j];   sa[j-1]=c & mask; c=(c-sa[j-1])/radix;   j++;
-        c+=sa[j]+ui*n[j]+t*y[j];   sa[j-1]=c & mask; c=(c-sa[j-1])/radix;   j++;
-        c+=sa[j]+ui*n[j]+t*y[j];   sa[j-1]=c & mask; c=(c-sa[j-1])/radix;   j++;
+        c+=sa[j]+ui*n[j]+t*y[j]; t2=sa[j-1]=c & mask; c=(c-t2)/radix; j++;
+        c+=sa[j]+ui*n[j]+t*y[j]; t2=sa[j-1]=c & mask; c=(c-t2)/radix; j++;
+        c+=sa[j]+ui*n[j]+t*y[j]; t2=sa[j-1]=c & mask; c=(c-t2)/radix; j++;
+        c+=sa[j]+ui*n[j]+t*y[j]; t2=sa[j-1]=c & mask; c=(c-t2)/radix; j++;
+        c+=sa[j]+ui*n[j]+t*y[j]; t2=sa[j-1]=c & mask; c=(c-t2)/radix; j++;
       }
       for (;j<ky;)   {
-        c+=sa[j]+ui*n[j]+t*y[j];   sa[j-1]=c & mask; c=(c-sa[j-1])/radix;   j++;
+        c+=sa[j]+ui*n[j]+t*y[j]; t2=sa[j-1]=c & mask; c=(c-t2)/radix; j++;
       }
       for (;j<kn-4;) {
-        c+=sa[j]+ui*n[j];          sa[j-1]=c & mask; c=(c-sa[j-1])/radix;   j++;
-        c+=sa[j]+ui*n[j];          sa[j-1]=c & mask; c=(c-sa[j-1])/radix;   j++;
-        c+=sa[j]+ui*n[j];          sa[j-1]=c & mask; c=(c-sa[j-1])/radix;   j++;
-        c+=sa[j]+ui*n[j];          sa[j-1]=c & mask; c=(c-sa[j-1])/radix;   j++;
-        c+=sa[j]+ui*n[j];          sa[j-1]=c & mask; c=(c-sa[j-1])/radix;   j++;
+        c+=sa[j]+ui*n[j];        t2=sa[j-1]=c & mask; c=(c-t2)/radix; j++;
+        c+=sa[j]+ui*n[j];        t2=sa[j-1]=c & mask; c=(c-t2)/radix; j++;
+        c+=sa[j]+ui*n[j];        t2=sa[j-1]=c & mask; c=(c-t2)/radix; j++;
+        c+=sa[j]+ui*n[j];        t2=sa[j-1]=c & mask; c=(c-t2)/radix; j++;
+        c+=sa[j]+ui*n[j];        t2=sa[j-1]=c & mask; c=(c-t2)/radix; j++;
       }
       for (;j<kn;)   {
-        c+=sa[j]+ui*n[j];          sa[j-1]=c & mask; c=(c-sa[j-1])/radix;   j++;
+        c+=sa[j]+ui*n[j];        t2=sa[j-1]=c & mask; c=(c-t2)/radix; j++;
       }
       for (;j<ks;)   {
-        c+=sa[j];                  sa[j-1]=c & mask; c=(c-sa[j-1])/radix;   j++;
+        c+=sa[j];                t2=sa[j-1]=c & mask; c=(c-t2)/radix; j++;
       }
       sa[j-1]=c & mask;
     }
