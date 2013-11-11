@@ -53,14 +53,14 @@ The normal flow for making a release is as follows,
 
     make test
     // bump the version numbers in package.json / bower.json
-		make build
-		git changelog  // cleanup the changelog
-		git commit -m "bump version"
-		git tag -a vX.X.X -m "version X.X.X"
-		git push origin master
-		git push --tags
-		npm publish
-		// update github releases and pages
+    make build
+    git changelog  // cleanup the changelog
+    git commit -m "bump version"
+    git tag -a vX.X.X -m "version X.X.X"
+    git push origin master
+    git push --tags
+    npm publish
+    // update github releases and pages
 
 ---
 
