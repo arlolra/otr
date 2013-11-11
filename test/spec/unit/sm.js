@@ -178,6 +178,13 @@ describe('SM', function () {
     this.timeout(15000)
     var both = false
 
+    try {
+      var ww = require("webworker-threads")
+    } catch (e) {
+      console.log("skipping webworker test. couldn't load optional dep")
+      return done()
+    }
+
     // use webworkers; default options
     userA.smw = {}
     userB.smw = {}
@@ -227,6 +234,13 @@ describe('SM', function () {
   it('5 should verify the SM secret failed in a webworker', function (done) {
     this.timeout(15000)
     var both = false
+
+    try {
+      var ww = require("webworker-threads")
+    } catch (e) {
+      console.log("skipping webworker test. couldn't load optional dep")
+      return done()
+    }
 
     // use webworkers; default options
     userA.smw = {}

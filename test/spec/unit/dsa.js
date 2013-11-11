@@ -89,7 +89,7 @@ describe('DSA', function() {
     assert.ok(BigInt.equals(prekeys.userA.x, par.x), 'Xs.')
   })
 
-  it('should my private key from pidgin', function () {
+  it('should parse my private key from pidgin', function () {
     var filename = path.join(process.env.HOME, ".purple/otr.private_key")
 
     if (!fs.existsSync(filename)) return
@@ -106,6 +106,13 @@ describe('DSA', function() {
 
   it('should create a key in a webworker', function (done) {
     this.timeout(25000)
+
+    try {
+      var ww = require("webworker-threads")
+    } catch (e) {
+      console.log("skipping webworker test. couldn't load optional dep")
+      return done()
+    }
 
     DSA.createInWebWorker(null, function (key) {
       assert.ok(HLP.between(key.q, BigInt.twoToThe(N - 1), BigInt.twoToThe(N)), 'q in between.')
