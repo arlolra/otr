@@ -1,4 +1,15 @@
 
+0.2.8 / 2013-11-11
+==================
+
+ * performance improvements in bigint
+ * removed salsa20 as a hard dependency
+ * webworker in node is truly an optional dep
+ * msCrypto support
+ * generate dsa key in a webworker
+ * internal code cleanup
+ * documentation improvements
+
 0.2.7 / 2013-10-12
 ==================
 
