@@ -1,17 +1,14 @@
 ;(function (root, factory) {
 
-  var Salsa20, crypto
   if (typeof define === 'function' && define.amd) {
-    define(['salsa20'], factory.bind(root, root.crypto || root.msCrypto))
+    define(factory.bind(root, root.crypto || root.msCrypto))
   } else if (typeof module !== 'undefined' && module.exports) {
-    Salsa20 = require('./salsa20.js')
-    crypto = require('crypto')
-    module.exports = factory(crypto, Salsa20)
+    module.exports = factory(require('crypto'))
   } else {
-    root.BigInt = factory(root.crypto || root.msCrypto, root.Salsa20)
+    root.BigInt = factory(root.crypto || root.msCrypto)
   }
 
-}(this, function (crypto, Salsa20) {
+}(this, function (crypto) {
 
   ////////////////////////////////////////////////////////////////////////////////////////
   // Big Integer Library v. 5.5
@@ -1575,10 +1572,10 @@
 
   // computes 2^m as a bigInt
   function twoToThe(m) {
-    var b = Math.floor(m / BigInt.bpe) + 2
+    var b = Math.floor(m / bpe) + 2
     var t = new Array(b)
     for (var i = 0; i < b; i++) t[i] = 0
-    t[b - 2] = 1 << (m % BigInt.bpe)
+    t[b - 2] = 1 << (m % bpe)
     return t
   }
 
@@ -1595,11 +1592,11 @@
   // padded up to pad length
   function bigInt2bits(bi, pad) {
     pad || (pad = 0)
-    bi = BigInt.dup(bi)
+    bi = dup(bi)
     var ba = ''
-    while (!BigInt.isZero(bi)) {
+    while (!isZero(bi)) {
       ba = _num2bin[bi[0] & 0xff] + ba
-      BigInt.rightShift_(bi, 8)
+      rightShift_(bi, 8)
     }
     while (ba.length < pad) {
       ba = '\x00' + ba
@@ -1609,15 +1606,68 @@
 
   // converts a byte array to a bigInt
   function ba2bigInt(data) {
-    var mpi = BigInt.str2bigInt('0', 10, data.length)
+    var mpi = str2bigInt('0', 10, data.length)
     data.forEach(function (d, i) {
-      if (i) BigInt.leftShift_(mpi, 8)
+      if (i) leftShift_(mpi, 8)
       mpi[0] |= d
     })
     return mpi
   }
 
-  var BigInt = {
+  // returns a function that returns an array of n bytes
+  var randomBytes = (function () {
+
+    // in node
+    if ( typeof crypto !== 'undefined' &&
+      typeof crypto.randomBytes === 'function' ) {
+      return function (n) {
+        try {
+          var buf = crypto.randomBytes(n)
+        } catch (e) { throw e }
+        return Array.prototype.slice.call(buf, 0)
+      }
+    }
+
+    // in browser
+    else if ( typeof crypto !== 'undefined' &&
+      typeof crypto.getRandomValues === 'function' ) {
+      return function (n) {
+        var buf = new Uint8Array(n)
+        crypto.getRandomValues(buf)
+        return Array.prototype.slice.call(buf, 0)
+      }
+    }
+
+    // err
+    else {
+      throw new Error('Keys should not be generated without CSPRNG.')
+    }
+
+  }())
+
+  // Salsa 20 in webworker needs a 40 byte seed
+  function getSeed() {
+    return randomBytes(40)
+  }
+
+  // returns a single random byte
+  function randomByte() {
+    return randomBytes(1)[0]
+  }
+
+  // returns a k-bit random integer
+  function randomBitInt(k) {
+    if (k > 31) throw new Error("Too many bits.")
+    var i = 0, r = 0
+    var b = Math.floor(k / 8)
+    var mask = (1 << (k % 8)) - 1
+    if (mask) r = randomByte() & mask
+    for (; i < b; i++)
+      r = (256 * r) + randomByte()
+    return r
+  }
+
+  return {
       str2bigInt    : str2bigInt
     , bigInt2str    : bigInt2str
     , int2bigInt    : int2bigInt
@@ -1658,102 +1708,5 @@
     , bigInt2bits   : bigInt2bits
     , ba2bigInt     : ba2bigInt
   }
-
-  // from http://davidbau.com/encode/seedrandom.js
-
-  var randomBitInt
-
-  function seedRand(buf) {
-
-    var state = new Salsa20([
-      buf[ 0], buf[ 1], buf[ 2], buf[ 3], buf[ 4], buf[ 5], buf[ 6], buf[ 7],
-      buf[ 8], buf[ 9], buf[10], buf[11], buf[12], buf[13], buf[14], buf[15],
-      buf[16], buf[17], buf[18], buf[19], buf[20], buf[21], buf[22], buf[23],
-      buf[24], buf[25], buf[26], buf[27], buf[28], buf[29], buf[30], buf[31]
-    ],[
-      buf[32], buf[33], buf[34], buf[35], buf[36], buf[37], buf[38], buf[39]
-    ])
-
-    var width = 256
-      , chunks = 6
-      , significance = Math.pow(2, 52)
-      , overflow = significance * 2
-
-    function numerator() {
-      var bytes = state.getBytes(chunks)
-      var i = 0, r = 0
-      for (; i < chunks; i++) {
-        r = r * width + bytes[i]
-      }
-      return r
-    }
-
-    function randomByte() {
-      return state.getBytes(1)[0]
-    }
-
-    randomBitInt = function (k) {
-      if (k > 31) throw new Error("Too many bits.")
-      var i = 0, r = 0
-      var b = Math.floor(k / 8)
-      var mask = (1 << (k % 8)) - 1
-      if (mask) r = randomByte() & mask
-      for (; i < b; i++)
-        r = (256 * r) + randomByte()
-      return r
-    }
-
-    // This function returns a random double in [0, 1) that contains
-    // randomness in every bit of the mantissa of the IEEE 754 value.
-
-    return function () {               // Closure to return a random double:
-      var n = numerator()              // Start with a numerator n < 2 ^ 48
-        , d = Math.pow(width, chunks)  //   and denominator d = 2 ^ 48.
-        , x = 0                        //   and no 'extra last byte'.
-      while (n < significance) {       // Fill up all significant digits by
-        n = (n + x) * width            //   shifting numerator and
-        d *= width                     //   denominator and generating a
-        x = randomByte()               //   new least-significant-byte.
-      }
-      while (n >= overflow) {          // To avoid rounding up, before adding
-        n /= 2                         //   last byte, shift everything
-        d /= 2                         //   right using integer math until
-        x >>>= 1                       //   we have exactly the desired bits.
-      }
-      return (n + x) / d               // Form the number within [0, 1).
-    }
-
-  }
-
-  function getSeed() {
-    var buf
-    if ( (typeof crypto !== 'undefined') &&
-         (typeof crypto.randomBytes === 'function')
-    ) {
-      try {
-        buf = crypto.randomBytes(40)
-      } catch (e) { throw e }
-    } else if ( (typeof crypto !== 'undefined') &&
-                (typeof crypto.getRandomValues === 'function')
-    ) {
-      buf = new Uint8Array(40)
-      crypto.getRandomValues(buf)
-    } else {
-      throw new Error('Keys should not be generated without CSPRNG.')
-    }
-    return Array.prototype.slice.call(buf, 0)
-  }
-
-  ;(function seed() {
-
-    Math.random = seedRand(getSeed())
-
-    // reseed every 5 mins (not in ww)
-    if ( typeof setTimeout === 'function' && typeof document !== 'undefined' )
-      setTimeout(seed, 5 * 60 * 1000)
-
-  }())
-
-  return BigInt
 
 }))

@@ -10,8 +10,6 @@
 This library hasn't been properly vetted by security researchers. Do not use
 in life and death situations!
 
-`Math.random()` is replaced by `salsa20.js`, seeded with either `window.crypto.getRandomValues()` in the [browser](https://developer.mozilla.org/en-US/docs/DOM/window.crypto.getRandomValues), or `crypto.randomBytes()` in [node.js](http://nodejs.org/api/crypto.html#crypto_crypto_randombytes_size_callback).
-
 ---
 
 ###Install
@@ -19,7 +17,6 @@ in life and death situations!
 Include the build files on the page,
 
     <!-- Load dependencies -->
-    <script src="build/dep/salsa20.js"></script>
     <script src="build/dep/bigint.js"></script>
     <script src="build/dep/crypto.js"></script>
     <script src="build/dep/eventemitter.js"></script>
@@ -341,6 +338,11 @@ thread. However, some feedback on these APIs would be appreciated.
 				smw: {}
 			})
 	  })
+
+WebWorkers don't have access to `window.crypto.getRandomValues()`, so they will
+need to include Salsa20.
+
+    <script src="build/dep/salsa20.js"></script>
 
 ---
 
