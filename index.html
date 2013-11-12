@@ -39,15 +39,12 @@
 <p>This library hasn't been properly vetted by security researchers. Do not use
 in life and death situations!</p>
 
-<p><code>Math.random()</code> is replaced by <code>salsa20.js</code>, seeded with either <code>window.crypto.getRandomValues()</code> in the <a href="https://developer.mozilla.org/en-US/docs/DOM/window.crypto.getRandomValues">browser</a>, or <code>crypto.randomBytes()</code> in <a href="http://nodejs.org/api/crypto.html#crypto_crypto_randombytes_size_callback">node.js</a>.</p>
-
 <hr><h3>
 <a name="install" class="anchor" href="#install"><span class="octicon octicon-link"></span></a>Install</h3>
 
 <p>Include the build files on the page,</p>
 
 <pre><code>&lt;!-- Load dependencies --&gt;
-&lt;script src="build/dep/salsa20.js"&gt;&lt;/script&gt;
 &lt;script src="build/dep/bigint.js"&gt;&lt;/script&gt;
 &lt;script src="build/dep/crypto.js"&gt;&lt;/script&gt;
 &lt;script src="build/dep/eventemitter.js"&gt;&lt;/script&gt;
@@ -67,6 +64,29 @@ in life and death situations!</p>
 
 <pre><code>var DSA = require('otr').DSA
 var OTR = require('otr').OTR
+</code></pre>
+
+<hr><h3>
+<a name="build" class="anchor" href="#build"><span class="octicon octicon-link"></span></a>Build</h3>
+
+<p>The contents of <code>build/</code> are the result of calling <code>make build</code> and are only
+updated with releases. Please submit patches against <code>lib/</code> and <code>vendor/</code>.</p>
+
+<hr><h3>
+<a name="release" class="anchor" href="#release"><span class="octicon octicon-link"></span></a>Release</h3>
+
+<p>The normal flow for making a release is as follows,</p>
+
+<pre><code>make test
+// bump the version numbers in package.json / bower.json
+make build
+git changelog  // cleanup the changelog
+git commit -m "bump version"
+git tag -a vX.X.X -m "version X.X.X"
+git push origin master
+git push --tags
+npm publish
+// update github releases and pages
 </code></pre>
 
 <hr><h3>
@@ -342,6 +362,29 @@ friend.on('file', function (type, key, filename) {
   // type === 'receive'
   // decrypt filename with key, once received
 })
+</code></pre>
+
+<hr><h3>
+<a name="webworkers" class="anchor" href="#webworkers"><span class="octicon octicon-link"></span></a>WebWorkers</h3>
+
+<p>Some support exists for calling computationally expensive work off the main
+thread. However, some feedback on these APIs would be appreciated.</p>
+
+<pre><code>// generate a DSA key in a web worker
+DSA.createInWebWorker(null, function (key) {
+        var buddy = new OTR({
+            priv: key,
+            // setting `smw` to a truthy value will perform the socialist
+            // millionaire protocol in a webworker.
+            smw: {}
+        })
+  })
+</code></pre>
+
+<p>WebWorkers don't have access to <code>window.crypto.getRandomValues()</code>, so they will
+need to include Salsa20.</p>
+
+<pre><code>&lt;script src="build/dep/salsa20.js"&gt;&lt;/script&gt;
 </code></pre>
 
 <hr><h3>
