@@ -377,7 +377,7 @@ A sampling of projects that use this library:
 
 ###Donate
 
-Bitcoins: 139WGwU6pXvXQnEvCD9j967gUmgW85DLec
+Bitcoins: 17wERkMaW4ueVLMyiSH7XS91Rj4Xodnntq
 
 ---
 
