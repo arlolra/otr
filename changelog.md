@@ -1,4 +1,11 @@
 
+0.2.9 / 2014-01-21
+==================
+
+ * coerce "is encrypted" var to boolean
+ * check DH pubkey equality before skipping key replacement
+ * remove unused exports from bigint
+
 0.2.8 / 2013-11-11
 ==================
 

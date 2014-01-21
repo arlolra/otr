@@ -1,7 +1,7 @@
 /*!
 
-  otr.js v0.2.8 - 2013-11-11
-  (c) 2013 - Arlo Breault <arlolra@gmail.com>
+  otr.js v0.2.9 - 2014-01-21
+  (c) 2014 - Arlo Breault <arlolra@gmail.com>
   Freely distributed under the MPL v2.0 license.
 
   This file is concatenated for the browser.
@@ -1163,17 +1163,19 @@
       if (BigInt.equals(this.their_y, this.our_dh.publicKey))
         return this.otr.error('equal keys - we have a problem.', true)
 
-      if ( this.their_keyid !== this.otr.their_keyid &&
-           this.their_keyid !== (this.otr.their_keyid - 1) ) {
+      this.otr.our_old_dh = this.our_dh
+      this.otr.their_priv_pk = this.their_priv_pk
 
-        // our keys
-        this.otr.our_old_dh = this.our_dh
+      if (!(
+        (this.their_keyid === this.otr.their_keyid &&
+         BigInt.equals(this.their_y, this.otr.their_y)) ||
+        (this.their_keyid === (this.otr.their_keyid - 1) &&
+         BigInt.equals(this.their_y, this.otr.their_old_y))
+      )) {
 
-        // their keys
         this.otr.their_y = this.their_y
         this.otr.their_old_y = null
         this.otr.their_keyid = this.their_keyid
-        this.otr.their_priv_pk = this.their_priv_pk
 
         // rotate keys
         this.otr.sessKeys[0] = [ new this.otr.DHSession(
@@ -2486,7 +2488,7 @@
           this.doAKE(msg)
     }
 
-    if (msg.msg) this.trigger('ui', [msg.msg, msg.encrypted])
+    if (msg.msg) this.trigger('ui', [msg.msg, !!msg.encrypted])
   }
 
   OTR.prototype.checkInstanceTags = function (it) {
