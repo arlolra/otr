@@ -579,4 +579,51 @@ describe('OTR', function () {
     userA.sendMsg(m)
   })
 
+  it('should check for DH pubkey equality before skipping key replacement', function (done) {
+    // issue #47
+
+    var err = function (err) { assert.ifError(err) }
+
+    var userA = new OTR({ priv: keys.userA })
+    userA.on('io', function (msg) { userB.receiveMsg(msg) })
+    userA.on('error', err)
+
+    var bIT = OTR.makeInstanceTag()
+
+    var userB = new OTR({ priv: keys.userB, instance_tag: bIT })
+    userB.on('io', userA.receiveMsg)
+    userB.on('error', err)
+    var rcvd = 0
+    userB.on('ui', function (msg, enc) {
+      assert.ok(enc)
+      rcvd += 1
+      if (rcvd === 2) {
+        rcvd = 0
+
+        // userB crashed; start over
+        userB = new OTR({ priv: keys.userB, instance_tag: bIT })
+        userB.on('io', userA.receiveMsg)
+        userB.on('error', err)
+        userB.on('ui', function (msg, enc) {
+          assert.ok(enc)
+          rcvd += 1
+          if (rcvd === 2) {
+            done()
+          }
+        })
+        userB.sendQueryMsg()
+
+      }
+    })
+
+    userA.on('status', function (state) {
+      if (state === OTR.CONST.STATUS_AKE_SUCCESS) {
+        userA.sendMsg("Amsg1 to B1")
+        userA.sendMsg("Amsg2 to B1")
+      }
+    })
+    userA.sendQueryMsg()
+
+  })
+
 })
