@@ -372,6 +372,7 @@ A sampling of projects that use this library:
 - [Diaspora](https://github.com/sualko/diaspora)
 - [Converse.js](https://github.com/jcbrand/converse.js)
 - [WebRTCCopy](https://github.com/erbbysam/webRTCCopy)
+- [OTRon](https://github.com/osnr/otron)
 
 ---
 
