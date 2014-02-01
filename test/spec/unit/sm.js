@@ -48,7 +48,7 @@ describe('SM', function () {
       if (state === CONST.STATUS_AKE_SUCCESS) {
         assert.equal(userB.msgstate, CONST.MSGSTATE_ENCRYPTED, 'Encrypted')
         assert.equal(userA.msgstate, CONST.MSGSTATE_ENCRYPTED, 'Encrypted')
-        userA.smpSecret('applesAndOranges')
+        userA.smpSecret('applesAndOranges utf8 äöüß')
       }
     })
 
@@ -68,7 +68,7 @@ describe('SM', function () {
     userB.on('smp', function (type, data, act) {
       switch (type) {
         case 'question':
-          userB.smpSecret('applesAndOranges')
+          userB.smpSecret('applesAndOranges utf8 äöüß')
           break
         case 'trust':
           assert.ok(data, 'Trust A? false')
@@ -150,7 +150,7 @@ describe('SM', function () {
       if (state === CONST.STATUS_AKE_SUCCESS) {
         assert.equal(userB.msgstate, CONST.MSGSTATE_ENCRYPTED, 'Encrypted')
         assert.equal(userA.msgstate, CONST.MSGSTATE_ENCRYPTED, 'Encrypted')
-        userA.smpSecret('applesAndOranges', 'What is difference?')
+        userA.smpSecret('applesAndOranges', 'What is difference? utf8 äöüß')
       }
     })
 
@@ -159,7 +159,7 @@ describe('SM', function () {
     userB.on('smp', function (type, data, act) {
       switch (type) {
         case 'question':
-          assert.equal('What is difference?', data, type)
+          assert.equal('What is difference? utf8 äöüß', data, type)
           userB.smpSecret('applesAndOranges')
           break
         case 'trust':
