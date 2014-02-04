@@ -1,6 +1,6 @@
 /*!
 
-  otr.js v0.2.9 - 2014-01-21
+  otr.js v0.2.10 - 2014-02-04
   (c) 2014 - Arlo Breault <arlolra@gmail.com>
   Freely distributed under the MPL v2.0 license.
 
@@ -1501,7 +1501,7 @@
     sha256.update(CryptoJS.enc.Hex.parse(our ? this.our_fp : this.their_fp))
     sha256.update(CryptoJS.enc.Hex.parse(our ? this.their_fp : this.our_fp))
     sha256.update(CryptoJS.enc.Latin1.parse(this.ssid))
-    sha256.update(CryptoJS.enc.Latin1.parse(secret))  // utf8?
+    sha256.update(CryptoJS.enc.Latin1.parse(secret))
     var hash = sha256.finalize()
     this.secret = HLP.bits2bigInt(hash.toString(CryptoJS.enc.Latin1))
   }
@@ -1609,6 +1609,11 @@
         this.computeGs(msg[0], msg[3])
 
         this.smpstate = CONST.SMPSTATE_EXPECT0
+
+        // assume utf8 question
+        question = CryptoJS.enc.Latin1
+          .parse(question)
+          .toString(CryptoJS.enc.Utf8)
 
         // invoke question
         this.trigger('question', [question])
@@ -2381,6 +2386,11 @@
       return this.error('Secret is required.')
 
     if (!this.sm) this._smInit()
+
+    // utf8 inputs
+    secret = CryptoJS.enc.Utf8.parse(secret).toString(CryptoJS.enc.Latin1)
+    question = CryptoJS.enc.Utf8.parse(question).toString(CryptoJS.enc.Latin1)
+
     this.sm.rcvSecret(secret, question)
   }
 

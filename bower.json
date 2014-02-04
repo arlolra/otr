@@ -1,6 +1,6 @@
 {
   "name": "otr",
-  "version": "0.2.9",
+  "version": "0.2.10",
   "main": "build/otr.js",
   "ignore": [
     "**/.*",
