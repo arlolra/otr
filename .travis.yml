@@ -5,6 +5,7 @@ node_js:
   - "0.8"
 
 before_install:
+  - "sudo apt-get update"
   - "sudo apt-get install -qq libotr2-dev"
   - "pushd test; make build LIBOTR_DIR=/usr; popd"
 
