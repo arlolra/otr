@@ -85,8 +85,9 @@ For each user you're communicating with, instantiate an OTR object.
       // encrypted === true, if the received msg was encrypted
     })
 
-    buddy.on('io', function (msg) {
+    buddy.on('io', function (msg, meta) {
       console.log("message to send to buddy: " + msg)
+      console.log("(optional) with sendMsg attached meta data: " + meta)
     })
 
     buddy.on('error', function (err) {
@@ -102,7 +103,8 @@ method.
 **Send a message to buddy**: Pass the message to the `sendMsg` method.
 
     var newmsg = "Message to userA."
-    buddy.sendMsg(newmsg)
+    var meta = "optional some meta data, like message id"
+    buddy.sendMsg(newmsg, meta)
 
 **Going encrypted**: Initially, messages are sent in plaintext. To manually
 initiate the authenticated key exchange.
@@ -373,6 +375,8 @@ A sampling of projects that use this library:
 - [Converse.js](https://github.com/jcbrand/converse.js)
 - [WebRTCCopy](https://github.com/erbbysam/webRTCCopy)
 - [OTRon](https://github.com/osnr/otron)
+- [ojsxc (owncloud)](https://github.com/sualko/ojsxc)
+- [sjsxc (SOGo)](https://github.com/sualko/sjsxc)
 
 ---
 
