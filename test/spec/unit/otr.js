@@ -578,5 +578,92 @@ describe('OTR', function () {
     assert.equal(userB.msgstate, CONST.MSGSTATE_PLAINTEXT)
     userA.sendMsg(m)
   })
+  
+  it('should passthrough meta data in plaintext mode', function(done) {
+     var m1 = 'text message'
+     var m2 = 'meta data'
+
+     var userA = new OTR({ priv: keys.userA })
+     userA.on('io', function (msg, meta) {
+        assert.equal(msg, m1)
+        assert.equal(meta, m2)
+        done()
+     })
+
+     userA.sendMsg(m1, m2)        
+  })
+  
+  it('should passthrough meta data in encrypted mode', function(done) {
+     var m1 = 'text message'
+     var m2 = 'meta data'
+
+     var userA = new OTR({ priv: keys.userA })
+     var userB = new OTR({ priv: keys.userB })
+     userA.on('io', function (msg, meta) {
+        if (userA.msgstate === CONST.MSGSTATE_ENCRYPTED){
+           assert.equal(meta, m2)
+           done()
+        }
+        userB.receiveMsg(msg)
+     })
+     userA.on('status', function(state){ 
+        if (state === CONST.STATUS_AKE_SUCCESS) {
+           userA.sendMsg(m1, m2)
+        }
+     })
+     userB.on('io', userA.receiveMsg)
+
+     userB.sendQueryMsg()
+  })
+  
+  it('should passthrough meta data for stored messages', function(done) {
+     var m1 = 'text message'
+     var m2 = 'meta data'
+
+     var userA = new OTR({ priv: keys.userA })
+     var userB = new OTR({ priv: keys.userB })
+     userA.msgstate = CONST.MSGSTATE_FINISHED;
+     userA.on('io', function (msg, meta) {
+        if (userA.msgstate === CONST.MSGSTATE_ENCRYPTED){
+           assert.equal(meta, m2)
+           done()
+        }
+        userB.receiveMsg(msg)
+     })
+     userB.on('io', userA.receiveMsg)
+
+     userA.sendMsg(m1, m2)
+     userB.sendQueryMsg()   
+  })
+
+  it('should passthrough meta data for fragmented messages', function(done) {
+     this.timeout(5000)
+     
+     var m1 = 'Lalalala alal allaallal alal al alalal alalaaall  lal lal la lal ala  al ala l al a al al al alalalalal alalal  a lal la aal ala lalala l lala lal lala lal la l  alal lalaall la lal la'
+     var m2 = 'meta data'
+
+     var userA = new OTR({
+          priv: keys.userA
+        , fragment_size: 200 
+        , send_interval: 40
+        })
+     var userB = new OTR({ priv: keys.userB, send_interval: 20 })
+     userA.on('io', function (msg, meta) {
+        if (userA.msgstate === CONST.MSGSTATE_ENCRYPTED){
+           assert.equal(meta, m2)
+           if(msg.replace(/^\?OTR.+,(\d),(\d)/, '$1') == msg.replace(/^\?OTR.+,(\d),(\d)/, '$2'))
+              done()
+        }
+        userB.receiveMsg(msg)
+     })
+     userA.on('status', function(state){ 
+        if (state === CONST.STATUS_AKE_SUCCESS) {
+           userA.sendMsg(m1, m2)
+        }
+     })
+     userB.on('io', userA.receiveMsg)
+     
+     userB.sendQueryMsg() 
+  })
 
 })
