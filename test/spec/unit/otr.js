@@ -535,7 +535,7 @@ describe('OTR', function () {
         assert.equal(userB.msgstate, CONST.MSGSTATE_ENCRYPTED)
         // send a plaintext msg w/ internal api
         // don't do this
-        userB._sendMsg(m, true)
+        userB.io(m)
       }
     })
     userB.on('error', function (err) { assert.ifError(err) })
