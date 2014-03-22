@@ -24,14 +24,14 @@
     "webworker-threads": "~0.4.7"
   },
   "devDependencies": {
-    "mocha": "~1.14.0",
-    "simple-xmpp": "~0.1.17",
-    "grunt": "~0.4.1",
-    "grunt-cli": "~0.1.11",
+    "mocha": "~1.17.1",
+    "simple-xmpp": "~0.1.19",
+    "grunt": "~0.4.4",
+    "grunt-cli": "~0.1.13",
     "grunt-contrib-clean": "~0.5.0",
     "grunt-contrib-concat": "~0.3.0",
-    "grunt-contrib-jshint": "~0.7.1",
-    "grunt-contrib-uglify": "~0.2.7"
+    "grunt-contrib-jshint": "~0.9.2",
+    "grunt-contrib-uglify": "~0.4.0"
   },
   "author": "Arlo Breault <arlolra@gmail.com>",
   "contributors": [
