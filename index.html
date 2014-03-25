@@ -115,8 +115,9 @@ buddy.on('ui', function (msg, encrypted) {
   // encrypted === true, if the received msg was encrypted
 })
 
-buddy.on('io', function (msg) {
+buddy.on('io', function (msg, meta) {
   console.log("message to send to buddy: " + msg)
+  console.log("(optional) with sendMsg attached meta data: " + meta)
 })
 
 buddy.on('error', function (err) {
@@ -134,7 +135,8 @@ buddy.receiveMsg(rcvmsg)
 <p><strong>Send a message to buddy</strong>: Pass the message to the <code>sendMsg</code> method.</p>
 
 <pre><code>var newmsg = "Message to userA."
-buddy.sendMsg(newmsg)
+var meta = "optional some meta data, like message id"
+buddy.sendMsg(newmsg, meta)
 </code></pre>
 
 <p><strong>Going encrypted</strong>: Initially, messages are sent in plaintext. To manually
@@ -415,6 +417,9 @@ need to include Salsa20.</p>
 <li><a href="https://github.com/sualko/diaspora">Diaspora</a></li>
 <li><a href="https://github.com/jcbrand/converse.js">Converse.js</a></li>
 <li><a href="https://github.com/erbbysam/webRTCCopy">WebRTCCopy</a></li>
+<li><a href="https://github.com/osnr/otron">OTRon</a></li>
+<li><a href="https://github.com/sualko/ojsxc">ojsxc (owncloud)</a></li>
+<li><a href="https://github.com/sualko/sjsxc">sjsxc (SOGo)</a></li>
 </ul><hr><h3>
 <a name="donate" class="anchor" href="#donate"><span class="octicon octicon-link"></span></a>Donate</h3>
 
