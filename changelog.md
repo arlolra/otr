@@ -1,4 +1,11 @@
 
+0.2.11 / 2014-03-24
+===================
+
+ * update dev dependencies
+ * option to attach meta data to outgoing messages
+ * type 6 tlvs trigger an abort
+
 0.2.10 / 2014-02-04
 ==================
 

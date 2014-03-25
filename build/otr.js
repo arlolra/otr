@@ -1,6 +1,6 @@
 /*!
 
-  otr.js v0.2.10 - 2014-02-04
+  otr.js v0.2.11 - 2014-03-24
   (c) 2014 - Arlo Breault <arlolra@gmail.com>
   Freely distributed under the MPL v2.0 license.
 
@@ -1095,7 +1095,6 @@
     this.ssid = null
     this.transmittedRS = false
     this.r = null
-    this.priv = otr.priv
 
     // bind methods
     var self = this
@@ -1144,10 +1143,10 @@
     },
 
     makeM: function (their_y, m1, c, m2) {
-      var pk = this.priv.packPublic()
+      var pk = this.otr.priv.packPublic()
       var kid = HLP.packINT(this.our_keyid)
       var m = hMac(this.our_dh.publicKey, their_y, pk, kid, m1)
-      m = this.priv.sign(m)
+      m = this.otr.priv.sign(m)
       var msg = pk + kid
       msg += BigInt.bigInt2bits(m[0], 20)  // pad to 20 bytes
       msg += BigInt.bigInt2bits(m[1], 20)
@@ -1409,7 +1408,7 @@
       )
       if (send[0]) return this.otr.error(send[0])
 
-      this.otr._sendMsg(send[1], true)
+      this.otr.io(send[1])
     },
 
     initiateAKE: function (version) {
@@ -1556,7 +1555,7 @@
 
     if (msg.type === 6) {
       this.init()
-      this.trigger('trust', [false])
+      this.trigger('abort')
       return
     }
 
@@ -2092,21 +2091,25 @@
     })
     this.sm.on('send', function (ssid, send) {
       if (self.ssid === ssid)
-        self._sendMsg(send)
+        send = self.prepareMsg(send)
+        self.io(send)
     })
   }
 
-  OTR.prototype.io = function (msg) {
+  OTR.prototype.io = function (msg, meta) {
 
     // buffer
+    msg = ([].concat(msg)).map(function(m){
+       return { msg: m, meta: meta }
+    })
     this.outgoing = this.outgoing.concat(msg)
 
     var self = this
     ;(function send(first) {
       if (!first) {
         if (!self.outgoing.length) return
-        var msg = self.outgoing.shift()
-        self.trigger('io', [msg])
+        var elem = self.outgoing.shift()
+        self.trigger('io', [elem.msg, elem.meta])
       }
       setTimeout(send, first ? 0 : self.send_interval)
     }(true))
@@ -2413,46 +2416,43 @@
       msg += '?'
     }
 
-    this._sendMsg(msg, true)
+    this.io(msg)
     this.trigger('status', [CONST.STATUS_SEND_QUERY])
   }
 
-  OTR.prototype.sendMsg = function (msg) {
+  OTR.prototype.sendMsg = function (msg, meta) {
     if ( this.REQUIRE_ENCRYPTION ||
          this.msgstate !== CONST.MSGSTATE_PLAINTEXT
     ) {
       msg = CryptoJS.enc.Utf8.parse(msg)
       msg = msg.toString(CryptoJS.enc.Latin1)
     }
-    this._sendMsg(msg)
-  }
 
-  OTR.prototype._sendMsg = function (msg, internal) {
-    if (!internal) {  // a user or sm msg
-
-      switch (this.msgstate) {
-        case CONST.MSGSTATE_PLAINTEXT:
-          if (this.REQUIRE_ENCRYPTION) {
-            this.storedMgs.push(msg)
-            this.sendQueryMsg()
-            return
-          }
-          if (this.SEND_WHITESPACE_TAG && !this.receivedPlaintext) {
-            msg += CONST.WHITESPACE_TAG  // 16 byte tag
-            if (this.ALLOW_V3) msg += CONST.WHITESPACE_TAG_V3
-            if (this.ALLOW_V2) msg += CONST.WHITESPACE_TAG_V2
-          }
-          break
-        case CONST.MSGSTATE_FINISHED:
-          this.storedMgs.push(msg)
-          this.error('Message cannot be sent at this time.')
+    switch (this.msgstate) {
+      case CONST.MSGSTATE_PLAINTEXT:
+        if (this.REQUIRE_ENCRYPTION) {
+          this.storedMgs.push({msg: msg, meta: meta})
+          this.sendQueryMsg()
           return
-        default:
-          msg = this.prepareMsg(msg)
-      }
-
+        }
+        if (this.SEND_WHITESPACE_TAG && !this.receivedPlaintext) {
+          msg += CONST.WHITESPACE_TAG  // 16 byte tag
+          if (this.ALLOW_V3) msg += CONST.WHITESPACE_TAG_V3
+          if (this.ALLOW_V2) msg += CONST.WHITESPACE_TAG_V2
+        }
+        break
+      case CONST.MSGSTATE_FINISHED:
+        this.storedMgs.push({msg: msg, meta: meta})
+        this.error('Message cannot be sent at this time.')
+        return
+      case CONST.MSGSTATE_ENCRYPTED:
+        msg = this.prepareMsg(msg)
+        break
+      default:
+        throw new Error('Unknown message state.')
     }
-    if (msg) this.io(msg)
+
+    if (msg) this.io(msg, meta)
   }
 
   OTR.prototype.receiveMsg = function (msg) {
@@ -2532,7 +2532,7 @@
     if (send) {
       if (!this.debug) err = "An OTR error has occurred."
       err = '?OTR Error:' + err
-      this._sendMsg(err, true)
+      this.io(err)
       return
     }
     this.trigger('error', [err])
@@ -2540,8 +2540,9 @@
 
   OTR.prototype.sendStored = function () {
     var self = this
-    ;(this.storedMgs.splice(0)).forEach(function (msg) {
-      self._sendMsg(msg)
+    ;(this.storedMgs.splice(0)).forEach(function (elem) {
+      var msg = self.prepareMsg(elem.msg)
+      self.io(msg, elem.meta)
     })
   }
 
@@ -2567,7 +2568,7 @@
     msg += l1name
 
     msg = this.prepareMsg(msg, filename)
-    if (msg) this._sendMsg(msg, true)
+    this.io(msg)
   }
 
   OTR.prototype.endOtr = function () {
@@ -2593,6 +2594,7 @@
   }
 
 }).call(this)
+
 
   return {
       OTR: this.OTR
