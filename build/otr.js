@@ -1,6 +1,6 @@
 /*!
 
-  otr.js v0.2.11 - 2014-03-24
+  otr.js v0.2.12 - 2014-04-15
   (c) 2014 - Arlo Breault <arlolra@gmail.com>
   Freely distributed under the MPL v2.0 license.
 
@@ -2090,9 +2090,10 @@
       })
     })
     this.sm.on('send', function (ssid, send) {
-      if (self.ssid === ssid)
+      if (self.ssid === ssid) {
         send = self.prepareMsg(send)
         self.io(send)
+      }
     })
   }
 
@@ -2142,7 +2143,7 @@
     this.sendenc = HLP.mask(HLP.h1(sendbyte, secbytes), 0, 128)  // f16 bytes
     this.sendmac = CryptoJS.SHA1(CryptoJS.enc.Latin1.parse(this.sendenc))
     this.sendmac = this.sendmac.toString(CryptoJS.enc.Latin1)
-    this.sendmacused = false
+
     this.rcvenc = HLP.mask(HLP.h1(rcvbyte, secbytes), 0, 128)
     this.rcvmac = CryptoJS.SHA1(CryptoJS.enc.Latin1.parse(this.rcvenc))
     this.rcvmac = this.rcvmac.toString(CryptoJS.enc.Latin1)
@@ -2161,7 +2162,6 @@
     // reveal old mac keys
     var self = this
     this.sessKeys[1].forEach(function (sk) {
-      if (sk && sk.sendmacused) self.oldMacKeys.push(sk.sendmac)
       if (sk && sk.rcvmacused) self.oldMacKeys.push(sk.rcvmac)
     })
 
@@ -2189,7 +2189,6 @@
     // reveal old mac keys
     var self = this
     this.sessKeys.forEach(function (sk) {
-      if (sk[1] && sk[1].sendmacused) self.oldMacKeys.push(sk[1].sendmac)
       if (sk[1] && sk[1].rcvmacused) self.oldMacKeys.push(sk[1].rcvmac)
     })
 
@@ -2244,8 +2243,6 @@
     send += HLP.packData(aes)
     send += HLP.make1Mac(send, sessKeys.sendmac)
     send += HLP.packData(this.oldMacKeys.splice(0).join(''))
-
-    sessKeys.sendmacused = true
 
     send = HLP.wrapMsg(
         send

@@ -1,4 +1,10 @@
 
+0.2.12 / 2014-04-15
+===================
+
+ * don't publish sending mac keys
+ * close potential leak of smp question
+
 0.2.11 / 2014-03-24
 ===================
 
