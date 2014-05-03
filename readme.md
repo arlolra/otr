@@ -377,6 +377,7 @@ A sampling of projects that use this library:
 - [OTRon](https://github.com/osnr/otron)
 - [ojsxc (owncloud)](https://github.com/sualko/ojsxc)
 - [sjsxc (SOGo)](https://github.com/sualko/sjsxc)
+- [LoquiIM](https://loqui.im/)
 
 ---
 
