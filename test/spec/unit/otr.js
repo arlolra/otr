@@ -637,8 +637,6 @@ describe('OTR', function () {
   })
 
   it('should passthrough meta data for fragmented messages', function(done) {
-     this.timeout(5000)
-     
      var m1 = 'Lalalala alal allaallal alal al alalal alalaaall  lal lal la lal ala  al ala l al a al al al alalalalal alalal  a lal la aal ala lalala l lala lal lala lal la l  alal lalaall la lal la'
      var m2 = 'meta data'
 
@@ -651,7 +649,7 @@ describe('OTR', function () {
      userA.on('io', function (msg, meta) {
         if (userA.msgstate === CONST.MSGSTATE_ENCRYPTED){
            assert.equal(meta, m2)
-           if(msg.replace(/^\?OTR.+,(\d),(\d)/, '$1') == msg.replace(/^\?OTR.+,(\d),(\d)/, '$2'))
+           if (msg.replace(/^\?OTR[^,]+,(\d),(\d)/, '$1') == msg.replace(/^\?OTR[^,]+,(\d),(\d)/, '$2'))
               done()
         }
         userB.receiveMsg(msg)
