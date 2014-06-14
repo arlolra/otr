@@ -383,7 +383,7 @@ A sampling of projects that use this library:
 
 ###Donate
 
-Bitcoins: 17wERkMaW4ueVLMyiSH7XS91Rj4Xodnntq
+Bitcoins: 1BWLnnig89fpn8hCcASd2B1YbfK6j1vtX3
 
 ---
 
