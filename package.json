@@ -21,17 +21,16 @@
     "dsa"
   ],
   "optionalDependencies": {
-    "webworker-threads": "~0.4.7"
+    "webworker-threads": "~0.4.13"
   },
   "devDependencies": {
-    "mocha": "~1.17.1",
-    "simple-xmpp": "~0.1.19",
+    "mocha": "~1.20.1",
     "grunt": "~0.4.4",
     "grunt-cli": "~0.1.13",
     "grunt-contrib-clean": "~0.5.0",
-    "grunt-contrib-concat": "~0.3.0",
-    "grunt-contrib-jshint": "~0.9.2",
-    "grunt-contrib-uglify": "~0.3.2"
+    "grunt-contrib-concat": "~0.4.0",
+    "grunt-contrib-jshint": "~0.10.0",
+    "grunt-contrib-uglify": "~0.5.0"
   },
   "author": "Arlo Breault <arlolra@gmail.com>",
   "contributors": [
