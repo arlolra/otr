@@ -493,6 +493,32 @@ describe('OTR', function () {
     userA.sendQueryMsg()
   })
 
+  it('callback after disconnect msg sent', function (done) {
+    var userB = new OTR({ priv: keys.userB })
+    var sent = false
+    userB.on('io', function (msg) { userA.receiveMsg(msg) })
+    userB.on('error', function (err) { assert.ifError(err) })
+    userB.on('status', function (state) {
+      if (state === CONST.STATUS_AKE_SUCCESS) {
+        assert.equal(userA.msgstate, CONST.MSGSTATE_ENCRYPTED)
+        assert.equal(userB.msgstate, CONST.MSGSTATE_ENCRYPTED)
+        userA.endOtr(function () {
+          assert.ok(sent)
+          done()
+        })
+      } else if (state === CONST.STATUS_END_OTR) {
+        assert.equal(userB.msgstate, CONST.MSGSTATE_FINISHED)
+        sent = true
+      }
+    })
+
+    var userA = new OTR({ priv: keys.userA })
+    userA.on('io', userB.receiveMsg)
+    assert.equal(userA.msgstate, CONST.MSGSTATE_PLAINTEXT)
+    assert.equal(userB.msgstate, CONST.MSGSTATE_PLAINTEXT)
+    userA.sendQueryMsg()
+  })
+
   it('should confirm extra symmetric keys', function (done) {
     var key, filename = 'testfile!@#$äöüß.zip'
 
