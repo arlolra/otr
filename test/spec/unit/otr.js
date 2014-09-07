@@ -405,7 +405,9 @@ describe('OTR', function () {
   it('should ignore messages with diff instance tags', function (done) {
     var userB = new OTR({ priv: keys.userB })
     userB.on('ui', function (msg) { assert.ok(!msg, msg) })
-    userB.on('error', function (err) { assert.ifError(err) })
+    userB.on('error', function (err, severity) {
+      assert.equal(severity, 'warn')
+    })
     userB.on('io', function (msg) { userA.receiveMsg(msg) })
     var userA = new OTR({ priv: keys.userA })
     userA.on('io', userB.receiveMsg)

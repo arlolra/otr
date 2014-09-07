@@ -1,5 +1,6 @@
 node_modules
 *.swp
+.DS_Store
 npm-debug.log
 test/data.csv
 test/hist.png
