@@ -121,8 +121,9 @@ buddy.on('io', function (msg, meta) {
   console.log("(optional) with sendMsg attached meta data: " + meta)
 })
 
-buddy.on('error', function (err) {
-  console.log("error occurred: " + err)
+buddy.on('error', function (err, severity) {
+  if (severity === 'error')  // either 'error' or 'warn'
+    console.error("error occurred: " + err)
 })
 </code></pre>
 
@@ -158,9 +159,11 @@ buddy.sendMsg('My plaintext message to be encrypted.')
 indicating a willingness to speak OTR. If the recipient in turn has set the
 policy <code>WHITESPACE_START_AKE</code>, the AKE will be initiated.</p>
 
-<p><strong>Close private connection</strong>: To end an encrypted communication,</p>
+<p><strong>Close private connection</strong>: To end an encrypted communication session,</p>
 
-<pre><code>buddy.endOtr()
+<pre><code>buddy.endOtr(function() {
+  // calls back when the 'disconnect' message has been sent
+})
 </code></pre>
 
 <p>will return the message state to plaintext and notify the correspondent.</p>
