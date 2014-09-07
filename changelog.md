@@ -1,4 +1,13 @@
 
+0.2.13 / 2014-09-07
+===================
+
+ * add severity to the error handler
+ * callback after disconnect message is sent
+ * fix broken regexp in test
+ * update some dev deps
+ * constant time int comparison
+
 0.2.12 / 2014-04-15
 ===================
 
