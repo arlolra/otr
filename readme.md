@@ -90,8 +90,9 @@ For each user you're communicating with, instantiate an OTR object.
       console.log("(optional) with sendMsg attached meta data: " + meta)
     })
 
-    buddy.on('error', function (err) {
-      console.log("error occurred: " + err)
+    buddy.on('error', function (err, severity) {
+      if (severity === 'error')  // either 'error' or 'warn'
+        console.error("error occurred: " + err)
     })
 
 **New message from buddy received**: Pass the received message to the `receiveMsg`
@@ -122,9 +123,11 @@ Another policy, `SEND_WHITESPACE_TAG`, will append tags to plaintext messages,
 indicating a willingness to speak OTR. If the recipient in turn has set the
 policy `WHITESPACE_START_AKE`, the AKE will be initiated.
 
-**Close private connection**: To end an encrypted communication,
+**Close private connection**: To end an encrypted communication session,
 
-    buddy.endOtr()
+    buddy.endOtr(function() {
+      // calls back when the 'disconnect' message has been sent
+    })
 
 will return the message state to plaintext and notify the correspondent.
 
