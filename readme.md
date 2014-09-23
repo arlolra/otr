@@ -381,6 +381,9 @@ A sampling of projects that use this library:
 - [ojsxc (owncloud)](https://github.com/sualko/ojsxc)
 - [sjsxc (SOGo)](https://github.com/sualko/sjsxc)
 - [LoquiIM](https://loqui.im/)
+- [Salut à Toi](http://salut-a-toi.org/) ([Python wrapper][0] for Pyjamas)
+
+[0]: http://repos.goffi.org/libervia/file/tip/src/browser/sat_browser/otrjs_wrapper.py
 
 ---
 
