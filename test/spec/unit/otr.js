@@ -693,6 +693,7 @@ describe('OTR', function () {
   })
 
   it('should check for DH pubkey equality before skipping key replacement', function (done) {
+    this.timeout(5000)
     // issue #47
 
     var err = function (err) { assert.ifError(err) }
