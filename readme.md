@@ -80,9 +80,10 @@ For each user you're communicating with, instantiate an OTR object.
 
     var buddy = new OTR(options)
 
-    buddy.on('ui', function (msg, encrypted) {
+    buddy.on('ui', function (msg, encrypted, meta) {
       console.log("message to display to the user: " + msg)
       // encrypted === true, if the received msg was encrypted
+      console.log("(optional) with receiveMsg attached meta data: " + meta)
     })
 
     buddy.on('io', function (msg, meta) {
@@ -99,7 +100,8 @@ For each user you're communicating with, instantiate an OTR object.
 method.
 
     var rcvmsg = "Message from buddy."
-    buddy.receiveMsg(rcvmsg)
+    var meta = "optional some meta data, like delay"
+    buddy.receiveMsg(rcvmsg, meta)
 
 **Send a message to buddy**: Pass the message to the `sendMsg` method.
 
