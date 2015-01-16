@@ -740,4 +740,18 @@ describe('OTR', function () {
 
   })
 
+  it('should passthrough meta data for received message', function (done) {
+     var m1 = 'text message'
+     var m2 = 'meta data'
+
+     var userA = new OTR({ priv: keys.userA })
+     userA.on('ui', function (msg, encrypted, meta) {
+        assert.equal(msg, m1)
+        assert.equal(meta, m2)
+        done()
+     })
+
+     userA.receiveMsg(m1, m2)
+  })
+
 })
