@@ -29,19 +29,23 @@
       </header>
       <section>
         <h1>
-<a name="off-the-record-messaging-protocol-in-javascript" class="anchor" href="#off-the-record-messaging-protocol-in-javascript"><span class="octicon octicon-link"></span></a>
+<a id="off-the-record-messaging-protocol-in-javascript" class="anchor" href="#off-the-record-messaging-protocol-in-javascript" aria-hidden="true"><span class="octicon octicon-link"></span></a>
 <a href="http://www.cypherpunks.ca/otr/">Off-the Record Messaging Protocol</a> in JavaScript</h1>
 
 <p><a href="http://travis-ci.org/arlolra/otr"><img src="https://secure.travis-ci.org/arlolra/otr.png?branch=master" alt="Build Status"></a></p>
 
-<hr><h3>
-<a name="warning" class="anchor" href="#warning"><span class="octicon octicon-link"></span></a>Warning</h3>
+<hr>
+
+<h3>
+<a id="warning" class="anchor" href="#warning" aria-hidden="true"><span class="octicon octicon-link"></span></a>Warning</h3>
 
 <p>This library hasn't been properly vetted by security researchers. Do not use
 in life and death situations!</p>
 
-<hr><h3>
-<a name="install" class="anchor" href="#install"><span class="octicon octicon-link"></span></a>Install</h3>
+<hr>
+
+<h3>
+<a id="install" class="anchor" href="#install" aria-hidden="true"><span class="octicon octicon-link"></span></a>Install</h3>
 
 <p>Include the build files on the page,</p>
 
@@ -67,14 +71,18 @@ in life and death situations!</p>
 var OTR = require('otr').OTR
 </code></pre>
 
-<hr><h3>
-<a name="build" class="anchor" href="#build"><span class="octicon octicon-link"></span></a>Build</h3>
+<hr>
+
+<h3>
+<a id="build" class="anchor" href="#build" aria-hidden="true"><span class="octicon octicon-link"></span></a>Build</h3>
 
 <p>The contents of <code>build/</code> are the result of calling <code>make build</code> and are only
 updated with releases. Please submit patches against <code>lib/</code> and <code>vendor/</code>.</p>
 
-<hr><h3>
-<a name="release" class="anchor" href="#release"><span class="octicon octicon-link"></span></a>Release</h3>
+<hr>
+
+<h3>
+<a id="release" class="anchor" href="#release" aria-hidden="true"><span class="octicon octicon-link"></span></a>Release</h3>
 
 <p>The normal flow for making a release is as follows,</p>
 
@@ -90,8 +98,10 @@ npm publish
 // update github releases and pages
 </code></pre>
 
-<hr><h3>
-<a name="usage" class="anchor" href="#usage"><span class="octicon octicon-link"></span></a>Usage</h3>
+<hr>
+
+<h3>
+<a id="usage" class="anchor" href="#usage" aria-hidden="true"><span class="octicon octicon-link"></span></a>Usage</h3>
 
 <p><strong>Initial setup</strong>: Compute your long-lived key beforehand. Currently this is
 expensive and can take several seconds.</p>
@@ -111,9 +121,10 @@ var options = {
 
 var buddy = new OTR(options)
 
-buddy.on('ui', function (msg, encrypted) {
+buddy.on('ui', function (msg, encrypted, meta) {
   console.log("message to display to the user: " + msg)
   // encrypted === true, if the received msg was encrypted
+  console.log("(optional) with receiveMsg attached meta data: " + meta)
 })
 
 buddy.on('io', function (msg, meta) {
@@ -131,7 +142,8 @@ buddy.on('error', function (err, severity) {
 method.</p>
 
 <pre><code>var rcvmsg = "Message from buddy."
-buddy.receiveMsg(rcvmsg)
+var meta = "optional some meta data, like delay"
+buddy.receiveMsg(rcvmsg, meta)
 </code></pre>
 
 <p><strong>Send a message to buddy</strong>: Pass the message to the <code>sendMsg</code> method.</p>
@@ -187,8 +199,10 @@ policy <code>WHITESPACE_START_AKE</code>, the AKE will be initiated.</p>
 }
 </code></pre>
 
-<hr><h3>
-<a name="status" class="anchor" href="#status"><span class="octicon octicon-link"></span></a>Status</h3>
+<hr>
+
+<h3>
+<a id="status" class="anchor" href="#status" aria-hidden="true"><span class="octicon octicon-link"></span></a>Status</h3>
 
 <p>A listener can be attached for status changes. These are non-standard codes,
 specific to this OTR library, indicating various things like the AKE success.</p>
@@ -208,8 +222,10 @@ specific to this OTR library, indicating various things like the AKE success.</p
 })
 </code></pre>
 
-<hr><h3>
-<a name="policies" class="anchor" href="#policies"><span class="octicon octicon-link"></span></a>Policies</h3>
+<hr>
+
+<h3>
+<a id="policies" class="anchor" href="#policies" aria-hidden="true"><span class="octicon octicon-link"></span></a>Policies</h3>
 
 <p>To be set on a per-correspondent basis. The defaults are as follows:</p>
 
@@ -230,8 +246,10 @@ WHITESPACE_START_AKE = false
 ERROR_START_AKE = false
 </code></pre>
 
-<hr><h3>
-<a name="instance-tags" class="anchor" href="#instance-tags"><span class="octicon octicon-link"></span></a>Instance Tags</h3>
+<hr>
+
+<h3>
+<a id="instance-tags" class="anchor" href="#instance-tags" aria-hidden="true"><span class="octicon octicon-link"></span></a>Instance Tags</h3>
 
 <p>These are intended to be persistent and can be precomputed.</p>
 
@@ -241,8 +259,10 @@ var options = { instance_tag: myTag }
 var buddy = new OTR(options)
 </code></pre>
 
-<hr><h3>
-<a name="fingerprints" class="anchor" href="#fingerprints"><span class="octicon octicon-link"></span></a>Fingerprints</h3>
+<hr>
+
+<h3>
+<a id="fingerprints" class="anchor" href="#fingerprints" aria-hidden="true"><span class="octicon octicon-link"></span></a>Fingerprints</h3>
 
 <p>OTR public key fingerprints can be obtained as follows:</p>
 
@@ -259,8 +279,10 @@ buddy.priv.fingerprint()
 buddy.their_priv_pk.fingerprint()
 </code></pre>
 
-<hr><h3>
-<a name="socialist-millionaire-protocol" class="anchor" href="#socialist-millionaire-protocol"><span class="octicon octicon-link"></span></a>Socialist Millionaire Protocol</h3>
+<hr>
+
+<h3>
+<a id="socialist-millionaire-protocol" class="anchor" href="#socialist-millionaire-protocol" aria-hidden="true"><span class="octicon octicon-link"></span></a>Socialist Millionaire Protocol</h3>
 
 <p>At any time after establishing encryption, either party can initiate SMP to
 detect impersonation or man-in-the-middle attacks. A shared secret,
@@ -305,8 +327,10 @@ buddy.on('smp', function (type, data, act) {
 
 <p>Both users should run the SMP to establish trust. Further, it should be run each time a partner presents a fresh long-lived key.</p>
 
-<hr><h3>
-<a name="private-keys" class="anchor" href="#private-keys"><span class="octicon octicon-link"></span></a>Private Keys</h3>
+<hr>
+
+<h3>
+<a id="private-keys" class="anchor" href="#private-keys" aria-hidden="true"><span class="octicon octicon-link"></span></a>Private Keys</h3>
 
 <p>To export a private, long-lived key:</p>
 
@@ -346,8 +370,10 @@ string = "(privkeys
 myKey = DSA.parsePrivate(string, true)
 </code></pre>
 
-<hr><h3>
-<a name="extra-symmetric-key" class="anchor" href="#extra-symmetric-key"><span class="octicon octicon-link"></span></a>Extra Symmetric Key</h3>
+<hr>
+
+<h3>
+<a id="extra-symmetric-key" class="anchor" href="#extra-symmetric-key" aria-hidden="true"><span class="octicon octicon-link"></span></a>Extra Symmetric Key</h3>
 
 <p>In version 3 of the protocol, an extra symmetric key is derived during the AKE. This may be used for secure communication over a different channel (e.g., file transfer, voice chat).</p>
 
@@ -370,8 +396,10 @@ friend.on('file', function (type, key, filename) {
 })
 </code></pre>
 
-<hr><h3>
-<a name="webworkers" class="anchor" href="#webworkers"><span class="octicon octicon-link"></span></a>WebWorkers</h3>
+<hr>
+
+<h3>
+<a id="webworkers" class="anchor" href="#webworkers" aria-hidden="true"><span class="octicon octicon-link"></span></a>WebWorkers</h3>
 
 <p>Some support exists for calling computationally expensive work off the main
 thread. However, some feedback on these APIs would be appreciated.</p>
@@ -393,8 +421,10 @@ need to include Salsa20.</p>
 <pre><code>&lt;script src="build/dep/salsa20.js"&gt;&lt;/script&gt;
 </code></pre>
 
-<hr><h3>
-<a name="links" class="anchor" href="#links"><span class="octicon octicon-link"></span></a>Links</h3>
+<hr>
+
+<h3>
+<a id="links" class="anchor" href="#links" aria-hidden="true"><span class="octicon octicon-link"></span></a>Links</h3>
 
 <p>Spec:</p>
 
@@ -403,15 +433,21 @@ need to include Salsa20.</p>
 <li><a href="http://www.cypherpunks.ca/otr/Protocol-v2-3.1.0.html">http://www.cypherpunks.ca/otr/Protocol-v2-3.1.0.html</a></li>
 <li>See: <code>specs/</code>
 </li>
-</ul><p>Using:</p>
+</ul>
+
+<p>Using:</p>
 
 <ul>
 <li><a href="http://code.google.com/p/crypto-js/">crypto-js</a></li>
 <li><a href="http://leemon.com/crypto/BigInt.html">bigint.js</a></li>
 <li><a href="https://gist.github.com/dchest/4582374">salsa20.js</a></li>
 <li><a href="https://github.com/Wolfy87/EventEmitter">eventemitter.js</a></li>
-</ul><hr><h3>
-<a name="in-the-wild" class="anchor" href="#in-the-wild"><span class="octicon octicon-link"></span></a>In The Wild</h3>
+</ul>
+
+<hr>
+
+<h3>
+<a id="in-the-wild" class="anchor" href="#in-the-wild" aria-hidden="true"><span class="octicon octicon-link"></span></a>In The Wild</h3>
 
 <p>A sampling of projects that use this library:</p>
 
@@ -425,13 +461,21 @@ need to include Salsa20.</p>
 <li><a href="https://github.com/sualko/ojsxc">ojsxc (owncloud)</a></li>
 <li><a href="https://github.com/sualko/sjsxc">sjsxc (SOGo)</a></li>
 <li><a href="https://loqui.im/">LoquiIM</a></li>
-</ul><hr><h3>
-<a name="donate" class="anchor" href="#donate"><span class="octicon octicon-link"></span></a>Donate</h3>
+<li>
+<a href="http://salut-a-toi.org/">Salut à Toi</a> (<a href="http://repos.goffi.org/libervia/file/tip/src/browser/sat_browser/otrjs_wrapper.py">Python wrapper</a> for Pyjamas)</li>
+</ul>
+
+<hr>
+
+<h3>
+<a id="donate" class="anchor" href="#donate" aria-hidden="true"><span class="octicon octicon-link"></span></a>Donate</h3>
 
 <p>Bitcoins: 1BWLnnig89fpn8hCcASd2B1YbfK6j1vtX3</p>
 
-<hr><h3>
-<a name="license" class="anchor" href="#license"><span class="octicon octicon-link"></span></a>License</h3>
+<hr>
+
+<h3>
+<a id="license" class="anchor" href="#license" aria-hidden="true"><span class="octicon octicon-link"></span></a>License</h3>
 
 <p>MPL v2.0</p>
       </section>
