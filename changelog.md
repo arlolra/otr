@@ -1,4 +1,10 @@
 
+0.2.14 / 2015-01-16
+===================
+
+  * add an option to attach metadata to incoming messages
+  * send type 2 TLV when no question is supplied
+
 0.2.13 / 2014-09-07
 ===================
 
