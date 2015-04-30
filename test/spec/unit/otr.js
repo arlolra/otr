@@ -521,6 +521,11 @@ describe('OTR', function () {
     userA.sendQueryMsg()
   })
 
+  it('callback even when not encrypted', function (done) {
+    var userB = new OTR({ priv: keys.userB })
+    userB.endOtr(done)
+  })
+
   it('should confirm extra symmetric keys', function (done) {
     var key, filename = 'testfile!@#$äöüß.zip'
 
