@@ -526,6 +526,32 @@ describe('OTR', function () {
     userB.endOtr(done)
   })
 
+  it('callback only once when fragmented', function (done) {
+    var userB = new OTR({ priv: keys.userB })
+    var called = false
+    userB.on('io', function (msg) { userA.receiveMsg(msg) })
+    userB.on('error', function (err) { assert.ifError(err) })
+    userB.on('status', function (state) {
+      if (state === CONST.STATUS_AKE_SUCCESS) {
+        assert.equal(userA.msgstate, CONST.MSGSTATE_ENCRYPTED)
+        assert.equal(userB.msgstate, CONST.MSGSTATE_ENCRYPTED)
+        userA.endOtr(function () {
+          assert.ifError(called)
+          called = true
+          setTimeout(done, 60)  // after send interval
+        })
+      }
+    })
+
+    var userA = new OTR({
+        priv: keys.userA
+      , fragment_size: 40
+      , send_interval: 40
+    })
+    userA.on('io', userB.receiveMsg)
+    userA.sendQueryMsg()
+  })
+
   it('should confirm extra symmetric keys', function (done) {
     var key, filename = 'testfile!@#$äöüß.zip'
 
