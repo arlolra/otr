@@ -1,4 +1,10 @@
 
+0.2.15 / 2015-05-04
+===================
+
+  * prevent end callback from getting called multiple times
+  * call end callback even when not in encrypted state
+
 0.2.14 / 2015-01-16
 ===================
 
