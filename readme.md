@@ -384,6 +384,7 @@ A sampling of projects that use this library:
 - [sjsxc (SOGo)](https://github.com/sualko/sjsxc)
 - [LoquiIM](https://loqui.im/)
 - [Salut à Toi](http://salut-a-toi.org/) ([Python wrapper][0] for Pyjamas)
+- [HackTunnel](https://github.com/devhq-io/hacktunnel)
 
 [0]: http://repos.goffi.org/libervia/file/tip/src/browser/sat_browser/otrjs_wrapper.py
 
