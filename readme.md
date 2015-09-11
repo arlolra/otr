@@ -1,7 +1,7 @@
+[![Build Status](https://travis-ci.org/arlolra/otr.svg?branch=master)](https://travis-ci.org/arlolra/otr)
+
 [Off-the Record Messaging Protocol](http://www.cypherpunks.ca/otr/) in JavaScript
 ==================================================
-
-[![Build Status](https://secure.travis-ci.org/arlolra/otr.png?branch=master)](http://travis-ci.org/arlolra/otr)
 
 ### Warning
 
