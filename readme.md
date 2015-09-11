@@ -3,14 +3,10 @@
 
 [![Build Status](https://secure.travis-ci.org/arlolra/otr.png?branch=master)](http://travis-ci.org/arlolra/otr)
 
----
-
 ### Warning
 
 This library hasn't been properly vetted by security researchers. Do not use
 in life and death situations!
-
----
 
 ### Install
 
@@ -35,14 +31,10 @@ And then,
     var DSA = require('otr').DSA
     var OTR = require('otr').OTR
 
----
-
 ### Build
 
 The contents of `build/` are the result of calling `make build` and are only
 updated with releases. Please submit patches against `lib/` and `vendor/`.
-
----
 
 ### Release
 
@@ -58,8 +50,6 @@ The normal flow for making a release is as follows,
     git push --tags
     npm publish
     // update github releases and pages
-
----
 
 ### Usage
 
@@ -151,8 +141,6 @@ will return the message state to plaintext and notify the correspondent.
 
     }
 
----
-
 ### Status
 
 A listener can be attached for status changes. These are non-standard codes,
@@ -171,8 +159,6 @@ specific to this OTR library, indicating various things like the AKE success.
           break
       }
     })
-
----
 
 ### Policies
 
@@ -194,8 +180,6 @@ To be set on a per-correspondent basis. The defaults are as follows:
     // Start the OTR AKE when you receive an OTR Error Message.
     ERROR_START_AKE = false
 
----
-
 ### Instance Tags
 
 These are intended to be persistent and can be precomputed.
@@ -204,8 +188,6 @@ These are intended to be persistent and can be precomputed.
     var options = { instance_tag: myTag }
 
     var buddy = new OTR(options)
-
----
 
 ### Fingerprints
 
@@ -222,8 +204,6 @@ OTR public key fingerprints can be obtained as follows:
 
     // for their key
     buddy.their_priv_pk.fingerprint()
-
----
 
 ### Socialist Millionaire Protocol
 
@@ -267,8 +247,6 @@ otherwise a no-opt is fired.
 
 Both users should run the SMP to establish trust. Further, it should be run each time a partner presents a fresh long-lived key.
 
----
-
 ### Private Keys
 
 To export a private, long-lived key:
@@ -306,8 +284,6 @@ Importing the (somewhat) standard libotr s-expression format works as well,
 
     myKey = DSA.parsePrivate(string, true)
 
----
-
 ### Extra Symmetric Key
 
 In version 3 of the protocol, an extra symmetric key is derived during the AKE. This may be used for secure communication over a different channel (e.g., file transfer, voice chat).
@@ -329,8 +305,6 @@ On the other end,
       // decrypt filename with key, once received
     })
 
----
-
 ### WebWorkers
 
 Some support exists for calling computationally expensive work off the main
@@ -351,8 +325,6 @@ need to include Salsa20.
 
     <script src="build/dep/salsa20.js"></script>
 
----
-
 ### Links
 
 Spec:
@@ -367,8 +339,6 @@ Using:
 - [bigint.js](http://leemon.com/crypto/BigInt.html)
 - [salsa20.js](https://gist.github.com/dchest/4582374)
 - [eventemitter.js](https://github.com/Wolfy87/EventEmitter)
-
----
 
 ### In The Wild
 
@@ -388,13 +358,9 @@ A sampling of projects that use this library:
 
 [0]: http://repos.goffi.org/libervia/file/tip/src/browser/sat_browser/otrjs_wrapper.py
 
----
-
 ### Donate
 
 Bitcoins: 1BWLnnig89fpn8hCcASd2B1YbfK6j1vtX3
-
----
 
 ### License
 
