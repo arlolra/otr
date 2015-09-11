@@ -5,14 +5,14 @@
 
 ---
 
-###Warning
+### Warning
 
 This library hasn't been properly vetted by security researchers. Do not use
 in life and death situations!
 
 ---
 
-###Install
+### Install
 
 Include the build files on the page,
 
@@ -44,7 +44,7 @@ updated with releases. Please submit patches against `lib/` and `vendor/`.
 
 ---
 
-###Release
+### Release
 
 The normal flow for making a release is as follows,
 
@@ -61,7 +61,7 @@ The normal flow for making a release is as follows,
 
 ---
 
-###Usage
+### Usage
 
 **Initial setup**: Compute your long-lived key beforehand. Currently this is
 expensive and can take several seconds.
@@ -153,7 +153,7 @@ will return the message state to plaintext and notify the correspondent.
 
 ---
 
-###Status
+### Status
 
 A listener can be attached for status changes. These are non-standard codes,
 specific to this OTR library, indicating various things like the AKE success.
@@ -174,7 +174,7 @@ specific to this OTR library, indicating various things like the AKE success.
 
 ---
 
-###Policies
+### Policies
 
 To be set on a per-correspondent basis. The defaults are as follows:
 
@@ -196,7 +196,7 @@ To be set on a per-correspondent basis. The defaults are as follows:
 
 ---
 
-###Instance Tags
+### Instance Tags
 
 These are intended to be persistent and can be precomputed.
 
@@ -207,7 +207,7 @@ These are intended to be persistent and can be precomputed.
 
 ---
 
-###Fingerprints
+### Fingerprints
 
 OTR public key fingerprints can be obtained as follows:
 
@@ -225,7 +225,7 @@ OTR public key fingerprints can be obtained as follows:
 
 ---
 
-###Socialist Millionaire Protocol
+### Socialist Millionaire Protocol
 
 At any time after establishing encryption, either party can initiate SMP to
 detect impersonation or man-in-the-middle attacks. A shared secret,
@@ -353,7 +353,7 @@ need to include Salsa20.
 
 ---
 
-###Links
+### Links
 
 Spec:
 
@@ -370,7 +370,7 @@ Using:
 
 ---
 
-###In The Wild
+### In The Wild
 
 A sampling of projects that use this library:
 
@@ -389,12 +389,12 @@ A sampling of projects that use this library:
 
 ---
 
-###Donate
+### Donate
 
 Bitcoins: 1BWLnnig89fpn8hCcASd2B1YbfK6j1vtX3
 
 ---
 
-###License
+### License
 
 MPL v2.0
