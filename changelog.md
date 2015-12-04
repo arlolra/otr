@@ -1,4 +1,10 @@
 
+0.2.16 / 2015-12-03
+===================
+
+  * handle already defined crypto object in webworker
+  * cleanup the readme
+
 0.2.15 / 2015-05-04
 ===================
 

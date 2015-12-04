@@ -1,6 +1,6 @@
 {
   "name": "otr",
-  "version": "0.2.15",
+  "version": "0.2.16",
   "description": "Off-the-Record Messaging Protocol",
   "homepage": "https://github.com/arlolra/otr",
   "main": "index.js",
@@ -38,7 +38,8 @@
     "Nadim Kobeissi <nadim@nadim.cc>",
     "Klaus Herberth <github@spam.herberth.eu>",
     "JC Brand <jc@opkode.com>",
-    "Mark Vayngrib <mark.vayngrib@lablz.com>"
+    "Mark Vayngrib <mark.vayngrib@lablz.com>",
+    "Jérémie Astori <jeremie@astori.fr>"
   ],
   "license": "MPL-2.0"
 }
