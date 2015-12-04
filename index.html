@@ -6,8 +6,8 @@
     <title>OTR.js by arlolra</title>
 
     <link rel="stylesheet" href="stylesheets/styles.css">
-    <link rel="stylesheet" href="stylesheets/pygment_trac.css">
-    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <link rel="stylesheet" href="stylesheets/github-light.css">
+    <meta name="viewport" content="width=device-width">
     <!--[if lt IE 9]>
     <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
     <![endif]-->
@@ -28,21 +28,16 @@
         </ul>
       </header>
       <section>
-        <h1>
-<a id="off-the-record-messaging-protocol-in-javascript" class="anchor" href="#off-the-record-messaging-protocol-in-javascript" aria-hidden="true"><span class="octicon octicon-link"></span></a>
-<a href="http://www.cypherpunks.ca/otr/">Off-the Record Messaging Protocol</a> in JavaScript</h1>
+        <p><a href="https://travis-ci.org/arlolra/otr"><img src="https://travis-ci.org/arlolra/otr.svg?branch=master" alt="Build Status"></a></p>
 
-<p><a href="http://travis-ci.org/arlolra/otr"><img src="https://secure.travis-ci.org/arlolra/otr.png?branch=master" alt="Build Status"></a></p>
-
-<hr>
+<h1>
+<a id="off-the-record-messaging-protocol-in-javascript" class="anchor" href="#off-the-record-messaging-protocol-in-javascript" aria-hidden="true"><span class="octicon octicon-link"></span></a><a href="http://www.cypherpunks.ca/otr/">Off-the Record Messaging Protocol</a> in JavaScript</h1>
 
 <h3>
 <a id="warning" class="anchor" href="#warning" aria-hidden="true"><span class="octicon octicon-link"></span></a>Warning</h3>
 
 <p>This library hasn't been properly vetted by security researchers. Do not use
 in life and death situations!</p>
-
-<hr>
 
 <h3>
 <a id="install" class="anchor" href="#install" aria-hidden="true"><span class="octicon octicon-link"></span></a>Install</h3>
@@ -71,15 +66,11 @@ in life and death situations!</p>
 var OTR = require('otr').OTR
 </code></pre>
 
-<hr>
-
 <h3>
 <a id="build" class="anchor" href="#build" aria-hidden="true"><span class="octicon octicon-link"></span></a>Build</h3>
 
 <p>The contents of <code>build/</code> are the result of calling <code>make build</code> and are only
 updated with releases. Please submit patches against <code>lib/</code> and <code>vendor/</code>.</p>
-
-<hr>
 
 <h3>
 <a id="release" class="anchor" href="#release" aria-hidden="true"><span class="octicon octicon-link"></span></a>Release</h3>
@@ -97,8 +88,6 @@ git push --tags
 npm publish
 // update github releases and pages
 </code></pre>
-
-<hr>
 
 <h3>
 <a id="usage" class="anchor" href="#usage" aria-hidden="true"><span class="octicon octicon-link"></span></a>Usage</h3>
@@ -199,8 +188,6 @@ policy <code>WHITESPACE_START_AKE</code>, the AKE will be initiated.</p>
 }
 </code></pre>
 
-<hr>
-
 <h3>
 <a id="status" class="anchor" href="#status" aria-hidden="true"><span class="octicon octicon-link"></span></a>Status</h3>
 
@@ -221,8 +208,6 @@ specific to this OTR library, indicating various things like the AKE success.</p
   }
 })
 </code></pre>
-
-<hr>
 
 <h3>
 <a id="policies" class="anchor" href="#policies" aria-hidden="true"><span class="octicon octicon-link"></span></a>Policies</h3>
@@ -246,8 +231,6 @@ WHITESPACE_START_AKE = false
 ERROR_START_AKE = false
 </code></pre>
 
-<hr>
-
 <h3>
 <a id="instance-tags" class="anchor" href="#instance-tags" aria-hidden="true"><span class="octicon octicon-link"></span></a>Instance Tags</h3>
 
@@ -258,8 +241,6 @@ var options = { instance_tag: myTag }
 
 var buddy = new OTR(options)
 </code></pre>
-
-<hr>
 
 <h3>
 <a id="fingerprints" class="anchor" href="#fingerprints" aria-hidden="true"><span class="octicon octicon-link"></span></a>Fingerprints</h3>
@@ -278,8 +259,6 @@ buddy.priv.fingerprint()
 // for their key
 buddy.their_priv_pk.fingerprint()
 </code></pre>
-
-<hr>
 
 <h3>
 <a id="socialist-millionaire-protocol" class="anchor" href="#socialist-millionaire-protocol" aria-hidden="true"><span class="octicon octicon-link"></span></a>Socialist Millionaire Protocol</h3>
@@ -327,8 +306,6 @@ buddy.on('smp', function (type, data, act) {
 
 <p>Both users should run the SMP to establish trust. Further, it should be run each time a partner presents a fresh long-lived key.</p>
 
-<hr>
-
 <h3>
 <a id="private-keys" class="anchor" href="#private-keys" aria-hidden="true"><span class="octicon octicon-link"></span></a>Private Keys</h3>
 
@@ -370,8 +347,6 @@ string = "(privkeys
 myKey = DSA.parsePrivate(string, true)
 </code></pre>
 
-<hr>
-
 <h3>
 <a id="extra-symmetric-key" class="anchor" href="#extra-symmetric-key" aria-hidden="true"><span class="octicon octicon-link"></span></a>Extra Symmetric Key</h3>
 
@@ -396,8 +371,6 @@ friend.on('file', function (type, key, filename) {
 })
 </code></pre>
 
-<hr>
-
 <h3>
 <a id="webworkers" class="anchor" href="#webworkers" aria-hidden="true"><span class="octicon octicon-link"></span></a>WebWorkers</h3>
 
@@ -421,8 +394,6 @@ need to include Salsa20.</p>
 <pre><code>&lt;script src="build/dep/salsa20.js"&gt;&lt;/script&gt;
 </code></pre>
 
-<hr>
-
 <h3>
 <a id="links" class="anchor" href="#links" aria-hidden="true"><span class="octicon octicon-link"></span></a>Links</h3>
 
@@ -444,8 +415,6 @@ need to include Salsa20.</p>
 <li><a href="https://github.com/Wolfy87/EventEmitter">eventemitter.js</a></li>
 </ul>
 
-<hr>
-
 <h3>
 <a id="in-the-wild" class="anchor" href="#in-the-wild" aria-hidden="true"><span class="octicon octicon-link"></span></a>In The Wild</h3>
 
@@ -463,16 +432,13 @@ need to include Salsa20.</p>
 <li><a href="https://loqui.im/">LoquiIM</a></li>
 <li>
 <a href="http://salut-a-toi.org/">Salut à Toi</a> (<a href="http://repos.goffi.org/libervia/file/tip/src/browser/sat_browser/otrjs_wrapper.py">Python wrapper</a> for Pyjamas)</li>
+<li><a href="https://github.com/devhq-io/hacktunnel">HackTunnel</a></li>
 </ul>
-
-<hr>
 
 <h3>
 <a id="donate" class="anchor" href="#donate" aria-hidden="true"><span class="octicon octicon-link"></span></a>Donate</h3>
 
 <p>Bitcoins: 1BWLnnig89fpn8hCcASd2B1YbfK6j1vtX3</p>
-
-<hr>
 
 <h3>
 <a id="license" class="anchor" href="#license" aria-hidden="true"><span class="octicon octicon-link"></span></a>License</h3>
