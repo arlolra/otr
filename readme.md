@@ -345,6 +345,7 @@ Using:
 A sampling of projects that use this library:
 
 - [Cryptocat](https://github.com/cryptocat/cryptocat)
+- [HackTunnel](https://github.com/devhq-io/hacktunnel)
 - [Yabasta](https://github.com/jonkri/yabasta)
 - [Diaspora](https://github.com/sualko/diaspora)
 - [Converse.js](https://github.com/jcbrand/converse.js)
