@@ -1,7 +1,7 @@
 ;(function (root, factory) {
 
   if (typeof define === 'function' && define.amd) {
-    define(factory.bind(root, root.crypto || root.msCrypto))
+    define([], factory.bind(root, root.crypto || root.msCrypto))
   } else if (typeof module !== 'undefined' && module.exports) {
     module.exports = factory(require('crypto'))
   } else {
