@@ -24,7 +24,7 @@ module.exports = function (grunt) {
 
       pkg: grunt.file.readJSON('package.json')
     , meta: {
-          banner: 
+          banner:
             '/*!\n\n  <%= pkg.name %>.js v<%= pkg.version %> - ' +
             '<%= grunt.template.today("yyyy-mm-dd") %>\n' +
             '  (c) <%= grunt.template.today("yyyy") %> - <%= pkg.author %>\n' +
@@ -72,7 +72,8 @@ module.exports = function (grunt) {
       }
     , jshint: {
           options: {
-            jshintrc: '.jshintrc'
+              jshintrc: '.jshintrc'
+            , reporterOutput: ''
           }
         , all: ['*.js', 'lib/*.js', 'test/spec/unit/*.js']
       }
