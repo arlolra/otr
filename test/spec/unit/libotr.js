@@ -22,7 +22,11 @@ describe('Libotr', function () {
   it('should ake and talk with libotr', function (done) {
     this.timeout(10000)
 
-    var cp = spawn('test/libotr_test_helper.out')
+    var cp = spawn('test/libotr_test_helper.out', [], {
+      env: {
+        'LD_LIBRARY_PATH': './test/libotr/lib/'
+      }
+    })
 
     buddy.on('io', function (msg) {
       cp.stdin.write(msg + '\n')

@@ -10,7 +10,7 @@ libotr:
 	fi;
 	rm -rf libotr-3.2.0;
 	tar -xzvf libotr-3.2.0.tar.gz;
-	cd libotr-3.2.0; ./configure --prefix=$(LIBOTR_DIR); make install;
+	cd libotr-3.2.0; ./configure --prefix=$(LIBOTR_DIR); sudo make install;
 
 build:
 	$(CC) libotr_test_helper.c \
