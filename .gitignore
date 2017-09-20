@@ -7,3 +7,5 @@ test/hist.png
 test/libotr
 test/libotr-3.2*
 test/libotr_test_helper.out
+bundle.js
+.reify-cache/

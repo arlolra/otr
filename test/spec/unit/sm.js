@@ -1,8 +1,8 @@
 /*global describe beforeEach it */
-var assert = require('assert')
-  , keys = require('./data/keys.js')
-  , CONST = require('../../../lib/const.js')
-  , OTR = require('../../../lib/otr.js')
+import assert from 'assert'
+import * as keys from './data/keys.js'
+import CONST from '../../../lib/const.js'
+import OTR from '../../../lib/otr.js'
 
 describe('SM', function () {
   "use strict";

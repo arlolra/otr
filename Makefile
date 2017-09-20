@@ -10,7 +10,7 @@ lint:
 	./node_modules/.bin/grunt jshint
 
 test:
-	./node_modules/.bin/mocha -G -R spec test/spec/unit/$(TEST).js
+	./node_modules/.bin/mocha --require reify -G -R spec test/spec/unit/$(TEST).js
 
 build:
 	./node_modules/.bin/grunt $(TASK)

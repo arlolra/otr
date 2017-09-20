@@ -1,14 +1,4 @@
-;(function (root, factory) {
-
-  if (typeof define === 'function' && define.amd) {
-    define(factory.bind(root, root.crypto || root.msCrypto))
-  } else if (typeof module !== 'undefined' && module.exports) {
-    module.exports = factory(require('crypto'))
-  } else {
-    root.BigInt = factory(root.crypto || root.msCrypto)
-  }
-
-}(this, function (crypto) {
+import crypto from 'crypto'
 
   ////////////////////////////////////////////////////////////////////////////////////////
   // Big Integer Library v. 5.5
@@ -32,33 +22,33 @@
   //   - fixed capitalization in call to int2bigInt in randBigInt
   //     (thanks to Emili Evripidou, Reinhold Behringer, and Samuel Macaleese for finding that bug)
   //
-  // v 5.1  8 Oct 2007 
+  // v 5.1  8 Oct 2007
   //   - renamed inverseModInt_ to inverseModInt since it doesn't change its parameters
   //   - added functions GCD and randBigInt, which call GCD_ and randBigInt_
   //   - fixed a bug found by Rob Visser (see comment with his name below)
   //   - improved comments
   //
   // This file is public domain.   You can use it for any purpose without restriction.
-  // I do not guarantee that it is correct, so use it at your own risk.  If you use 
-  // it for something interesting, I'd appreciate hearing about it.  If you find 
+  // I do not guarantee that it is correct, so use it at your own risk.  If you use
+  // it for something interesting, I'd appreciate hearing about it.  If you find
   // any bugs or make any improvements, I'd appreciate hearing about those too.
-  // It would also be nice if my name and URL were left in the comments.  But none 
+  // It would also be nice if my name and URL were left in the comments.  But none
   // of that is required.
   //
   // This code defines a bigInt library for arbitrary-precision integers.
-  // A bigInt is an array of integers storing the value in chunks of bpe bits, 
+  // A bigInt is an array of integers storing the value in chunks of bpe bits,
   // little endian (buff[0] is the least significant word).
   // Negative bigInts are stored two's complement.  Almost all the functions treat
   // bigInts as nonnegative.  The few that view them as two's complement say so
-  // in their comments.  Some functions assume their parameters have at least one 
+  // in their comments.  Some functions assume their parameters have at least one
   // leading zero element. Functions with an underscore at the end of the name put
-  // their answer into one of the arrays passed in, and have unpredictable behavior 
-  // in case of overflow, so the caller must make sure the arrays are big enough to 
-  // hold the answer.  But the average user should never have to call any of the 
-  // underscored functions.  Each important underscored function has a wrapper function 
-  // of the same name without the underscore that takes care of the details for you.  
-  // For each underscored function where a parameter is modified, that same variable 
-  // must not be used as another argument too.  So, you cannot square x by doing 
+  // their answer into one of the arrays passed in, and have unpredictable behavior
+  // in case of overflow, so the caller must make sure the arrays are big enough to
+  // hold the answer.  But the average user should never have to call any of the
+  // underscored functions.  Each important underscored function has a wrapper function
+  // of the same name without the underscore that takes care of the details for you.
+  // For each underscored function where a parameter is modified, that same variable
+  // must not be used as another argument too.  So, you cannot square x by doing
   // multMod_(x,x,n).  You must use squareMod_(x,n) instead, or do y=dup(x); multMod_(x,y,n).
   // Or simply use the multMod(x,x,n) function without the underscore, where
   // such issues never arise, because non-underscored functions never change
@@ -70,20 +60,20 @@
   // that when a function is called repeatedly with same-sized parameters, it only allocates
   // memory on the first call.
   //
-  // Note that for cryptographic purposes, the calls to Math.random() must 
+  // Note that for cryptographic purposes, the calls to Math.random() must
   // be replaced with calls to a better pseudorandom number generator.
   //
   // In the following, "bigInt" means a bigInt with at least one leading zero element,
-  // and "integer" means a nonnegative integer less than radix.  In some cases, integer 
+  // and "integer" means a nonnegative integer less than radix.  In some cases, integer
   // can be negative.  Negative bigInts are 2s complement.
-  // 
+  //
   // The following functions do not modify their inputs.
   // Those returning a bigInt, string, or Array will dynamically allocate memory for that value.
   // Those returning a boolean will return the integer 0 (false) or 1 (true).
-  // Those returning boolean or int will not allocate memory except possibly on the first 
+  // Those returning boolean or int will not allocate memory except possibly on the first
   // time they're called with a given parameter size.
-  // 
-  // bigInt  add(x,y)               //return (x+y) for bigInts x and y.  
+  //
+  // bigInt  add(x,y)               //return (x+y) for bigInts x and y.
   // bigInt  addInt(x,n)            //return (x+n) where x is a bigInt and n is an integer.
   // string  bigInt2str(x,base)     //return a string form of bigInt x in a given base, with 2 <= base <= 95
   // int     bitSize(x)             //return how many bits long the bigInt x is, not counting leading zeros
@@ -116,8 +106,8 @@
   //
   //
   // The following functions each have a non-underscored version, which most users should call instead.
-  // These functions each write to a single parameter, and the caller is responsible for ensuring the array 
-  // passed in is large enough to hold the result. 
+  // These functions each write to a single parameter, and the caller is responsible for ensuring the array
+  // passed in is large enough to hold the result.
   //
   // void    addInt_(x,n)          //do x=x+n where x is a bigInt and n is an integer
   // void    add_(x,y)             //do x=x+y for bigInts x and y
@@ -133,9 +123,9 @@
   // void    randTruePrime_(ans,k) //do ans = a random k-bit true random prime (not just probable prime) with 1 in the msb.
   // void    sub_(x,y)             //do x=x-y for bigInts x and y. Negative answers will be 2s complement.
   //
-  // The following functions do NOT have a non-underscored version. 
+  // The following functions do NOT have a non-underscored version.
   // They each write a bigInt result to one or more parameters.  The caller is responsible for
-  // ensuring the arrays passed in are large enough to hold the results. 
+  // ensuring the arrays passed in are large enough to hold the results.
   //
   // void addShift_(x,y,ys)       //do x=x+(y<<(ys*bpe))
   // void carry_(x)               //do carries and borrows so each element of the bigInt x fits in bpe bits.
@@ -206,7 +196,7 @@
 
   var one=int2bigInt(1,1,1);     //constant used in powMod_()
 
-  //the following global variables are scratchpad memory to 
+  //the following global variables are scratchpad memory to
   //reduce dynamic memory allocation in the inner loop
   var t=new Array(0);
   var ss=t;       //used in mult_()
@@ -225,14 +215,13 @@
 
   var primes=t, pows=t, s_i=t, s_i2=t, s_R=t, s_rm=t, s_q=t, s_n1=t;
   var s_a=t, s_r2=t, s_n=t, s_b=t, s_d=t, s_x1=t, s_x2=t, s_aa=t; //used in randTruePrime_()
-    
+
   var rpprb=t; //used in randProbPrimeRounds() (which also uses "primes")
 
   ////////////////////////////////////////////////////////////////////////////////////////
 
-
   //return array of all primes less than integer n
-  function findPrimes(n) {
+  export function findPrimes(n) {
     var i,s,p,ans;
     s=new Array(n);
     for (i=0;i<n;i++)
@@ -255,7 +244,7 @@
 
   //does a single round of Miller-Rabin base b consider x to be a possible prime?
   //x is a bigInt, and b is an integer, with b<x
-  function millerRabinInt(x,b) {
+  export function millerRabinInt(x,b) {
     if (mr_x1.length!=x.length) {
       mr_x1=dup(x);
       mr_r=dup(x);
@@ -268,7 +257,7 @@
 
   //does a single round of Miller-Rabin base b consider x to be a possible prime?
   //x and b are bigInts with b<x
-  function millerRabin(x,b) {
+  export function millerRabin(x,b) {
     var i,j,k,s;
 
     if (mr_x1.length!=x.length) {
@@ -291,7 +280,7 @@
     for (i=0;i<mr_r.length;i++)
       for (j=1;j<mask;j<<=1)
         if (x[i] & j) {
-          s=(k<mr_r.length+bpe ? k : 0); 
+          s=(k<mr_r.length+bpe ? k : 0);
            i=mr_r.length;
            j=mask;
         } else
@@ -305,7 +294,7 @@
     s = k*bpe + i - 1;
     /* end */
 
-    if (s)                
+    if (s)
       rightShift_(mr_r,s);
 
     powMod_(mr_a,mr_r,x);
@@ -323,11 +312,11 @@
         return 0;
       }
     }
-    return 1;  
+    return 1;
   }
 
   //returns how many bits long the bigInt is, not counting leading zeros.
-  function bitSize(x) {
+  export function bitSize(x) {
     var j,z,w;
     for (j=x.length-1; (x[j]==0) && (j>0); j--);
     for (z=0,w=x[j]; w; (w>>=1),z++);
@@ -336,21 +325,21 @@
   }
 
   //return a copy of x with at least n elements, adding leading zeros if needed
-  function expand(x,n) {
+  export function expand(x,n) {
     var ans=int2bigInt(0,(x.length>n ? x.length : n)*bpe,0);
     copy_(ans,x);
     return ans;
   }
 
   //return a k-bit true random prime using Maurer's algorithm.
-  function randTruePrime(k) {
+  export function randTruePrime(k) {
     var ans=int2bigInt(0,k,0);
     randTruePrime_(ans,k);
     return trim(ans,1);
   }
 
   //return a k-bit random probable prime with probability of error < 2^-80
-  function randProbPrime(k) {
+  export function randProbPrime(k) {
     if (k>=600) return randProbPrimeRounds(k,2); //numbers from HAC table 4.3
     if (k>=550) return randProbPrimeRounds(k,4);
     if (k>=500) return randProbPrimeRounds(k,5);
@@ -365,13 +354,13 @@
   }
 
   //return a k-bit probable random prime using n rounds of Miller Rabin (after trial division with small primes)
-  function randProbPrimeRounds(k,n) {
-    var ans, i, divisible, B; 
+  export function randProbPrimeRounds(k,n) {
+    var ans, i, divisible, B;
     B=30000;  //B is largest prime to use in trial division
     ans=int2bigInt(0,k,0);
-    
+
     //optimization: try larger and smaller B to find the best limit.
-    
+
     if (primes.length==0)
       primes=findPrimes(30000);  //check for divisibility by primes <=30000
 
@@ -379,23 +368,23 @@
       rpprb=dup(ans);
 
     for (;;) { //keep trying random values for ans until one appears to be prime
-      //optimization: pick a random number times L=2*3*5*...*p, plus a 
+      //optimization: pick a random number times L=2*3*5*...*p, plus a
       //   random element of the list of all numbers in [0,L) not divisible by any prime up to p.
       //   This can reduce the amount of random number generation.
-      
+
       randBigInt_(ans,k,0); //ans = a random odd number to check
-      ans[0] |= 1; 
+      ans[0] |= 1;
       divisible=0;
-    
+
       //check ans for divisibility by small primes up to B
       for (i=0; (i<primes.length) && (primes[i]<=B); i++)
         if (modInt(ans,primes[i])==0 && !equalsInt(ans,primes[i])) {
           divisible=1;
           break;
-        }      
-      
+        }
+
       //optimization: change millerRabin so the base can be bigger than the number being checked, then eliminate the while here.
-      
+
       //do n rounds of Miller Rabin, with random bases less than ans
       for (i=0; i<n && !divisible; i++) {
         randBigInt_(rpprb,k,0);
@@ -404,64 +393,64 @@
         if (!millerRabin(ans,rpprb))
           divisible=1;
       }
-      
+
       if(!divisible)
         return ans;
-    }  
+    }
   }
 
   //return a new bigInt equal to (x mod n) for bigInts x and n.
-  function mod(x,n) {
+  export function mod(x,n) {
     var ans=dup(x);
     mod_(ans,n);
     return trim(ans,1);
   }
 
   //return (x+n) where x is a bigInt and n is an integer.
-  function addInt(x,n) {
+  export function addInt(x,n) {
     var ans=expand(x,x.length+1);
     addInt_(ans,n);
     return trim(ans,1);
   }
 
   //return x*y for bigInts x and y. This is faster when y<x.
-  function mult(x,y) {
+  export function mult(x,y) {
     var ans=expand(x,x.length+y.length);
     mult_(ans,y);
     return trim(ans,1);
   }
 
   //return (x**y mod n) where x,y,n are bigInts and ** is exponentiation.  0**0=1. Faster for odd n.
-  function powMod(x,y,n) {
-    var ans=expand(x,n.length);  
+  export function powMod(x,y,n) {
+    var ans=expand(x,n.length);
     powMod_(ans,trim(y,2),trim(n,2),0);  //this should work without the trim, but doesn't
     return trim(ans,1);
   }
 
   //return (x-y) for bigInts x and y.  Negative answers will be 2s complement
-  function sub(x,y) {
-    var ans=expand(x,(x.length>y.length ? x.length+1 : y.length+1)); 
+  export function sub(x,y) {
+    var ans=expand(x,(x.length>y.length ? x.length+1 : y.length+1));
     sub_(ans,y);
     return trim(ans,1);
   }
 
-  //return (x+y) for bigInts x and y.  
-  function add(x,y) {
-    var ans=expand(x,(x.length>y.length ? x.length+1 : y.length+1)); 
+  //return (x+y) for bigInts x and y.
+  export function add(x,y) {
+    var ans=expand(x,(x.length>y.length ? x.length+1 : y.length+1));
     add_(ans,y);
     return trim(ans,1);
   }
 
   //return (x**(-1) mod n) for bigInts x and n.  If no inverse exists, it returns null
-  function inverseMod(x,n) {
-    var ans=expand(x,n.length); 
+  export function inverseMod(x,n) {
+    var ans=expand(x,n.length);
     var s;
     s=inverseMod_(ans,n);
     return s ? trim(ans,1) : null;
   }
 
   //return (x*y mod n) for bigInts x,y,n.  For greater speed, let y<x.
-  function multMod(x,y,n) {
+  export function multMod(x,y,n) {
     var ans=expand(x,n.length);
     multMod_(ans,y,n);
     return trim(ans,1);
@@ -549,10 +538,10 @@
       add_(s_R,s_i);   //now s_R is in the range [s_i+1,2*s_i]
 
       copy_(s_n,s_q);
-      mult_(s_n,s_R); 
+      mult_(s_n,s_R);
       multInt_(s_n,2);
       addInt_(s_n,1);    //s_n=2*s_R*s_q+1
-      
+
       copy_(s_r2,s_R);
       multInt_(s_r2,2);  //s_r2=2*s_R
 
@@ -561,10 +550,10 @@
         if (modInt(s_n,primes[j])==0 && !equalsInt(s_n,primes[j])) {
           divisible=1;
           break;
-        }      
+        }
 
       if (!divisible)    //if it passes small primes check, then try a single Miller-Rabin base 2
-        if (!millerRabinInt(s_n,2)) //this line represents 75% of the total runtime for randTruePrime_ 
+        if (!millerRabinInt(s_n,2)) //this line represents 75% of the total runtime for randTruePrime_
           divisible=1;
 
       if (!divisible) {  //if it passes that test, continue checking s_n
@@ -601,7 +590,7 @@
   }
 
   //Return an n-bit random BigInt (n>=1).  If s=1, then the most significant of those n bits is set to 1.
-  function randBigInt(n,s) {
+  export function randBigInt(n,s) {
     var a,b;
     a=Math.floor((n-1)/bpe)+2; //# array elements to hold the BigInt with a leading 0 element
     b=int2bigInt(0,0,a);
@@ -611,7 +600,7 @@
 
   //Set b to an n-bit random BigInt.  If s=1, then the most significant of those n bits is set to 1.
   //Array b must be big enough to hold the result. Must have n>=1
-  function randBigInt_(b,n,s) {
+  export function randBigInt_(b,n,s) {
     var i,a;
     for (i=0;i<b.length;i++)
       b[i]=0;
@@ -625,7 +614,7 @@
   }
 
   //Return the greatest common divisor of bigInts x and y (each with same number of elements).
-  function GCD(x,y) {
+  export function GCD(x,y) {
     var xc,yc;
     xc=dup(x);
     yc=dup(y);
@@ -659,7 +648,7 @@
         qp=Math.floor((xp+B)/(yp+D));
         if (q!=qp)
           break;
-        t= A-q*C;   A=C;   C=t;    //  do (A,B,xp, C,D,yp) = (C,D,yp, A,B,xp) - q*(0,0,0, C,D,yp)      
+        t= A-q*C;   A=C;   C=t;    //  do (A,B,xp, C,D,yp) = (C,D,yp, A,B,xp) - q*(0,0,0, C,D,yp)
         t= B-q*D;   B=D;   D=t;
         t=xp-q*yp; xp=yp; yp=t;
       }
@@ -672,7 +661,7 @@
         copy_(T,x);
         copy_(x,y);
         copy_(y,T);
-      } 
+      }
     }
     if (y[0]==0)
       return;
@@ -716,7 +705,7 @@
         halve_(eg_u);
         if (!(eg_A[0]&1) && !(eg_B[0]&1)) { //if eg_A==eg_B==0 mod 2
           halve_(eg_A);
-          halve_(eg_B);      
+          halve_(eg_B);
         } else {
           add_(eg_A,n);  halve_(eg_A);
           sub_(eg_B,x);  halve_(eg_B);
@@ -727,7 +716,7 @@
         halve_(eg_v);
         if (!(eg_C[0]&1) && !(eg_D[0]&1)) { //if eg_C==eg_D==0 mod 2
           halve_(eg_C);
-          halve_(eg_D);      
+          halve_(eg_D);
         } else {
           add_(eg_C,n);  halve_(eg_C);
           sub_(eg_D,x);  halve_(eg_D);
@@ -759,7 +748,7 @@
   }
 
   //return x**(-1) mod n, for integers x and n.  Return 0 if there is no inverse
-  function inverseModInt(x,n) {
+  export function inverseModInt(x,n) {
     var a=1,b=0,t;
     for (;;) {
       if (x==1) return a;
@@ -774,7 +763,7 @@
     }
   }
 
-  //this deprecated function is for backward compatibility only. 
+  //this deprecated function is for backward compatibility only.
   function inverseModInt_(x,n) {
      return inverseModInt(x,n);
   }
@@ -809,7 +798,7 @@
         halve_(eg_u);
         if (!(eg_A[0]&1) && !(eg_B[0]&1)) { //if A==B==0 mod 2
           halve_(eg_A);
-          halve_(eg_B);      
+          halve_(eg_B);
         } else {
           add_(eg_A,y);  halve_(eg_A);
           sub_(eg_B,x);  halve_(eg_B);
@@ -820,7 +809,7 @@
         halve_(v);
         if (!(eg_C[0]&1) && !(eg_D[0]&1)) { //if C==D==0 mod 2
           halve_(eg_C);
-          halve_(eg_D);      
+          halve_(eg_D);
         } else {
           add_(eg_C,y);  halve_(eg_C);
           sub_(eg_D,x);  halve_(eg_D);
@@ -852,7 +841,7 @@
 
 
   //is bigInt x negative?
-  function negative(x) {
+  export function negative(x) {
     return ((x[x.length-1]>>(bpe-1))&1);
   }
 
@@ -860,10 +849,10 @@
   //is (x << (shift*bpe)) > y?
   //x and y are nonnegative bigInts
   //shift is a nonnegative integer
-  function greaterShift(x,y,shift) {
+  export function greaterShift(x,y,shift) {
     var i, kx=x.length, ky=y.length;
     var k=((kx+shift)<ky) ? (kx+shift) : ky;
-    for (i=ky-1-shift; i<kx && i>=0; i++) 
+    for (i=ky-1-shift; i<kx && i>=0; i++)
       if (x[i]>0)
         return 1; //if there are nonzeros in x to the left of the first column of y, then x is bigger
     for (i=kx-1+shift; i<ky; i++)
@@ -876,7 +865,7 @@
   }
 
   //is x > y? (x and y both nonnegative)
-  function greater(x,y) {
+  export function greater(x,y) {
     var i;
     var k=(x.length<y.length) ? x.length : y.length;
 
@@ -901,16 +890,16 @@
   //y must be nonzero.
   //q and r must be arrays that are exactly the same length as x. (Or q can have more).
   //Must have x.length >= y.length >= 2.
-  function divide_(x,y,q,r) {
+  export function divide_(x,y,q,r) {
     var kx, ky;
     var i,j,y1,y2,c,a,b;
     copy_(r,x);
     for (ky=y.length;y[ky-1]==0;ky--); //ky is number of elements in y, not including leading zeros
 
-    //normalize: ensure the most significant element of y has its highest bit set  
+    //normalize: ensure the most significant element of y has its highest bit set
     b=y[ky-1];
     for (a=0; b; a++)
-      b>>=1;  
+      b>>=1;
     a=bpe-a;  //a is how many bits to shift so that the high order bit of y is leftmost in its array element
     leftShift_(y,a);  //multiply both by 1<<a now, then divide both by that at the end
     leftShift_(r,a);
@@ -930,11 +919,11 @@
       else
         q[i-ky]=Math.floor((r[i]*radix+r[i-1])/y[ky-1]);
 
-      //The following for(;;) loop is equivalent to the commented while loop, 
+      //The following for(;;) loop is equivalent to the commented while loop,
       //except that the uncommented version avoids overflow.
       //The commented loop comes from HAC, which assumes r[-1]==y[-1]==0
       //  while (q[i-ky]*(y[ky-1]*radix+y[ky-2]) > r[i]*radix*radix+r[i-1]*radix+r[i-2])
-      //    q[i-ky]--;    
+      //    q[i-ky]--;
       for (;;) {
         y2=(ky>1 ? y[ky-2] : 0)*q[i-ky];
         c=y2;
@@ -945,7 +934,7 @@
         y1=y1 & mask;
         c = (c - y1) / radix;
 
-        if (c==r[i] ? y1==r[i-1] ? y2>(i>1 ? r[i-2] : 0) : y1>r[i-1] : c>r[i]) 
+        if (c==r[i] ? y1==r[i-1] ? y2>(i>1 ? r[i-2] : 0) : y1>r[i-1] : c>r[i])
           q[i-ky]--;
         else
           break;
@@ -963,7 +952,7 @@
   }
 
   //do carries and borrows so each element of the bigInt x fits in bpe bits.
-  function carry_(x) {
+  export function carry_(x) {
     var i,k,c,b;
     k=x.length;
     c=0;
@@ -981,7 +970,7 @@
   }
 
   //return x mod n for bigInt x and integer n.
-  function modInt(x,n) {
+  export function modInt(x,n) {
     var i,c=0;
     for (i=x.length-1; i>=0; i--)
       c=(c*radix+x[i])%n;
@@ -992,7 +981,7 @@
   //the returned array stores the bigInt in bpe-bit chunks, little endian (buff[0] is least significant word)
   //Pad the array with leading zeros so that it has at least minSize elements.
   //There will always be at least one leading 0 element.
-  function int2bigInt(t,bits,minSize) {   
+  export function int2bigInt(t,bits,minSize) {
     var i,k, buff;
     k=Math.ceil(bits/bpe)+1;
     k=minSize>k ? minSize : k;
@@ -1001,11 +990,11 @@
     return buff;
   }
 
-  //return the bigInt given a string representation in a given base.  
+  //return the bigInt given a string representation in a given base.
   //Pad the array with leading zeros so that it has at least minSize elements.
   //If base=-1, then it reads in a space-separated list of array elements in decimal.
   //The array will always have at least one leading zero, unless base=-1.
-  function str2bigInt(s,base,minSize) {
+  export function str2bigInt(s,base,minSize) {
     var d, i, j, x, y, kk;
     var k=s.length;
     if (base==-1) { //comma-separated list of array elements in decimal
@@ -1017,7 +1006,7 @@
         y[0]=parseInt(s,10);
         x=y;
         d=s.indexOf(',',0);
-        if (d<1) 
+        if (d<1)
           break;
         s=s.substring(d+1);
         if (s.length==0)
@@ -1066,7 +1055,7 @@
 
   //is bigint x equal to integer y?
   //y must have less than bpe bits
-  function equalsInt(x,y) {
+  export function equalsInt(x,y) {
     var i;
     if (x[0]!=y)
       return 0;
@@ -1078,7 +1067,7 @@
 
   //are bigints x and y equal?
   //this works even if x and y are different lengths and have arbitrarily many leading zeros
-  function equals(x,y) {
+  export function equals(x,y) {
     var i;
     var k=x.length<y.length ? x.length : y.length;
     for (i=0;i<k;i++)
@@ -1097,7 +1086,7 @@
   }
 
   //is the bigInt x equal to zero?
-  function isZero(x) {
+  export function isZero(x) {
     var i;
     for (i=0;i<x.length;i++)
       if (x[i])
@@ -1107,10 +1096,10 @@
 
   //convert a bigInt into a string in a given base, from base 2 up to base 95.
   //Base -1 prints the contents of the array representing the number.
-  function bigInt2str(x,base) {
+  export function bigInt2str(x,base) {
     var i,t,s="";
 
-    if (s6.length!=x.length) 
+    if (s6.length!=x.length)
       s6=dup(x);
     else
       copy_(s6,x);
@@ -1132,7 +1121,7 @@
   }
 
   //returns a duplicate of bigInt x
-  function dup(x) {
+  export function dup(x) {
     var i, buff;
     buff=new Array(x.length);
     copy_(buff,x);
@@ -1140,7 +1129,7 @@
   }
 
   //do x=y on bigInts x and y.  x must be an array at least as big as y (not counting the leading zeros in y).
-  function copy_(x,y) {
+  export function copy_(x,y) {
     var i;
     var k=x.length<y.length ? x.length : y.length;
     for (i=0;i<k;i++)
@@ -1149,8 +1138,8 @@
       x[i]=0;
   }
 
-  //do x=y on bigInt x and integer y.  
-  function copyInt_(x,n) {
+  //do x=y on bigInt x and integer y.
+  export function copyInt_(x,n) {
     var i,c;
     for (c=n,i=0;i<x.length;i++) {
       x[i]=c & mask;
@@ -1160,7 +1149,7 @@
 
   //do x=x+n where x is a bigInt and n is an integer.
   //x must be large enough to hold the result.
-  function addInt_(x,n) {
+  export function addInt_(x,n) {
     var i,k,c,b;
     x[0]+=n;
     k=x.length;
@@ -1180,7 +1169,7 @@
   }
 
   //right shift bigInt x by n bits.
-  function rightShift_(x,n) {
+  export function rightShift_(x,n) {
     var i;
     var k=Math.floor(n/bpe);
     if (k) {
@@ -1213,7 +1202,7 @@
       for (i=x.length; i>=k; i--) //left shift x by k elements
         x[i]=x[i-k];
       for (;i>=0;i--)
-        x[i]=0;  
+        x[i]=0;
       n%=bpe;
     }
     if (!n)
@@ -1246,7 +1235,7 @@
   }
 
   //do x=floor(x/n) for bigInt x and integer n, and return the remainder
-  function divInt_(x,n) {
+  export function divInt_(x,n) {
     var i,r=0,s;
     for (i=x.length-1;i>=0;i--) {
       s=r*radix+x[i];
@@ -1382,7 +1371,7 @@
     else
       copy_(s4,x);
     if (s5.length!=x.length)
-      s5=dup(x);  
+      s5=dup(x);
     divide_(s4,n,s5,x);  //x = remainder of s4 / n
   }
 
@@ -1405,7 +1394,7 @@
     var i,j,d,c,kx,kn,k;
     for (kx=x.length; kx>0 && !x[kx-1]; kx--);  //ignore leading zeros in x
     k=kx>n.length ? 2*kx : 2*n.length; //k=# elements in the product, which is twice the elements in the larger of x and n
-    if (s0.length!=k) 
+    if (s0.length!=k)
       s0=new Array(k);
     copyInt_(s0,0);
     for (i=0;i<kx;i++) {
@@ -1424,7 +1413,7 @@
   }
 
   //return x with exactly k leading zero elements
-  function trim(x,k) {
+  export function trim(x,k) {
     var i,y;
     for (i=x.length; i>0 && !x[i-1]; i--);
     y=new Array(i+k);
@@ -1448,7 +1437,7 @@
         if (y[0]&1)
           multMod_(x,s7,n);
         divInt_(y,2);
-        squareMod_(s7,n); 
+        squareMod_(s7,n);
       }
       return;
     }
@@ -1479,7 +1468,7 @@
           return;
         }
         k2=1<<(bpe-1);
-      }    
+      }
       mont_(x,x,n,np);
 
       if (k2 & y[k1]) //if next bit is a 1
@@ -1488,10 +1477,10 @@
   }
 
 
-  //do x=x*y*Ri mod n for bigInts x,y,n, 
-  //  where Ri = 2**(-kn*bpe) mod n, and kn is the 
-  //  number of elements in the n array, not 
-  //  counting leading zeros.  
+  //do x=x*y*Ri mod n for bigInts x,y,n,
+  //  where Ri = 2**(-kn*bpe) mod n, and kn is the
+  //  number of elements in the n array, not
+  //  counting leading zeros.
   //x array must have at least as many elemnts as the n array
   //It's OK if x and y are the same variable.
   //must have:
@@ -1505,12 +1494,12 @@
 
     if (sa.length!=kn)
       sa=new Array(kn);
-      
+
     copyInt_(sa,0);
 
     for (;kn>0 && n[kn-1]==0;kn--); //ignore leading zeros of n
     for (;ky>0 && y[ky-1]==0;ky--); //ignore leading zeros of y
-    ks=sa.length-1; //sa will never have more than this many nonzero elements.  
+    ks=sa.length-1; //sa will never have more than this many nonzero elements.
 
     //the following loop consumes 95% of the runtime for randTruePrime_() and powMod_() for large numbers
     for (i=0; i<kn; i++) {
@@ -1519,7 +1508,7 @@
       c=(t+ui*n[0]);
       c = (c - (c & mask)) / radix;
       t=x[i];
-      
+
       //do sa=(sa+x[i]*y+ui*n)/b   where b=2**bpe.  Loop is unrolled 5-fold for speed
       j=1;
       for (;j<ky-4;) {
@@ -1558,12 +1547,12 @@
 
 
   // computes num / den mod n
-  function divMod(num, den, n) {
+  export function divMod(num, den, n) {
     return multMod(num, inverseMod(den, n), n)
   }
 
   // computes one - two mod n
-  function subMod(one, two, n) {
+  export function subMod(one, two, n) {
     one = mod(one, n)
     two = mod(two, n)
     if (greater(two, one)) one = add(one, n)
@@ -1571,7 +1560,7 @@
   }
 
   // computes 2^m as a bigInt
-  function twoToThe(m) {
+  export function twoToThe(m) {
     var b = Math.floor(m / bpe) + 2
     var t = new Array(b)
     for (var i = 0; i < b; i++) t[i] = 0
@@ -1590,7 +1579,7 @@
 
   // serialize a bigInt to an ascii string
   // padded up to pad length
-  function bigInt2bits(bi, pad) {
+  export function bigInt2bits(bi, pad) {
     pad || (pad = 0)
     bi = dup(bi)
     var ba = ''
@@ -1605,7 +1594,7 @@
   }
 
   // converts a byte array to a bigInt
-  function ba2bigInt(data) {
+  export function ba2bigInt(data) {
     var mpi = str2bigInt('0', 10, data.length)
     data.forEach(function (d, i) {
       if (i) leftShift_(mpi, 8)
@@ -1629,7 +1618,7 @@
     }
 
     // in browser
-    else if ( typeof crypto !== 'undefined' &&
+    else if (typeof crypto !== 'undefined' &&
       typeof crypto.getRandomValues === 'function' ) {
       return function (n) {
         var buf = new Uint8Array(n)
@@ -1646,7 +1635,7 @@
   }())
 
   // Salsa 20 in webworker needs a 40 byte seed
-  function getSeed() {
+  export function getSeed() {
     return randomBytes(40)
   }
 
@@ -1667,39 +1656,4 @@
     return r
   }
 
-  return {
-      str2bigInt    : str2bigInt
-    , bigInt2str    : bigInt2str
-    , int2bigInt    : int2bigInt
-    , multMod       : multMod
-    , powMod        : powMod
-    , inverseMod    : inverseMod
-    , randBigInt    : randBigInt
-    , randBigInt_   : randBigInt_
-    , equals        : equals
-    , equalsInt     : equalsInt
-    , sub           : sub
-    , mod           : mod
-    , modInt        : modInt
-    , mult          : mult
-    , divInt_       : divInt_
-    , rightShift_   : rightShift_
-    , dup           : dup
-    , greater       : greater
-    , add           : add
-    , isZero        : isZero
-    , bitSize       : bitSize
-    , millerRabin   : millerRabin
-    , divide_       : divide_
-    , trim          : trim
-    , primes        : primes
-    , findPrimes    : findPrimes
-    , getSeed       : getSeed
-    , divMod        : divMod
-    , subMod        : subMod
-    , twoToThe      : twoToThe
-    , bigInt2bits   : bigInt2bits
-    , ba2bigInt     : ba2bigInt
-  }
-
-}))
+  export var primes;

@@ -1,6 +1,6 @@
 /*global describe it */
-var assert = require('assert')
-  , BigInt = require('../../../vendor/bigint.js')
+import assert from 'assert'
+import BigInt from '../../../vendor/bigint.js'
 
 describe('BigInt', function() {
   "use strict";

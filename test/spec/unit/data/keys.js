@@ -1,5 +1,5 @@
-var DSA = require('../../../../lib/dsa.js')
-  , BigInt = require('../../../../vendor/bigint.js')
+import DSA from '../../../../lib/dsa.js'
+import BigInt from '../../../../vendor/bigint.js'
 
 var userA = DSA({
   q: 'AA6B0EFC9135D7DBBC44254C63DA1A941E818BD1',
@@ -22,4 +22,4 @@ var userB = DSA({
   userB[k] = BigInt.str2bigInt(userB[k], 16  )
 })
 
-module.exports = { userA: userA, userB: userB }
+export {userA, userB}

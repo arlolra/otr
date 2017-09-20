@@ -1,11 +1,11 @@
 /*global describe before it */
-var assert = require('assert')
-  , fs = require('fs')
-  , path = require('path')
-  , HLP = require('../../../lib/helpers.js')
-  , DSA = require('../../../lib/dsa.js')
-  , BigInt = require('../../../vendor/bigint.js')
-  , prekeys = require('./data/keys.js')
+import assert from 'assert'
+import fs from 'fs'
+import path from 'path'
+import HLP from '../../../lib/helpers.js'
+import DSA from '../../../lib/dsa.js'
+import BigInt from '../../../vendor/bigint.js'
+import * as prekeys from './data/keys.js'
 
 describe('DSA', function() {
   "use strict";

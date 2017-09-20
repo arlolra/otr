@@ -2,19 +2,7 @@
 // Contributed to Cryptocat by Dmitry Chestnykh
 // 21-01-2013
 
-;(function (root, factory) {
-
-  if (typeof define === 'function' && define.amd) {
-    define(factory)
-  } else if (typeof module !== 'undefined' && module.exports) {
-    module.exports = factory()
-  } else {
-    root.Salsa20 = factory()
-  }
-
-}(this, function () {
-
-    function Salsa20(key, nonce) {
+    export default function Salsa20(key, nonce) {
         // Constants.
         this.rounds = 20; // number of Salsa rounds
         this.sigmaWords = [0x61707865, 0x3320646e, 0x79622d32, 0x6b206574];
@@ -250,5 +238,3 @@
     };
 
   return Salsa20
-
-}))
