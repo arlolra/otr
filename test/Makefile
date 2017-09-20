@@ -14,7 +14,7 @@ libotr:
 
 build:
 	$(CC) libotr_test_helper.c \
-		-L$(LIBOTR_DIR)/lib \
+		-L$(LIBOTR_DIR)/lib -Wl,-rpath,$(LIBOTR_DIR)/lib\
 		-I$(LIBOTR_DIR)/include/libotr \
 		-lotr \
 		-o libotr_test_helper.out

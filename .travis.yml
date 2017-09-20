@@ -11,8 +11,7 @@ matrix:
 
 before_install:
   - "sudo apt-get update"
-  - "sudo apt-get install -qq libotr2-dev"
-  - "pushd test; make build LIBOTR_DIR=/usr; popd"
+  - "pushd test; make; popd"
 
 script:
   - "make all"
