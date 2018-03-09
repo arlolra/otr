@@ -213,7 +213,8 @@ import crypto from 'crypto'
   var eg_v=t, eg_u=t, eg_A=t, eg_B=t, eg_C=t, eg_D=t;               //used in eGCD_(), inverseMod_()
   var md_q1=t, md_q2=t, md_q3=t, md_r=t, md_r1=t, md_r2=t, md_tt=t; //used in mod_()
 
-  var primes=t, pows=t, s_i=t, s_i2=t, s_R=t, s_rm=t, s_q=t, s_n1=t;
+  export var primes=t;
+  var pows=t, s_i=t, s_i2=t, s_R=t, s_rm=t, s_q=t, s_n1=t;
   var s_a=t, s_r2=t, s_n=t, s_b=t, s_d=t, s_x1=t, s_x2=t, s_aa=t; //used in randTruePrime_()
 
   var rpprb=t; //used in randProbPrimeRounds() (which also uses "primes")
@@ -1655,5 +1656,3 @@ import crypto from 'crypto'
       r = (256 * r) + randomByte()
     return r
   }
-
-  export var primes;
