@@ -25,9 +25,10 @@
     "webworker-threads": "~0.7.13"
   },
   "devDependencies": {
+    "jshint": "^2.10.2",
     "mocha": "~3.5.3",
     "reify": "^0.12.3",
-    "rollup": "^0.50.0"
+    "rollup": "^1.7.0"
   },
   "author": "Arlo Breault <arlolra@gmail.com>",
   "contributors": [

@@ -1,5 +1,6 @@
 {
-    "browser"  : true
+    "esversion": 6
+  , "browser"  : true
   , "devel"    : true
   , "node"     : true
   , "bitwise"  : false
@@ -7,7 +8,6 @@
   , "laxcomma" : true
   , "asi"      : true
   , "undef"    : true
-  , "strict"   : true
   , "expr"     : true
   , "white"    : false
   , "multistr" : true
