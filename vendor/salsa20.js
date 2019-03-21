@@ -237,4 +237,3 @@
             this.block[62] = (x15 >>> 16) & 0xff; this.block[63] = (x15 >>> 24) & 0xff;
     };
 
-  return Salsa20
