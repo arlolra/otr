@@ -25,12 +25,6 @@
     "webworker-threads": "~0.7.13"
   },
   "devDependencies": {
-    "grunt": "~1.0.1",
-    "grunt-cli": "~1.2.0",
-    "grunt-contrib-clean": "~1.1.0",
-    "grunt-contrib-concat": "~1.0.1",
-    "grunt-contrib-jshint": "~1.1.0",
-    "grunt-contrib-uglify": "~3.1.0",
     "mocha": "~3.5.3",
     "reify": "^0.12.3",
     "rollup": "^0.50.0"
