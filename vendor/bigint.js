@@ -1619,11 +1619,11 @@ import crypto from 'crypto'
     }
 
     // in browser
-    else if (typeof crypto !== 'undefined' &&
-      typeof crypto.getRandomValues === 'function' ) {
+    else if (typeof window.crypto !== 'undefined' &&
+      typeof window.crypto.getRandomValues === 'function' ) {
       return function (n) {
         var buf = new Uint8Array(n)
-        crypto.getRandomValues(buf)
+        window.crypto.getRandomValues(buf)
         return Array.prototype.slice.call(buf, 0)
       }
     }
