@@ -7,12 +7,12 @@ TASK=default
 all: lint test
 
 lint:
-	./node_modules/.bin/grunt jshint
+	./node_modules/.bin/jshint -c .jshintrc *.js lib/*.js test/spec/unit/*.js
 
 test:
-	./node_modules/.bin/mocha -G -R spec test/spec/unit/$(TEST).js
+	./node_modules/.bin/mocha --require reify -G -R spec test/spec/unit/$(TEST).js
 
 build:
-	./node_modules/.bin/grunt $(TASK)
+	./node_modules/.bin/rollup -c
 
 .PHONY: test build

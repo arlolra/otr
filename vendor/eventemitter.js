@@ -5,16 +5,13 @@
  * @preserve
  */
 
-(function () {
-	'use strict';
-
 	/**
 	 * Class for managing events.
 	 * Can be extended to provide event functionality in other classes.
 	 *
 	 * @class EventEmitter Manages event registering and emitting.
 	 */
-	function EventEmitter() {}
+	export default function EventEmitter() {}
 
 	// Shortcuts to improve speed and size
 
@@ -439,17 +436,3 @@
 	proto._getEvents = function _getEvents() {
 		return this._events || (this._events = {});
 	};
-
-	// Expose the class either via AMD, CommonJS or the global object
-	if (typeof define === 'function' && define.amd) {
-		define(function () {
-			return EventEmitter;
-		});
-	}
-	else if (typeof module === 'object' && module.exports){
-		module.exports = EventEmitter;
-	}
-	else {
-		this.EventEmitter = EventEmitter;
-	}
-}.call(this));

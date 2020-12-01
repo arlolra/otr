@@ -1,10 +1,10 @@
 /*global describe it */
-var assert = require('assert')
-  , keys = require('./data/keys.js')
-  , CONST = require('../../../lib/const.js')
-  , HLP = require('../../../lib/helpers.js')
-  , Parse = require('../../../lib/parse.js')
-  , OTR = require('../../../lib/otr.js')
+import assert from 'assert'
+import * as keys from './data/keys.js'
+import CONST from '../../../lib/const.js'
+import HLP from '../../../lib/helpers.js'
+import Parse from '../../../lib/parse.js'
+import OTR from '../../../lib/otr.js'
 
 describe('OTR', function () {
   "use strict";
@@ -268,7 +268,7 @@ describe('OTR', function () {
       if (counter > 7) done()
       else this.sendMsg(msgs[counter])
     }
-    var err = function (err) { assert.ifError(err) } 
+    var err = function (err) { assert.ifError(err) }
     var io = function (msg) { userB.receiveMsg(msg) }
     var userA = new OTR({ priv: keys.userA })
     userA.on('ui', ui.bind(userA))
@@ -651,7 +651,7 @@ describe('OTR', function () {
 
     userA.sendMsg(m1, m2)
   })
-  
+
   it('should passthrough meta data in encrypted mode', function(done) {
     var m1 = 'text message'
     var m2 = 'meta data'
@@ -674,7 +674,7 @@ describe('OTR', function () {
 
     userB.sendQueryMsg()
   })
-  
+
   it('should passthrough meta data for stored messages', function(done) {
     var m1 = 'text message'
     var m2 = 'meta data'

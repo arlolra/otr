@@ -1,15 +1,3 @@
-;(function (root, factory) {
-
-  if (typeof define === "function" && define.amd) {
-    define(factory)
-  } else if (typeof module !== 'undefined' && module.exports) {
-    module.exports = factory()
-  } else {
-    root.CryptoJS = factory()
-  }
-
-}(this, function () {
-
 /*
 CryptoJS v3.1.2
 code.google.com/p/crypto-js
@@ -19,11 +7,14 @@ code.google.com/p/crypto-js/wiki/License
 /**
  * CryptoJS core components.
  */
-var CryptoJS = CryptoJS || (function (Math, undefined) {
+
     /**
      * CryptoJS namespace.
      */
     var C = {};
+    var CryptoJS = C;
+
+    export default C;
 
     /**
      * Library namespace.
@@ -719,9 +710,6 @@ var CryptoJS = CryptoJS || (function (Math, undefined) {
      * Algorithm namespace.
      */
     var C_algo = C.algo = {};
-
-    return C;
-}(Math));
 
 /*
 CryptoJS v3.1.2
@@ -2427,8 +2415,3 @@ CryptoJS.mode.CTR = (function () {
 
     return CTR;
 }());
-
-
-  return CryptoJS
-
-}))

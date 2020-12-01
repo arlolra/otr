@@ -1,10 +1,10 @@
 /*global describe it beforeEach */
-var assert = require('assert')
-  , CryptoJS = require('../../../vendor/crypto.js')
-  , CONST = require('../../../lib/const.js')
-  , HLP = require('../../../lib/helpers.js')
-  , Parse = require('../../../lib/parse.js')
-  , OTR = function () {}  // just a constructor
+import assert from 'assert'
+import CryptoJS from '../../../vendor/crypto.js'
+import CONST from '../../../lib/const.js'
+import HLP from '../../../lib/helpers.js'
+import Parse from '../../../lib/parse.js'
+var OTR = function () {}  // just a constructor
 
 describe('Parse', function () {
   "use strict";
@@ -106,7 +106,7 @@ describe('Parse', function () {
   it('should encode properly', function () {
     var enc = 'QgEDAwEIBgQCAAAAA2ZvbwAAAADerb7vAAAADWVuY29kZWRfZHVtbXl0aGlzIGlzIGEgZHVtbXkgbWFjAAAAAAA='
     var dec = '\x42' + '\x01\x03\x03\x01' + '\x08\x06\x04\x02' + HLP.packData('foo') +
-              '\x00\x00\x00\x00\xde\xad\xbe\xef' + HLP.packData('encoded_dummy') + 
+              '\x00\x00\x00\x00\xde\xad\xbe\xef' + HLP.packData('encoded_dummy') +
               'this is a dummy mac\x00' + '\x00\x00\x00\x00'
     dec = CryptoJS.enc.Latin1.parse(dec)
     assert.equal(enc, dec.toString(CryptoJS.enc.Base64), 'Base64')

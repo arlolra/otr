@@ -1,11 +1,12 @@
 {
   "name": "otr",
-  "version": "0.2.16",
+  "version": "0.3.0-sualko",
   "description": "Off-the-Record Messaging Protocol",
   "homepage": "https://github.com/arlolra/otr",
   "main": "index.js",
   "scripts": {
-    "test": "make test"
+    "test": "make test",
+    "build": "node_modules/.bin/rollup -c"
   },
   "repository": {
     "type": "git",
@@ -20,17 +21,11 @@
     "socialist millionaire",
     "dsa"
   ],
-  "optionalDependencies": {
-    "webworker-threads": "~0.4.13"
-  },
   "devDependencies": {
-    "mocha": "~1.20.1",
-    "grunt": "~0.4.4",
-    "grunt-cli": "~0.1.13",
-    "grunt-contrib-clean": "~0.5.0",
-    "grunt-contrib-concat": "~0.4.0",
-    "grunt-contrib-jshint": "~0.10.0",
-    "grunt-contrib-uglify": "~0.5.0"
+    "jshint": "^2.10.2",
+    "mocha": "~3.5.3",
+    "reify": "^0.12.3",
+    "rollup": "^1.7.0"
   },
   "author": "Arlo Breault <arlolra@gmail.com>",
   "contributors": [

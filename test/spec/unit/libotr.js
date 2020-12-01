@@ -1,8 +1,8 @@
 /*global describe it before */
-var spawn = require('child_process').spawn
-  , keys = require('./data/keys.js')
-  , OTR = require('../../../lib/otr.js')
-  , CONST = require('../../../lib/const.js')
+import {spawn} from 'child_process'
+import keys from './data/keys.js'
+import OTR from '../../../lib/otr.js'
+import CONST from '../../../lib/const.js'
 
 // this test is ported from golang
 // https://code.google.com/p/go/source/browse/otr/otr_test.go?repo=crypto

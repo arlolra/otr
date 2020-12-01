@@ -1,7 +1,7 @@
 /*global describe it */
-var assert = require('assert')
-  , BigInt = require('../../../vendor/bigint.js')
-  , HLP = require('../../../lib/helpers.js')
+import assert from 'assert'
+import BigInt from '../../../vendor/bigint.js'
+import HLP from '../../../lib/helpers.js'
 
 describe('Helpers', function () {
   "use strict";
@@ -11,7 +11,7 @@ describe('Helpers', function () {
   it('should pack empty data correctly', function () {
     assert.equal('\x00\x00\x00\x00', HLP.packData(''), 'Empty pack.')
   })
-  
+
   it('should pack mpi data correctly', function () {
     var test = HLP.packMPI(BigInt.str2bigInt('65280', 10))
     assert.equal('\x00\x00\x00\x02\xff\x00', test, 'They be equal.')
